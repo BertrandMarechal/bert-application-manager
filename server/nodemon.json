@@ -1,0 +1,10 @@
+{
+    "watch": [
+        "./build"
+    ],
+    "ignore": [
+        "src/**/*.spec.ts"
+    ],
+    "ext": "js",
+    "exec": "node build/main.js"
+}
