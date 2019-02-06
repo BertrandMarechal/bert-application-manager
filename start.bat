@@ -1,1 +1,1 @@
-cls && npm link && aws-mock start-server
+cls && npm link
