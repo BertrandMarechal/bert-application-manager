@@ -43,6 +43,10 @@ export class RepositoryUtils {
         }
     }
 
+    static async checkDbParams(filter: string, environment: string) {
+        await DatabaseRepositoryReader.checkParams(filter, environment);
+    }
+
     static async listFunctions(filter: string) {
         await ServerlessRepositoryReader.listFunctions(filter);
     }

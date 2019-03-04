@@ -10,7 +10,8 @@ const optionDefinitions = [
     { name: 'action', alias: 'a', type: String, defaultOption: true, description: 'Action' },
     { name: 'help', alias: 'h', type: Boolean, description: 'Displays the help' },
     { name: 'type', alias: 't', type: String, description: 'Type of the repository to read' },
-    { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' }
+    { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
+    { name: 'environment', alias: 'e', type: String, description: 'environment' },
 ];
 const options: CommandLineOptions = commandLineArgs(optionDefinitions);
 
@@ -36,6 +37,9 @@ const main = async () => {
                 break;
             case 'list-functions':
                 await RepositoryUtils.listFunctions(options.filter);
+                break;
+            case 'check-db-params':
+                await RepositoryUtils.checkDbParams(options.filter, options.environment);
                 break;
             default:
                 break;
