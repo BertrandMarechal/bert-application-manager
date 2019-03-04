@@ -7,15 +7,15 @@ import { DatabaseVersionFile, DatabaseObject } from "../models/database-file.mod
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
     private static _tempFolderPath = path.resolve(process.argv[1], '../../../temp');
-    private static _postgresDbFilesPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-dbs.json';
-    private static _postgresDbParamsPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-db-params.json';
-    private static _postgresDbDataPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-db-data.json';
-    private static _releasesPath = 'postgres/release';
+    static postgresDbFilesPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-dbs.json';
+    static postgresDbParamsPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-db-params.json';
+    static postgresDbDataPath = DatabaseRepositoryReader._tempFolderPath + '/postgres-db-data.json';
+    static releasesPath = 'postgres/release';
 
     static async readRepo(startPath: string, repoName: string) {
         // we have to get the list of files and read them
         const versionFiles = await FileUtils.getFileList({
-            startPath: path.resolve(startPath, DatabaseRepositoryReader._releasesPath),
+            startPath: path.resolve(startPath, DatabaseRepositoryReader.releasesPath),
             filter: /version.json$/
         });
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `${versionFiles.length} files found` });
@@ -23,22 +23,22 @@ export class DatabaseRepositoryReader {
         // read the current db file and add on
         FileUtils.createFolderStructureIfNeeded(DatabaseRepositoryReader._tempFolderPath);
         let fileData: { [name: string]: DatabaseVersionFile[] } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader._postgresDbFilesPath)) {
-            fileData = await FileUtils.readJsonFile(DatabaseRepositoryReader._postgresDbFilesPath);
+        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbFilesPath)) {
+            fileData = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbFilesPath);
         }
         fileData[repoName] = await DatabaseRepositoryReader._readFiles(versionFiles);
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres db file` });
-        FileUtils.writeFileSync(DatabaseRepositoryReader._postgresDbFilesPath, JSON.stringify(fileData, null, 2));
+        FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbFilesPath, JSON.stringify(fileData, null, 2));
 
         // read the current db file and add on
         FileUtils.createFolderStructureIfNeeded(DatabaseRepositoryReader._tempFolderPath);
         let fileData2: { [name: string]: DatabaseObject } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader._postgresDbDataPath)) {
-            fileData2 = await FileUtils.readJsonFile(DatabaseRepositoryReader._postgresDbDataPath);
+        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbDataPath)) {
+            fileData2 = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
         }
         fileData2[repoName] = await DatabaseRepositoryReader._extractObjectInformation(fileData[repoName]);
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres objects db file` });
-        FileUtils.writeFileSync(DatabaseRepositoryReader._postgresDbDataPath, JSON.stringify(fileData2, null, 2));
+        FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbDataPath, JSON.stringify(fileData2, null, 2));
     }
 
     private static async _readFiles(files: string[]): Promise<DatabaseVersionFile[]> {
@@ -151,8 +151,8 @@ export class DatabaseRepositoryReader {
         // get the database parameters
         FileUtils.createFolderStructureIfNeeded(DatabaseRepositoryReader._tempFolderPath);
         let fileDataDatabaseObject: { [name: string]: DatabaseObject } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader._postgresDbDataPath)) {
-            fileDataDatabaseObject = await FileUtils.readJsonFile(DatabaseRepositoryReader._postgresDbDataPath);
+        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbDataPath)) {
+            fileDataDatabaseObject = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
         }
         let databasesToCheck = Object.keys(fileDataDatabaseObject);
         // filter them if needed
@@ -176,9 +176,9 @@ export class DatabaseRepositoryReader {
         // read the current db file and add on
         FileUtils.createFolderStructureIfNeeded(DatabaseRepositoryReader._tempFolderPath);
         let databaseParametersFromDb: { [database: string]: {[env: string]: {[param: string]: string}} } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader._postgresDbParamsPath)) {
-            databaseParametersFromDb = await FileUtils.readJsonFile(DatabaseRepositoryReader._postgresDbParamsPath);
-        }
+        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbParamsPath)) {
+            databaseParametersFromDb = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbParamsPath);
+        
 
         // loop through all of them, and ask to set or update
         for (let i = 0; i < databaseParams.length; i++) {
@@ -208,6 +208,6 @@ export class DatabaseRepositoryReader {
             }
         }
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
-        FileUtils.writeFileSync(DatabaseRepositoryReader._postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
-    }
+        FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
+    
 }
