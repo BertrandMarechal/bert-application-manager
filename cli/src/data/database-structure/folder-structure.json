@@ -1,0 +1,126 @@
+[
+    {
+        "folderName": "postgres",
+        "children": [
+            {
+                "folderName": "release",
+                "children": [
+                    {
+                        "folderName": "0.0.0.0",
+                        "children": [
+                            {
+                                "fileName": "version.json",
+                                "fileSource": "0.0.0.0.json"
+                            }
+                        ]
+                    },
+                    {
+                        "folderName": "0.1.0.0",
+                        "children": [
+                            {
+                                "fileName": "version.json",
+                                "fileSource": "0.1.0.0.json"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "folderName": "schema",
+                "children": [
+                    {
+                        "folderName": "00-database-setup",
+                        "children": [
+                            {
+                                "fileName": "00-stop-connections.sql",
+                                "fileSource": "stop_database_connections.sql"
+                            },
+                            {
+                                "fileName": "01-drop-database.sql",
+                                "fileSource": "drop_database.sql"
+                            },
+                            {
+                                "fileName": "02-create-database.sql",
+                                "fileSource": "create_database.sql"
+                            },
+                            {
+                                "fileName": "03-timezone.sql",
+                                "fileSource": "timezone.sql"
+                            }
+                        ]
+                    },
+                    {
+                        "folderName": "01-types"
+                    },
+                    {
+                        "folderName": "02-external-systems",
+                        "children": [
+                            {
+                                "folderName": "00-replications",
+                                "children": [
+                                    {
+                                        "folderName": "00-foreign-servers"
+                                    },
+                                    {
+                                        "folderName": "01-user-mappings"
+                                    },
+                                    {
+                                        "folderName": "02-local-tables"
+                                    },
+                                    {
+                                        "folderName": "03-foreign-tables"
+                                    },
+                                    {
+                                        "folderName": "04-source-specific-app-setup"
+                                    }
+                                ]
+                            },
+                            {
+                                "folderName": "01-data-transfers"
+                            },
+                            {
+                                "folderName": "02-external-system-integrations"
+                            },
+                            {
+                                "folderName": "03-data-exchange"
+                            }
+                        ]
+                    },
+                    {
+                        "folderName": "03-tables",
+                        "children": [
+                            {
+                                "fileName": "<db>_version_ver.sql",
+                                "fileSource": "version_table.sql"
+                            }
+                        ]
+                    },
+                    {
+                        "folderName": "04-sequences"
+                    },
+                    {
+                        "folderName": "05-indexes"
+                    },
+                    {
+                        "folderName": "06-views"
+                    },
+                    {
+                        "folderName": "07-functions"
+                    },
+                    {
+                        "folderName": "08-triggers"
+                    },
+                    {
+                        "folderName": "09-data"
+                    },
+                    {
+                        "folderName": "10-users-roles-permissions"
+                    },
+                    {
+                        "folderName": "11-full-text-catalogues"
+                    }
+                ]
+            }
+        ]
+    }
+]
