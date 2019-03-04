@@ -8,16 +8,42 @@ export type DatabaseFileType =
     | 'trigger'
     | 'view'
     | 'unknown';
-export interface DatabaseObject {
-    [name: string]: {
-        [name: string]: {
-            latestVersion: string;
-            latestFile: string;
-            versions: {
-                version: string;
-                file: string;
-            }[];
-        }
+
+export interface DatabaseSubObject {
+    latestVersion: string;
+    latestFile: string;
+    versions: {
+        version: string;
+        file: string;
+    }[];
+}
+export class DatabaseObject {
+    table: { [name: string]: DatabaseSubObject; };
+    type: { [name: string]: DatabaseSubObject; };
+    function: { [name: string]: DatabaseSubObject; };
+    data: { [name: string]: DatabaseSubObject; };
+    sequence: { [name: string]: DatabaseSubObject; };
+    index: { [name: string]: DatabaseSubObject; };
+    view: { [name: string]: DatabaseSubObject; };
+    trigger: { [name: string]: DatabaseSubObject; };
+    _parameters: {
+        dbName: string;
+        hasCurrent: boolean;
+    };
+
+    constructor() {
+        this.table = {};
+        this.type = {};
+        this.function = {};
+        this.data = {};
+        this.sequence = {};
+        this.index = {};
+        this.view = {};
+        this.trigger = {};
+        this._parameters = {
+            dbName: '',
+            hasCurrent: false
+        };
     }
 }
 
@@ -78,6 +104,6 @@ export class DatabaseVersionFile {
         this.fileName = fileName;
         const fileNameSplit = fileName.split('/');
         this.versionName = fileNameSplit[fileNameSplit.length - 2];
-        this.versions = params.map(x => new DatabaseVersion(x, fileName));
+        this.versions = params.map((x: any) => new DatabaseVersion(x, fileName));
     }
 }

@@ -50,6 +50,7 @@ export class DatabaseRepositoryReader {
     }
 
     private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[]): Promise<DatabaseObject> {
+        databaseFiles = databaseFiles.filter(x => x.versionName === 'current' || x.versionName.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/));
         databaseFiles.sort((a, b) => {
             let vA = 0, vB = 0;
             if (a.versionName === 'current') {
@@ -70,8 +71,11 @@ export class DatabaseRepositoryReader {
             }
             return vA - vB;
         });
-        const databaseObject: DatabaseObject = {};
+        const databaseObject: DatabaseObject = new DatabaseObject();
         databaseFiles.forEach(databaseFile => {
+            if (databaseFile.versionName === 'current') {
+                databaseObject._parameters.hasCurrent = true;
+            }
             databaseFile.versions.forEach(version => {
                 version.files.forEach(file => {
                     if (file.type !== 'unknown') {
@@ -99,6 +103,14 @@ export class DatabaseRepositoryReader {
                 })
             });
         });
+        if (Object.keys(databaseObject.table).length > 0 && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
+            const dbNameRegex = /^([a-z]{2,4})t_/g.exec(Object.keys(databaseObject.table)[0]);
+            if (dbNameRegex) {
+                databaseObject._parameters.dbName = dbNameRegex[1];
+            }
+        }
         return databaseObject;
     }
+
+
 }
