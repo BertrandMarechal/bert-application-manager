@@ -6,21 +6,11 @@ import path from 'path';
 import colors from 'colors';
 
 export class ServerlessRepositoryReader {
-    static _origin = 'ServerlessRepositoryReader';
-    static _tempFolderPath = path.resolve(process.argv[1], '../../../temp');
-    static _serverlessDbPath = ServerlessRepositoryReader._tempFolderPath + '/serverless-db.json';
+    private static _origin = 'ServerlessRepositoryReader';
+    private static _tempFolderPath = path.resolve(process.argv[1], '../../../temp');
+    private static _serverlessDbPath = ServerlessRepositoryReader._tempFolderPath + '/serverless-db.json';
 
-    static async readRepo(startPath: string) {
-
-        // try to see if we can know the repo name
-        let repoName = '';
-        if (FileUtils.checkIfFolderExists(path.resolve(startPath, '.git'))) {
-            const gitFileData = await FileUtils.readFile(path.resolve(startPath, '.git', 'config'));
-            const repoUrlRegexResult = gitFileData.match(/\/.*?\.git$/gim);
-            if (repoUrlRegexResult) {
-                repoName = repoUrlRegexResult[0].substr(1).replace('.git', '');
-                LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Repo name is "${repoName}"` });
-            }
+    static async readRepo(startPath: string, repoName: string) {
             const files = await FileUtils.getFileList({
                 startPath: startPath,
                 filter: /serverless.yml/
@@ -42,7 +32,6 @@ export class ServerlessRepositoryReader {
             fileData[repoName] = serverlessFiles;
             LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Saving data in serverless db file` });
             FileUtils.writeFileSync(ServerlessRepositoryReader._serverlessDbPath, JSON.stringify(fileData, null, 2));
-        }
 
     }
 
