@@ -2,6 +2,7 @@ import { FileUtils } from "../utils/file.utils";
 import { LoggerUtils } from "../utils/logger.utils";
 import path from 'path';
 import { DatabaseVersionFile, DatabaseObject } from "../models/database-file.model";
+import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from "constants";
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
@@ -74,7 +75,7 @@ export class DatabaseRepositoryReader {
         const databaseObject: DatabaseObject = new DatabaseObject();
         databaseFiles.forEach(databaseFile => {
             if (databaseFile.versionName === 'current') {
-                databaseObject._parameters.hasCurrent = true;
+                databaseObject._properties.hasCurrent = true;
             }
             databaseFile.versions.forEach(version => {
                 version.files.forEach(file => {
@@ -106,11 +107,38 @@ export class DatabaseRepositoryReader {
         if (Object.keys(databaseObject.table).length > 0 && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
             const dbNameRegex = /^([a-z]{2,4})t_/g.exec(Object.keys(databaseObject.table)[0]);
             if (dbNameRegex) {
-                databaseObject._parameters.dbName = dbNameRegex[1];
+                databaseObject._properties.dbName = dbNameRegex[1];
             }
         }
+        // read the files to check for parameters
+        const filesToWatch: string[] = databaseFiles.map(databaseFile => {
+            return databaseFile.versions.map(version => {
+                return version.files.map(file => file.fileName);
+            }).reduce((agg, curr) => agg.concat(curr), [])
+        }).reduce((agg, curr) => agg.concat(curr), []);
+        const variableRegex = new RegExp(/\<(\w+)\>/gi);
+        const variablesPerFiles: {[name: string]: string[]} = {};
+
+        for (let i = 0; i < filesToWatch.length; i++) {
+            const element = filesToWatch[i];
+            const data = await FileUtils.readFile(element);
+            const variablesArray: string[] = (data.match(variableRegex) || []);
+            if (variablesArray.length > 0) {
+                const startArray: string[] = [];
+                const variablesForFile = variablesArray
+                    .reduce((agg, curr) => (agg.indexOf(curr) > -1 ? agg : [...agg, curr]), startArray)
+                    .map((x: string) => x.substr(1, x.length - 2));
+                for (let j = 0; j < variablesForFile.length; j++) {
+                    const variable = variablesForFile[j];
+                    if (!variablesPerFiles[variable]) {
+                        variablesPerFiles[variable] = [];
+                    }
+                    variablesPerFiles[variable].push(element);
+                }
+            }
+        }
+        databaseObject._parameters = variablesPerFiles;
+
         return databaseObject;
     }
-
-
 }
