@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/cli-progress": "^1.8.0",
     "@types/command-line-args": "^5.0.0",
     "@types/yamljs": "^0.2.30",
     "axios": "^0.18.0",

@@ -117,7 +117,7 @@ export class DatabaseRepositoryReader {
                 return version.files.map(file => file.fileName);
             }).reduce((agg, curr) => agg.concat(curr), [])
         }).reduce((agg, curr) => agg.concat(curr), []);
-        const variableRegex = new RegExp(/\<(\w+)\>/gi);
+        const variableRegex = new RegExp(/\<(\w+)\>/gim);
         const variablesPerFiles: {[name: string]: string[]} = {};
 
         for (let i = 0; i < filesToWatch.length; i++) {

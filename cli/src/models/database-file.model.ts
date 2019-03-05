@@ -134,12 +134,13 @@ export class DatabaseFile {
             this.type = 'full-text-catalogues';
         }
         
-        const fileNameSplit = fileName.split('/');
+        const fileNameSplit = fileName.split('\\');
         this.objectName = fileNameSplit[fileNameSplit.length - 1].split('.')[0];
     }
 }
 export class DatabaseVersion {
     userToUse: string;
+    databaseToUse: string;
     dependencies?: {
         application: string;
         version: string;
@@ -149,11 +150,12 @@ export class DatabaseVersion {
 
     constructor(params: any, fileName: string) {
         this.userToUse = params.userToUse;
+        this.databaseToUse = params.databaseToUse;
         this.dependencies = params.dependencies || [];
-        this.fileList = params.fileList;
+        this.fileList = params.fileList.map((x: string) => x.replace(/\//g, '\\'));
         const fileNameMinusVersion = fileName.split('\\postgres\\release')[0];
         this.files = this.fileList.map(file => {
-            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\//gi, ''));
+            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\\/gi, ''));
         });
     }
 }
@@ -163,9 +165,9 @@ export class DatabaseVersionFile {
     versions: DatabaseVersion[];
 
     constructor(fileName: string, params?: any) {
-        this.fileName = fileName;
-        const fileNameSplit = fileName.split('/');
+        this.fileName = fileName.replace(/\//g, '\\');
+        const fileNameSplit = this.fileName.split('\\');
         this.versionName = fileNameSplit[fileNameSplit.length - 2];
-        this.versions = params.map((x: any) => new DatabaseVersion(x, fileName));
+        this.versions = params.map((x: any) => new DatabaseVersion(x, this.fileName));
     }
 }

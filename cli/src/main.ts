@@ -4,7 +4,6 @@ import { ServerUtils } from './utils/server.utils';
 import { FileUtils } from './utils/file.utils';
 import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
-import { LoggerUtils } from './utils/logger.utils';
 import { DatabaseInstaller } from './classes/database-installer';
 
 const optionDefinitions = [
