@@ -68,7 +68,7 @@ export class DatabaseTableField {
     }, tableSuffix: string) {
         this.name = field.split[0];
         this.camelCasedName = '';
-        this.type = '';
+        this.type = field.split[1];
         this.notNull = field.fullText.indexOf('not null') > -1;
         this.tags = field.fullText.match(/#[a-z-]+/g) || [];
         this.isForeignKey = false;
