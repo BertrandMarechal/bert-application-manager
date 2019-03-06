@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "bin": {
-    "aws-mock": "./cli/build/main.js"
+    "am": "./cli/build/main.js"
   }
 }
