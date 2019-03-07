@@ -38,7 +38,7 @@ export class Tag {
     value: any;
 
     constructor(tag: string) {
-        const regexedTag = /#([a-z-]+)(=([\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?))?/g.exec(tag);
+        const regexedTag = /#([a-z-]+)(=([\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?))?/gi.exec(tag);
         if (regexedTag) {
             this.name = regexedTag[1];
             this.value = regexedTag[2] ? regexedTag[2].substr(1) : true;
@@ -68,7 +68,7 @@ export class DatabaseTableField {
     type: string;
     notNull: boolean;
     toUpdate: boolean;
-    tags: {[name: string]: Tag};
+    tags: { [name: string]: Tag };
     isForeignKey: boolean;
     foreignKey?: {
         table: String;
@@ -79,7 +79,7 @@ export class DatabaseTableField {
     isListFilter: boolean;
     listFilterName: string;
     sort: boolean;
-    
+
 
     constructor(field: {
         fullText: string;
@@ -89,7 +89,7 @@ export class DatabaseTableField {
         this.camelCasedName = '';
         this.type = field.split[1];
         this.notNull = field.fullText.indexOf('not null') > -1;
-        this.tags = (field.fullText.match(/#[a-z-]+(=[\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?)?/g) || [])
+        this.tags = (field.fullText.match(/#[a-z-]+(=[\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?)?/gi) || [])
             .reduce((agg, current) => {
                 const tag = new Tag(current);
                 return {
@@ -106,7 +106,7 @@ export class DatabaseTableField {
         this.sort = false;
 
         const reference = /references (.*?)\((.*?)\)/.exec(field.fullText);
-        if(reference) {
+        if (reference) {
             this.isForeignKey = true
             this.foreignKey = {
                 table: reference[1],
@@ -115,7 +115,7 @@ export class DatabaseTableField {
         }
 
         const primaryKey = /primary key/.exec(field.fullText);
-        if(primaryKey) {
+        if (primaryKey) {
             this.isPrimaryKey = true;
             this.toUpdate = false;
             this.retrieveInList = true;
@@ -127,22 +127,26 @@ export class DatabaseTableField {
             this.name === 'created_at') {
             this.toUpdate = false;
         }
-        
+
         // get camel cased name
-        if (this.isForeignKey) {
-            if (this.name.match(/fk_[a-z0-9]{3}_[a-z0-9]{3}_/)) {
+        if (this.tags['camel-cased-name'] && this.tags['camel-cased-name'].value) {
+            this.camelCasedName = this.tags['camel-cased-name'].value
+        } else {
+            if (this.isForeignKey) {
+                if (this.name.match(/fk_[a-z0-9]{3}_[a-z0-9]{3}_/)) {
+                    this.camelCasedName = SyntaxUtils
+                        .snakeCaseToCamelCase(this.name.substr(11));
+                }
+            } else if (this.isPrimaryKey) {
+                if (this.name.match(/pk_[a-z0-9]{3}_/)) {
+                    this.camelCasedName = 'id';
+                }
+            }
+            if (!this.camelCasedName) {
+                const fieldName = tableSuffix ? this.name.replace(tableSuffix + '_', '') : this.name;
                 this.camelCasedName = SyntaxUtils
-                    .snakeCaseToCamelCase(this.name.substr(11));
+                    .snakeCaseToCamelCase(fieldName);
             }
-        } else if (this.isPrimaryKey) {
-            if (this.name.match(/pk_[a-z0-9]{3}_/)) {
-                this.camelCasedName = 'id';
-            }
-        }
-        if (!this.camelCasedName) {
-            const fieldName = tableSuffix ? this.name.replace(tableSuffix + '_', '') : this.name;
-            this.camelCasedName = SyntaxUtils
-                .snakeCaseToCamelCase(fieldName);
         }
 
         if (this.tags['list-filter']) {
@@ -167,7 +171,7 @@ export class DatabaseTable extends DatabaseSubObject {
     dbPrefix: string;
     camelCasedName: string;
     name: string;
-    tags: {[name: string]: Tag};
+    tags: { [name: string]: Tag };
     constructor(params?: any) {
         super(params);
         this.fields = params.fields || {};
@@ -184,7 +188,6 @@ export class DatabaseTable extends DatabaseSubObject {
             tableFile = tableFile.replace(/  /g, ' ');
         }
         tableFile = tableFile
-            .toLowerCase()
             .replace(/\r/g, '')
             .replace(/\n/g, '')
             .replace(/\\r/g, '')
@@ -195,15 +198,15 @@ export class DatabaseTable extends DatabaseSubObject {
         if (tableNameMatch) {
             this.name = tableNameMatch[2];
             if (this.name.match(/[a-z0-9]{2,3}t_[a-z0-9_]+_[a-z0-9]{3}/i)) {
-                const [,dbPrefix,tableName,tableSuffix] =
-                    /([a-z0-9]{2,3})t_([a-z0-9_]+)_([a-z0-9]{3})/.exec(this.name) || ['', '', '', ''];
+                const [, dbPrefix, tableName, tableSuffix] =
+                    /([a-z0-9]{2,3})t_([a-z0-9_]+)_([a-z0-9]{3})/i.exec(this.name) || ['', '', '', ''];
                 this.dbPrefix = dbPrefix;
                 this.camelCasedName = SyntaxUtils.snakeCaseToCamelCase(tableName);
                 this.tableSuffix = tableSuffix;
             }
         }
         const stringBeforeCreate = tableFile.substr(0, tableFile.indexOf('create'));
-        this.tags = (stringBeforeCreate.match(/#[a-z-]+(=[\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?)?/g) || [])
+        this.tags = (stringBeforeCreate.match(/#[a-z-]+(=[\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?)?/gi) || [])
             .reduce((agg, current) => {
                 const tag = new Tag(current);
                 return {
@@ -220,9 +223,9 @@ export class DatabaseTable extends DatabaseSubObject {
                 if (i === 0) {
                     return [curr];
                 }
-                const aggMatchOpen =  agg[agg.length - 1].match(/\(/g);
+                const aggMatchOpen = agg[agg.length - 1].match(/\(/g);
                 if (aggMatchOpen) {
-                    const aggMatchClose =  agg[agg.length - 1].match(/\)/g);
+                    const aggMatchClose = agg[agg.length - 1].match(/\)/g);
                     if (!aggMatchClose) {
                         agg[agg.length - 1] += ',' + curr;
                         return agg;
@@ -356,7 +359,7 @@ export class DatabaseFile {
         } else if (fileName.includes('11-full-text-catalogues')) {
             this.type = 'full-text-catalogues';
         }
-        
+
         const fileNameSplit = fileName.split('\\');
         this.objectName = fileNameSplit[fileNameSplit.length - 1].split('.')[0];
     }
@@ -378,7 +381,7 @@ export class DatabaseVersion {
         this.fileList = params.fileList.map((x: string) => x.replace(/\//g, '\\'));
         const fileNameMinusVersion = fileName.split('\\postgres\\release')[0];
         this.files = this.fileList.map(file => {
-            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\\/gi, ''));
+            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\\/g, ''));
         });
     }
 }

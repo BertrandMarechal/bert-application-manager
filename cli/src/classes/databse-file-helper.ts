@@ -96,16 +96,16 @@ export class DatabaseFileHelper {
                     camelCasedFields.push(`${indentationSpaces.repeat(2)}"${field.camelCasedName}" ${field.type}`);
                     tableFields.push(indentationSpaces.repeat(2) + field.name);
                     if (field.toUpdate) {
-                        tableFieldsUpdate.push(`${indentationSpaces.repeat(4)}${field.name} = (i_params->>${field.camelCasedName})::${field.type}`);
+                        tableFieldsUpdate.push(`${indentationSpaces.repeat(4)}${field.name} = (i_params->>'${field.camelCasedName}')::${field.type}`);
                     }
                     if (field.toUpdate) {
                         tableFieldsInsert.push(`${indentationSpaces.repeat(3)}${field.name}`);
-                        paramsFieldsInsert.push(`${indentationSpaces.repeat(3)}(i_params->>${field.camelCasedName})::${field.type}`);
+                        paramsFieldsInsert.push(`${indentationSpaces.repeat(3)}(i_params->>'${field.camelCasedName}')::${field.type}`);
                     }
                     if (field.isListFilter) {
-                        if (field.type === 'text') {
+                        if (field.type.match(/text/i)) {
                             listFilters.push(`${indentationSpaces.repeat(4)}(i_params->'filters'->>'${field.listFilterName}' IS null OR ${field.name} ilike '%' || (i_params->'filters'->>'${field.listFilterName}')::TEXT || '%')`);
-                        } else if (field.type === 'integer') {
+                        } else if (field.type.match(/integer/i)) {
                             listFilters.push(`${indentationSpaces.repeat(4)}(i_params->'filters'->>'${field.listFilterName}' IS null OR ${field.name} = i_params->'filters'->>'${field.listFilterName}')::INTEGER)`);
                         }
                         // todo add the other types
