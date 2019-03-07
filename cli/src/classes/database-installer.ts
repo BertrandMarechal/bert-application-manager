@@ -100,6 +100,8 @@ export class DatabaseInstaller {
                     if (subVersion.databaseToUse === 'postgres') {
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/postgres`);
                     } else {
+                        console.log(params.applicationName, fileDatabaseObject[params.applicationName]._properties);
+                        
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/${params.environment}_${fileDatabaseObject[params.applicationName]._properties.dbName}`);
                     }
                     const bar = new Bar({
@@ -121,7 +123,6 @@ export class DatabaseInstaller {
                             await postgresUtils.execute(fileString);
                         } catch (error) {
                             let commandLine = '';
-                            console.log(process.platform);
                             
                             switch (process.platform) { 
                                case 'darwin' : commandLine = 'open'; break;
@@ -129,6 +130,7 @@ export class DatabaseInstaller {
                                default : commandLine = 'xdg-open'; break;
                             }
                             exec(`"${file.fileName}"`);
+                            LoggerUtils.error({origin: this._origin, message: fileString});
                             LoggerUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
                             throw error;
                         }

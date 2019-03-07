@@ -22,8 +22,5 @@
   "devDependencies": {
     "@types/node": "^10.12.21",
     "typescript": "^3.3.1"
-  },
-  "bin": {
-    "am": "./build/main.js"
   }
 }

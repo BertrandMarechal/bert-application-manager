@@ -5,6 +5,7 @@ import { FileUtils } from './utils/file.utils';
 import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database-installer';
+import { DatabaseFileHelper } from './classes/databse-file-helper';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -40,6 +41,13 @@ const main = async () => {
                             dbOptions.filter,
                             dbOptions.environment
                         );
+                        break;
+                    case 'gf':
+                    case 'generate-functions':
+                        await DatabaseFileHelper.createFunctions({
+                            applicationName: dbOptions['application-name'],
+                            filter: dbOptions.filter,
+                        });
                         break;
                     default:
                         break;

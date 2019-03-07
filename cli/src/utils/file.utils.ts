@@ -103,7 +103,7 @@ export class FileUtils {
     }
 
     static writeFileSync(fileName: string, content: string) {
-        LoggerUtils.info({origin: 'FileUtils', message: `Creating ${fileName}`});
+        // LoggerUtils.info({origin: 'FileUtils', message: `Creating ${fileName}`});
         FileUtils.createFolderStructureIfNeeded(fileName);
         fs.writeFileSync(fileName, content);
     }
@@ -136,7 +136,10 @@ export class FileUtils {
     }
 
     static createFolderStructureIfNeeded(path: string, depth: number = 0): void {
-        const splitPath = path.replace('//','/').split('/');
+        const splitPath = path
+            .replace(/\\/g,'/')
+            .replace(/\/\//g,'/')
+            .split('/');
         if (depth === splitPath.length - 1) {
             return;
         } else {

@@ -36,7 +36,7 @@ export class DatabaseRepositoryReader {
         if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbDataPath)) {
             fileData2 = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
         }
-        fileData2[repoName] = await DatabaseRepositoryReader._extractObjectInformation(fileData[repoName]);
+        fileData2[repoName] = await DatabaseRepositoryReader._extractObjectInformation(fileData[repoName], startPath);
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres objects db file` });
         FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbDataPath, JSON.stringify(fileData2, null, 2));
     }
@@ -51,7 +51,7 @@ export class DatabaseRepositoryReader {
         return filesRead;
     }
 
-    private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[]): Promise<DatabaseObject> {
+    private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[], path: string): Promise<DatabaseObject> {
         databaseFiles = databaseFiles.filter(x => x.versionName === 'current' || x.versionName.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/));
         databaseFiles.sort((a, b) => {
             let vA = 0, vB = 0;
@@ -106,18 +106,19 @@ export class DatabaseRepositoryReader {
             });
         });
 
-        if (Object.keys(databaseObject.table).length > 0 && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
-            const dbNameRegex = /^([a-z]{2,4})t_/g.exec(Object.keys(databaseObject.table)[0]);
-            if (dbNameRegex) {
-                databaseObject._properties.dbName = dbNameRegex[1];
-            }
-        }
-
         if (Object.keys(databaseObject.table).length > 0) {
             Object.keys(databaseObject.table).forEach(async key => {
                 databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
                 await databaseObject.table[key].analyzeFile();
             });
+        }
+
+        if (Object.keys(databaseObject.table).length > 0 && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
+            const dbNameRegex = /^([a-z]{2,4})t_/g.exec(Object.keys(databaseObject.table)[0]);
+            Object.keys(databaseObject.table)[0];
+            if (dbNameRegex) {
+                databaseObject._properties.dbName = dbNameRegex[1];
+            }
         }
 
         // read the files to check for parameters
@@ -148,6 +149,7 @@ export class DatabaseRepositoryReader {
             }
         }
         databaseObject._parameters = variablesPerFiles;
+        databaseObject._properties.path = path;
 
         return databaseObject;
     }
@@ -164,6 +166,7 @@ export class DatabaseRepositoryReader {
             fileDataDatabaseObject = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
         }
         let databasesToCheck = Object.keys(fileDataDatabaseObject);
+        
         // filter them if needed
         if (filter) {
             databasesToCheck = databasesToCheck.filter(x => x.indexOf(filter) > -1);
@@ -189,35 +192,35 @@ export class DatabaseRepositoryReader {
             databaseParametersFromDb = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbParamsPath);
 
 
-            // loop through all of them, and ask to set or update
-            for (let i = 0; i < databaseParams.length; i++) {
-                const element = databaseParams[i];
-
-                let value = '';
-                if (databaseParametersFromDb &&
-                    databaseParametersFromDb[element.databaseName] &&
-                    databaseParametersFromDb[element.databaseName][env] &&
-                    databaseParametersFromDb[element.databaseName][env][element.paramName]) {
-                    value = databaseParametersFromDb[element.databaseName][env][element.paramName];
-                }
-                const paramValue = await LoggerUtils.question({
-                    origin: this._origin,
-                    text: `Please enter the value for ${colors.yellow(env)} - ${colors.green(element.databaseName)} - ${colors.cyan(element.paramName)} ${value ? `(current : "${value}") ` : ''}:`
-                });
-                if (paramValue) {
-                    if (!databaseParametersFromDb[element.databaseName]) {
-                        databaseParametersFromDb[element.databaseName] = {};
-                    }
-                    if (!databaseParametersFromDb[element.databaseName][env]) {
-                        databaseParametersFromDb[element.databaseName][env] = {};
-                    }
-                    databaseParametersFromDb[element.databaseName][env][element.paramName] = paramValue;
-                } else {
-                    LoggerUtils.info({ origin: this._origin, message: 'No value provided => value not changed' });
-                }
-            }
-            LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
-            FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
         }
+        // loop through all of them, and ask to set or update
+        for (let i = 0; i < databaseParams.length; i++) {
+            const element = databaseParams[i];
+
+            let value = '';
+            if (databaseParametersFromDb &&
+                databaseParametersFromDb[element.databaseName] &&
+                databaseParametersFromDb[element.databaseName][env] &&
+                databaseParametersFromDb[element.databaseName][env][element.paramName]) {
+                value = databaseParametersFromDb[element.databaseName][env][element.paramName];
+            }
+            const paramValue = await LoggerUtils.question({
+                origin: this._origin,
+                text: `Please enter the value for ${colors.yellow(env)} - ${colors.green(element.databaseName)} - ${colors.cyan(element.paramName)} ${value ? `(current : "${value}") ` : ''}:`
+            });
+            if (paramValue) {
+                if (!databaseParametersFromDb[element.databaseName]) {
+                    databaseParametersFromDb[element.databaseName] = {};
+                }
+                if (!databaseParametersFromDb[element.databaseName][env]) {
+                    databaseParametersFromDb[element.databaseName][env] = {};
+                }
+                databaseParametersFromDb[element.databaseName][env][element.paramName] = paramValue;
+            } else {
+                LoggerUtils.info({ origin: this._origin, message: 'No value provided => value not changed' });
+            }
+        }
+        LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
+        FileUtils.writeFileSync(DatabaseRepositoryReader.postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
     }
 }
