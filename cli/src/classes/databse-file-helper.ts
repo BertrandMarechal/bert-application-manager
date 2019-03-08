@@ -1,4 +1,4 @@
-import { DatabaseObject } from "../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile } from "../models/database-file.model";
 import { FileUtils } from "../utils/file.utils";
 import { DatabaseRepositoryReader } from "./database-repo-reader";
 import path from 'path';
@@ -13,6 +13,7 @@ export class DatabaseFileHelper {
     static dbTemplatesFolder = '../../data/db/templates';
     static async createFunctions(params: {
         applicationName: string;
+        version: string;
         filter: string;
     }): Promise<boolean> {
         LoggerUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
@@ -29,10 +30,41 @@ export class DatabaseFileHelper {
             fileData = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
         }
 
+
         if (!fileData[params.applicationName]) {
             throw 'This application does not exist';
         }
         const databaseObject = fileData[params.applicationName];
+        
+        let databaseVersionFiles: { [name: string]: DatabaseVersionFile[] } = {};
+        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbFilesPath)) {
+            databaseVersionFiles = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbFilesPath);
+        }
+
+        let versionToChange = params.version;
+        if (params.version && !databaseVersionFiles[params.applicationName].find(x => x.versionName === params.version)) {
+            throw 'The version you provided could not be found. Please check and try again.';
+        } else {
+            const lastVersion = databaseVersionFiles[params.applicationName][databaseVersionFiles[params.applicationName].length - 1];
+            versionToChange = lastVersion.versionName;
+            if (!lastVersion) {
+                throw 'No version found, please run init in the repo to initialize the DB code';
+            }
+            if (lastVersion.versionName !== 'current') {
+                let ok = false;
+                while (!ok) {
+                    const response = await LoggerUtils.question({origin: this._origin, text: `The last version is not current (last version = ${versionToChange}). If you wish to amend this version, please use "y". If you want to create a new version (current folder), please use "c".`});
+                    if (response === 'c') {
+                        versionToChange = 'current';
+                        ok = true;
+                    } else if (response === 'y') {
+                        ok = true;
+                    } else {
+                        LoggerUtils.warning({origin: this._origin, message: 'Incorrect response'});
+                    }
+                }
+            }
+        }
 
         const actions = [
             'save',
@@ -47,9 +79,11 @@ export class DatabaseFileHelper {
             format: `Functions  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
             clearOnComplete: true
         }, Presets.shades_grey);
+
+        LoggerUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
+
         bar.start(tables.length * 4, 0);
 
-        // todo create the current folder
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             if (!databaseObject.table[tableName].tags.ignore) {
@@ -143,9 +177,7 @@ export class DatabaseFileHelper {
                 // deal with joins later
                 dbParams.joins = '';
     
-                // we are going to create the functions in the current folder for now, and see later
-    
-                const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', 'current', '07-functions', nameWithoutPrefixAndSuffix);
+                const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, '07-functions', nameWithoutPrefixAndSuffix);
     
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {

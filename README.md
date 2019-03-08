@@ -7,6 +7,9 @@ cls && npm link && aws-mock start-server
 ```
 ## todos
 
+- [ ] check in which version we want to add the functions
+- [ ] create lambda functions
+- [ ] create Angular files
 - [ ] read version files on install (version files only), and check file orders
 
 ## tags

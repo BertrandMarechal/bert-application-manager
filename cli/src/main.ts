@@ -46,6 +46,7 @@ const main = async () => {
                     case 'generate-functions':
                         await DatabaseFileHelper.createFunctions({
                             applicationName: dbOptions['application-name'],
+                            version: dbOptions['version'],
                             filter: dbOptions.filter,
                         });
                         break;

@@ -86,7 +86,6 @@ export class DatabaseInstaller {
         }
         // todo check we have all the params
         // todo check we have the root password
-
         LoggerUtils.info({ origin: this._origin, message: `Found ${versionsToInstall.length} versions to install` });
         const postgresUtils = new PostgresUtils();
         let carryOn = true;
