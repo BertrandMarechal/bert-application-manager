@@ -5,6 +5,7 @@ import { LoggerUtils } from "../utils/logger.utils";
 import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../utils/postgres.utils";
 import {exec} from 'child_process';
+import { resolve } from "url";
 
 export class DatabaseInstaller {
     private static _origin = 'DatabaseRepositoryReader';
@@ -88,10 +89,11 @@ export class DatabaseInstaller {
 
         LoggerUtils.info({ origin: this._origin, message: `Found ${versionsToInstall.length} versions to install` });
         const postgresUtils = new PostgresUtils();
+        let carryOn = true;
         try {
-            for (let i = 0; i < versionsToInstall.length; i++) {
+            for (let i = 0; i < versionsToInstall.length && carryOn; i++) {
                 const version = versionsToInstall[i];
-                for (let j = 0; j < version.versions.length; j++) {
+                for (let j = 0; j < version.versions.length && carryOn; j++) {
                     LoggerUtils.info({
                         origin: this._origin,
                         message: `Installing ${params.applicationName} ${version.versionName}${version.versions.length > 1 ? ` (${j + 1} of ${version.versions.length})` : ''}`
@@ -99,17 +101,15 @@ export class DatabaseInstaller {
                     const subVersion = version.versions[j];
                     if (subVersion.databaseToUse === 'postgres') {
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/postgres`);
-                    } else {
-                        console.log(params.applicationName, fileDatabaseObject[params.applicationName]._properties);
-                        
+                    } else {                        
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/${params.environment}_${fileDatabaseObject[params.applicationName]._properties.dbName}`);
                     }
-                    const bar = new Bar({
+                    let bar = new Bar({
                         format: `${params.applicationName} - ${version.versionName}  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
                         clearOnComplete: true
                     }, Presets.shades_grey);
                     bar.start(subVersion.files.length, 0);
-                    for (let k = 0; k < subVersion.files.length; k++) {
+                    for (let k = 0; k < subVersion.files.length && carryOn; k++) {
                         const file = subVersion.files[k];
                         let fileString = await FileUtils.readFile(file.fileName);
                         if (paramsPerFile[file.fileName]) {
@@ -122,17 +122,45 @@ export class DatabaseInstaller {
                         try {
                             await postgresUtils.execute(fileString);
                         } catch (error) {
-                            let commandLine = '';
-                            
-                            switch (process.platform) { 
-                               case 'darwin' : commandLine = 'open'; break;
-                               case 'win32' : commandLine = 'start'; break;
-                               default : commandLine = 'xdg-open'; break;
-                            }
-                            exec(`"${file.fileName}"`);
+                            bar.stop();
                             LoggerUtils.error({origin: this._origin, message: fileString});
                             LoggerUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
-                            throw error;
+                            await new Promise((resolve, reject) => {
+                                try {
+                                    const cp = exec(`"${file.fileName}"`, (error, stdout, stderr) => {
+                                        if (error) {
+                                          reject(`exec error: ${error}`);
+                                          return;
+                                        }
+                                        cp.kill();
+                                        resolve();
+                                      });
+                                  } catch (error) {
+                                      reject(error);
+                                  }
+                            });
+                            let text = 'There has been an issue with this file.\n';
+                            text += 'Press "Enter" to retry this file\n';
+                            text += 'Use "r" to restart the whole installation\n';
+                            text += 'Use "s" to stop\n';
+                            const response = await LoggerUtils.question({
+                                origin: this._origin,
+                                text: text
+                            });
+                            switch (response.toLowerCase()) {
+                                case 'r':
+                                    carryOn = false;
+                                    await this.installDatabse(params);
+                                    break;
+                                case '':
+                                    k = k - 1;
+                                    bar.start(k + 1, 0);
+                                    break;
+                                case 's':
+                                default:
+                                    carryOn = false;
+                                    break;
+                            }
                         }
                         bar.update(k + 1);
                     }
@@ -147,6 +175,5 @@ export class DatabaseInstaller {
         finally {
             postgresUtils.endConnection();
         }
-
     }
 }
