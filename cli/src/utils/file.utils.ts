@@ -7,7 +7,7 @@ export class FileUtils {
         startPath: string,
         foldersToIgnore?: string[],
         filter: RegExp;
-    }): Promise<any> {
+    }): Promise<string[]> {
         const foldersToIgnore = params.foldersToIgnore || ['node_modules'];
         if (foldersToIgnore) {
             if (foldersToIgnore.indexOf('node_modules') === -1) {
@@ -37,15 +37,10 @@ export class FileUtils {
             if (directories.length > 0) {
                 return Promise.all(directories.map((x: string) => {
                     return FileUtils.getFileList({ startPath: params.startPath + '/' + x, filter: params.filter, foldersToIgnore: foldersToIgnore })
-                })).then((fileLists: any) => {
-                    let fileList = fileLists.reduce((current: string[], item: string[]) => {
-                        current = current.concat(item);
-                        return current;
-                    }, []);
-                    fileList = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
-                    return new Promise((resolve) => {
-                        resolve(fileList);
-                    });
+                })).then((fileLists: string[][]) => {
+                    let fileList: string[] = fileLists.reduce((current: string[], item: string[]) => current.concat(item), []);
+                    const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
+                    return Promise.resolve(newFileList);
                 });
             }
             else {

@@ -6,6 +6,7 @@ import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../utils/postgres.utils";
 import {exec} from 'child_process';
 import { resolve } from "url";
+import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {
     private static _origin = 'DatabaseRepositoryReader';
@@ -22,16 +23,12 @@ export class DatabaseInstaller {
         if (!params.applicationName) {
             throw 'No application name provided, please use the -an parameter.';
         }
-
-        // get the application and its versions
-        let fileData: { [name: string]: DatabaseVersionFile[] } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbFilesPath)) {
-            fileData = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbFilesPath);
-        }
         if (!params.applicationName.match(/\-database$/)) {
             params.applicationName += '-database';
         }
-        const databaseData = fileData[params.applicationName];
+
+        // get the application and its versions
+        const databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         if (!databaseData) {
             throw 'Invalid application name. Please run the "read-repo" command in the desired folder beforehand.';
         }
@@ -48,34 +45,28 @@ export class DatabaseInstaller {
             throw 'Invalid version name. Please run the "read-repo" again if this version is missing.';
         }
         // get the db as object to get the params
-        let fileDatabaseObject: { [database: string]: DatabaseObject } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbDataPath)) {
-            fileDatabaseObject = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
-        }
+        const DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
 
         // get the application parameters
-        let fileParameters: { [database: string]: { [env: string]: { [param: string]: string } } } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbParamsPath)) {
-            fileParameters = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbParamsPath);
-        }
+        const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);
         let paramsPerFile: {
             [fileName: string]: {
                 paramName: string;
                 value: string;
             }[];
         } = {};
-        if (fileDatabaseObject[params.applicationName] && fileDatabaseObject[params.applicationName]._parameters) {
+        if (DatabaseObject && DatabaseObject._parameters) {
 
-            for (let i = 0; i < Object.keys(fileDatabaseObject[params.applicationName]._parameters).length; i++) {
-                const parameterName = Object.keys(fileDatabaseObject[params.applicationName]._parameters)[i];
-                for (let j = 0; j < fileDatabaseObject[params.applicationName]._parameters[parameterName].length; j++) {
-                    const fileName = fileDatabaseObject[params.applicationName]._parameters[parameterName][j];
+            for (let i = 0; i < Object.keys(DatabaseObject._parameters).length; i++) {
+                const parameterName = Object.keys(DatabaseObject._parameters)[i];
+                for (let j = 0; j < DatabaseObject._parameters[parameterName].length; j++) {
+                    const fileName = DatabaseObject._parameters[parameterName][j];
                     if (!paramsPerFile[fileName]) {
                         paramsPerFile[fileName] = [];
                     }
                     let parameterValue = '';
-                    if (fileParameters[params.applicationName] && fileParameters[params.applicationName][params.environment]) {
-                        parameterValue = fileParameters[params.applicationName][params.environment][parameterName];
+                    if (fileParameters && fileParameters[params.environment]) {
+                        parameterValue = fileParameters[params.environment][parameterName];
                     }
                     paramsPerFile[fileName].push({
                         paramName: parameterName,
@@ -99,9 +90,9 @@ export class DatabaseInstaller {
                     });
                     const subVersion = version.versions[j];
                     if (subVersion.databaseToUse === 'postgres') {
-                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/postgres`);
+                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/postgres`);
                     } else {                        
-                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.applicationName][params.environment].password_root}@${fileParameters[params.applicationName][params.environment].server || 'localhost'}:5432/${params.environment}_${fileDatabaseObject[params.applicationName]._properties.dbName}`);
+                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/${params.environment}_${DatabaseObject._properties.dbName}`);
                     }
                     let bar = new Bar({
                         format: `${params.applicationName} - ${version.versionName}  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,

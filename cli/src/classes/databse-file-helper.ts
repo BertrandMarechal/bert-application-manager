@@ -1,16 +1,16 @@
 import { DatabaseObject, DatabaseVersionFile } from "../models/database-file.model";
 import { FileUtils } from "../utils/file.utils";
-import { DatabaseRepositoryReader } from "./database-repo-reader";
 import path from 'path';
 import { LoggerUtils } from "../utils/logger.utils";
 import { Bar, Presets } from "cli-progress";
+import {DatabaseHelper} from './database-helper';
+import { DatabaseRepositoryReader } from "./database-repo-reader";
 
 const intentationSpaceNumber = 4;
 const indentationSpaces = ' '.repeat(intentationSpaceNumber);
 
 export class DatabaseFileHelper {
     private static _origin = 'DatabaseFileHelper';
-    static dbTemplatesFolder = '../../data/db/templates';
     static async createFunctions(params: {
         applicationName: string;
         version: string;
@@ -24,28 +24,20 @@ export class DatabaseFileHelper {
         if (!params.applicationName.match(/\-database$/)) {
             params.applicationName += '-database';
         }
-        let fileData: { [name: string]: DatabaseObject } = {};
-        
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbDataPath)) {
-            fileData = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbDataPath);
-        }
 
-
-        if (!fileData[params.applicationName]) {
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
             throw 'This application does not exist';
         }
-        const databaseObject = fileData[params.applicationName];
-        
-        let databaseVersionFiles: { [name: string]: DatabaseVersionFile[] } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseRepositoryReader.postgresDbFilesPath)) {
-            databaseVersionFiles = await FileUtils.readJsonFile(DatabaseRepositoryReader.postgresDbFilesPath);
-        }
+
+        const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        const databaseVersionFile: DatabaseVersionFile | undefined = databaseVersionFiles[databaseVersionFiles.length - 1];
 
         let versionToChange = params.version;
-        if (params.version && !databaseVersionFiles[params.applicationName].find(x => x.versionName === params.version)) {
-            throw 'The version you provided could not be found. Please check and try again.';
+        if (params.version && databaseVersionFile.versionName !== params.version) {
+            throw 'The version you provided is not the last version. Please check and try again.';
         } else {
-            const lastVersion = databaseVersionFiles[params.applicationName][databaseVersionFiles[params.applicationName].length - 1];
+            const lastVersion = databaseVersionFiles[databaseVersionFiles.length - 1];
             versionToChange = lastVersion.versionName;
             if (!lastVersion) {
                 throw 'No version found, please run init in the repo to initialize the DB code';
@@ -186,7 +178,7 @@ export class DatabaseFileHelper {
                         if (FileUtils.checkIfFolderExists(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`))) {
                             // todo what do we do if the file does exist ?
                         }
-                        let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseFileHelper.dbTemplatesFolder, `${action}.sql`));
+                        let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, `${action}.sql`));
         
                         for (let j = 0; j < dbParamsFields.length; j++) {
                             const param = dbParamsFields[j];
@@ -233,6 +225,7 @@ export class DatabaseFileHelper {
         } else {
             LoggerUtils.warning({origin: this._origin, message: `No files created`});
         }
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName);
         return await Promise.resolve(true);
     }
 }

@@ -6,6 +6,7 @@ import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database-installer';
 import { DatabaseFileHelper } from './classes/databse-file-helper';
+import { DatabaseRepositoryReader } from './classes/database-repo-reader';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -27,6 +28,13 @@ const main = async () => {
                 ]
                 const dbOptions = commandLineArgs(dbOptionsDefinitions, { argv, stopAtFirstUnknown: true });
                 switch (dbOptions.action) {
+                    case 'version':
+                    case 'v':
+                        await DatabaseRepositoryReader.updateVersionFile({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions.version
+                        });
+                        break;
                     case 'install':
                     case 'i':
                         await DatabaseInstaller.installDatabse({
