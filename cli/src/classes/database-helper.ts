@@ -55,7 +55,7 @@ export class DatabaseHelper {
             fileData = await FileUtils.readJsonFile(DatabaseHelper.postgresDbDataPath);
         }
         fileData[applicationName] = data;
-        FileUtils.writeFileSync(DatabaseHelper.postgresDbFilesPath, JSON.stringify(fileData, null, 2));
+        FileUtils.writeFileSync(DatabaseHelper.postgresDbDataPath, JSON.stringify(fileData, null, 2));
     }
 
     static async updateApplicationDatabaseFiles(applicationName: string, data: DatabaseVersionFile[]) {

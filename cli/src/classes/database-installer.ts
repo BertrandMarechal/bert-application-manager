@@ -9,7 +9,7 @@ import { resolve } from "url";
 import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {
-    private static _origin = 'DatabaseRepositoryReader';
+    private static _origin = 'DatabaseInstaller';
 
     static async installDatabse(params: {
         applicationName: string;
@@ -29,8 +29,9 @@ export class DatabaseInstaller {
 
         // get the application and its versions
         const databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        
         if (!databaseData) {
-            throw 'Invalid application name. Please run the "read-repo" command in the desired folder beforehand.';
+            throw 'Invalid application name. Please run the "am repo read" command in the desired folder beforehand.';
         }
         let versionsToInstall: DatabaseVersionFile[] = [];
         if (params.version) {
@@ -41,8 +42,9 @@ export class DatabaseInstaller {
         } else {
             versionsToInstall = databaseData;
         }
+        
         if (!versionsToInstall[0]) {
-            throw 'Invalid version name. Please run the "read-repo" again if this version is missing.';
+            throw 'Invalid version name. Please run the "am repo read" again if this version is missing.';
         }
         // get the db as object to get the params
         const DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
@@ -113,6 +115,7 @@ export class DatabaseInstaller {
                             await postgresUtils.execute(fileString);
                         } catch (error) {
                             bar.stop();
+                            console.log(error);
                             LoggerUtils.error({origin: this._origin, message: fileString});
                             LoggerUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
                             await new Promise((resolve, reject) => {

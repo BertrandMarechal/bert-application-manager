@@ -2,7 +2,7 @@ import { FileUtils } from "../utils/file.utils";
 import { LoggerUtils } from "../utils/logger.utils";
 import path from 'path';
 import colors from 'colors';
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable } from "../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseRepositoryReader {
@@ -55,27 +55,27 @@ export class DatabaseRepositoryReader {
             startPath: path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version)
         })).map(x => x.replace(/\\\\/g, '/')).map(x => x.replace(/\\/g, '/'));
 
-        let versionFiles: { [name: string]: DatabaseVersionFile[] } = {};
-        if (FileUtils.checkIfFolderExists(DatabaseHelper.postgresDbFilesPath)) {
-            versionFiles = await FileUtils.readJsonFile(DatabaseHelper.postgresDbFilesPath);
-        }
-        const fileListFromVersions = versionFiles[params.applicationName]
-            .filter(versionFile => versionFile.versionName === params.version)
-            .reduce((agg: string[], versionFile) => {
-                return agg.concat(versionFile.versions.reduce((ag: string[], version) => {
-                    return ag.concat(version.files.map(x => x.fileName));
-                }, []));
-            }, []).map(x => x.replace(/\\\\/g, '/')).map(x => x.replace(/\\/g, '/'));
+        // read the files, see if they have dependencies
+        const replacedPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version).replace(/\\\\/g, '/').replace(/\\/g, '/');
+        const newDBObject: DatabaseObject = await DatabaseRepositoryReader._extractObjectInformation([{
+            versionName: params.version,
+            fileName: params.version,
+            versions: [{
+                userToUse: 'root',
+                files: fileList
+                    .map(filePath => new DatabaseFile(
+                        databaseObject._properties.path,
+                        filePath
+                            .replace(replacedPath, '../postgres/'))),
+                fileList: fileList,
+                databaseToUse: ''
+            }],
+        }], databaseObject._properties.path);
         
-        console.log('fileList', fileList.length);
-        console.log('fileListFromVersions', fileListFromVersions.length);
-        const missingFiles = fileList
-            .filter((file: string) => fileListFromVersions.indexOf(file) === -1);
-            // list of missing files
-        console.log(missingFiles);
+        const versionFileList: string[] = [];
+        // order the objects
 
-        // list all files
-        // 
+
     }
 
     private static async _readFiles(files: string[]): Promise<DatabaseVersionFile[]> {
