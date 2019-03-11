@@ -1,6 +1,7 @@
 import { DatabaseObject, DatabaseVersionFile } from "../models/database-file.model";
 import { FileUtils } from "../utils/file.utils";
 import path from 'path';
+import colors from 'colors';
 import { LoggerUtils } from "../utils/logger.utils";
 import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
@@ -65,6 +66,8 @@ export class DatabaseFileHelper {
             'delete',
         ];
         let filesCreated = 0;
+        let filesIgnored = 0;
+        let filesOverwritten = 0;
         
         const tables = Object.keys(databaseObject.table);
         const bar = new Bar({
@@ -76,6 +79,8 @@ export class DatabaseFileHelper {
 
         bar.start(tables.length * 4, 0);
 
+        
+        const functionsToAdd: string[] = [];
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             if (!databaseObject.table[tableName].tags.ignore) {
@@ -211,21 +216,77 @@ export class DatabaseFileHelper {
                             }
                             fileString = fileString.replace(new RegExp(`<${param}>`, 'gi'), valueToReplaceWith);
                         }
-        
-                        FileUtils.writeFileSync(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`), fileString);
-                        filesCreated++;
-                        bar.update(filesCreated + 1);
+
+                        let writeFile = true;
+    
+                        if (FileUtils.checkIfFolderExists(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`))) {
+                            // we have an existing file. We get the content, and check if it is different. If yer, we override
+                            const currentFileCOntent = await FileUtils.readFile(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`));
+                            if (currentFileCOntent !== fileString) {
+                                writeFile = true;
+                                filesOverwritten++;
+                            } else {
+                                writeFile = false;
+                                filesIgnored++;
+                            }
+                        } else {
+                            writeFile = true;
+                        }
+                        if (writeFile) {
+                            const fileName = `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`;
+                            FileUtils.writeFileSync(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`), fileString);
+                            filesCreated++;
+                            
+                            functionsToAdd.push(
+                                ['../','postgres', 'release', versionToChange, '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
+                            );
+                        }
+                        bar.update(4 * t + i);
                     }
                 }
             }
         }
         bar.stop();
+        let feedback = 'No files created.';
+
         if (filesCreated) {
-            LoggerUtils.success({origin: this._origin, message: `Created ${filesCreated} files.`});
-        } else {
-            LoggerUtils.warning({origin: this._origin, message: `No files created`});
+            feedback = `Created ${filesCreated} files.`
         }
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName);
+        if (filesIgnored) {
+            feedback += ` ${colors.yellow(`${filesIgnored}`)} files ignored (as unchanged)`;
+        }
+        if (filesOverwritten) {
+            feedback += ` ${colors.yellow(`${filesOverwritten}`)} files overwritten`;
+        }
+
+        if (filesCreated) {
+            LoggerUtils.success({origin: this._origin, message: feedback});
+        } else {
+            LoggerUtils.warning({origin: this._origin, message: feedback});
+        }
+
+        if (filesCreated || filesOverwritten) {
+            // if something has been changed, we update the file
+            const newVersionJsonPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'version.json');
+            const versionJsonPath = path.resolve(process.argv[1], '../../data/db/database-structure/files/version.json');
+            let versionJsonFile = await FileUtils.readJsonFile(versionJsonPath);
+            
+            if (FileUtils.checkIfFolderExists(newVersionJsonPath)) {
+                versionJsonFile = await FileUtils.readJsonFile(newVersionJsonPath);
+            }
+            
+            // todo list versions to add
+            // todo update version.json
+            versionJsonFile[versionJsonFile.length - 1].fileList = [
+                ...versionJsonFile[versionJsonFile.length - 1].fileList,
+                ...functionsToAdd
+            ];
+            
+            FileUtils.createFolderStructureIfNeeded(newVersionJsonPath);
+            FileUtils.writeFileSync(newVersionJsonPath, JSON.stringify(versionJsonFile, null, 2));
+            
+            await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName);
+        }
         return await Promise.resolve(true);
     }
 }

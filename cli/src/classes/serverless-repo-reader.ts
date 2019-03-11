@@ -81,7 +81,6 @@ export class ServerlessRepositoryReader {
                     value: variables[newValue],
                     variableFileName: newValue,
                     declared: !!variables[newValue],
-
                 }
             });
 

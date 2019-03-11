@@ -4,6 +4,7 @@ import path from 'path';
 import colors from 'colors';
 import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
+import { Bar, Presets } from 'cli-progress';
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
@@ -38,7 +39,7 @@ export class DatabaseRepositoryReader {
                 return agg2.concat(version.files.map(y => y.fileName))
             }, []));
         }, []).map(FileUtils.replaceSlashes);
-        
+
         const unmappedFiles = fileList.filter(file => files.indexOf(file) === -1);
         const incorrectlyMappedFiles = files.filter(file => fileList.indexOf(file) === -1);
         
@@ -95,8 +96,6 @@ export class DatabaseRepositoryReader {
         
         const versionFileList: string[] = [];
         // order the objects
-
-
     }
 
     private static async _readFiles(files: string[]): Promise<DatabaseVersionFile[]> {
