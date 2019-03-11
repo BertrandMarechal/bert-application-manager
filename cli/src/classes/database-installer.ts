@@ -3,7 +3,6 @@ import { FileUtils } from "../utils/file.utils";
 import { LoggerUtils } from "../utils/logger.utils";
 import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../utils/postgres.utils";
-import {exec} from 'child_process';
 import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {
@@ -116,20 +115,7 @@ export class DatabaseInstaller {
                             console.log(error);
                             LoggerUtils.error({origin: this._origin, message: fileString});
                             LoggerUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
-                            await new Promise((resolve, reject) => {
-                                try {
-                                    const cp = exec(`"${file.fileName}"`, (error, stdout, stderr) => {
-                                        if (error) {
-                                          reject(`exec error: ${error}`);
-                                          return;
-                                        }
-                                        cp.kill();
-                                        resolve();
-                                      });
-                                  } catch (error) {
-                                      reject(error);
-                                  }
-                            });
+                            FileUtils.openFileInFileEditor(file.fileName);
                             let text = 'There has been an issue with this file.\n';
                             text += 'Press "Enter" to retry this file\n';
                             text += 'Use "r" to restart the whole installation\n';

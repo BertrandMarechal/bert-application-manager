@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { LoggerUtils } from './logger.utils';
+import {exec} from 'child_process';
 
 export class FileUtils {
     static getFileList(params: {
@@ -196,4 +197,21 @@ export class FileUtils {
             fs.rmdirSync(path);
         }
     };
+
+    static async openFileInFileEditor(fileName: string) {
+        await new Promise((resolve, reject) => {
+            try {
+                const cp = exec(`"${fileName}"`, (error, stdout, stderr) => {
+                    if (error) {
+                      reject(`exec error: ${error}`);
+                      return;
+                    }
+                    cp.kill();
+                    resolve();
+                  });
+              } catch (error) {
+                  reject(error);
+              }
+        });
+    }
 }
