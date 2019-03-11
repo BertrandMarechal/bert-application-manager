@@ -4,10 +4,13 @@ import { LoggerUtils } from './logger.utils';
 
 export class FileUtils {
     static getFileList(params: {
-        startPath: string,
-        foldersToIgnore?: string[],
+        startPath: string;
+        foldersToIgnore?: string[];
+        maxLevels?: number;
+        currentLevel?: number;
         filter: RegExp;
     }): Promise<string[]> {
+        params.currentLevel = (params.currentLevel || 0) + 1;
         const foldersToIgnore = params.foldersToIgnore || ['node_modules'];
         if (foldersToIgnore) {
             if (foldersToIgnore.indexOf('node_modules') === -1) {
@@ -34,9 +37,13 @@ export class FileUtils {
                 let stat = fs.lstatSync(fileName);
                 return !stat.isDirectory() && params.filter.test(fileName);
             });
-            if (directories.length > 0) {
+            if (directories.length > 0 && (!params.maxLevels || params.maxLevels >= params.currentLevel)) {
                 return Promise.all(directories.map((x: string) => {
-                    return FileUtils.getFileList({ startPath: params.startPath + '/' + x, filter: params.filter, foldersToIgnore: foldersToIgnore })
+                    return FileUtils.getFileList({
+                        ...params,
+                        startPath: params.startPath + '/' + x,
+                        foldersToIgnore: foldersToIgnore
+                     });
                 })).then((fileLists: string[][]) => {
                     let fileList: string[] = fileLists.reduce((current: string[], item: string[]) => current.concat(item), []);
                     const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));

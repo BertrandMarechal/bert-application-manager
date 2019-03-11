@@ -14,7 +14,6 @@ export class DatabaseRepositoryReader {
             startPath: path.resolve(startPath, DatabaseHelper.releasesPath),
             filter: /version.json$/
         });
-        LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `${versionFiles.length} files found` });
 
         // read the current db files file and add on
         await DatabaseHelper.updateApplicationDatabaseFiles(repoName, await DatabaseRepositoryReader._readFiles(versionFiles));
@@ -27,7 +26,6 @@ export class DatabaseRepositoryReader {
                 startPath
             )
         );
-        FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
         LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Repository read` });
     }
 

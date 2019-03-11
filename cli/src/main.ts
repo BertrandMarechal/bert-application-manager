@@ -63,6 +63,7 @@ const main = async () => {
                 }
                 break;
             case 'repo':
+            case 'r':
                 const repoOptionsDefinitions = [
                     { name: 'action', defaultOption: true },
                     { name: 'all', alias: 'e', type: String, description: 'environment' },
@@ -71,14 +72,16 @@ const main = async () => {
                 const repoOptions = commandLineArgs(repoOptionsDefinitions, { argv, stopAtFirstUnknown: true });
                 switch (repoOptions.action) {
                     case 'read':
+                    case 'r':
                         await RepositoryUtils.readRepository(path.resolve(process.cwd()), options.type);
-                        break;
-                    case 'clear':
-                        await FileUtils.deleteFolderRecursiveSync(path.resolve(__dirname, '../../temp'));
                         break;
                     default:
                         break;
                 }
+                break;
+            case 'c':
+            case 'clear':
+                await FileUtils.deleteFolderRecursiveSync(path.resolve(__dirname, '../../temp'));
                 break;
             default:
                 break;

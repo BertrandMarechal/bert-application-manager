@@ -4,6 +4,7 @@ import { LoggerUtils } from "../utils/logger.utils";
 import { ServerlessFile } from "../models/serverless-file.model";
 import path from 'path';
 import colors from 'colors';
+import { Bar, Presets } from 'cli-progress';
 
 export class ServerlessRepositoryReader {
     private static _origin = 'ServerlessRepositoryReader';
@@ -11,28 +12,27 @@ export class ServerlessRepositoryReader {
     private static _serverlessDbPath = ServerlessRepositoryReader._tempFolderPath + '/serverless-db.json';
 
     static async readRepo(startPath: string, repoName: string) {
-            const files = await FileUtils.getFileList({
-                startPath: startPath,
-                filter: /serverless.yml/
-            });
-            LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `${files.length} files found` });
-            const variableFiles = await FileUtils.getFileList({
-                startPath: startPath,
-                filter: /variables.yml/
-            });
-            const serverlessFiles = await ServerlessRepositoryReader._readFiles(files, variableFiles);
+        const files = await FileUtils.getFileList({
+            startPath: startPath,
+            filter: /serverless.yml/
+        });
+        // LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `${files.length} files found` });
+        const variableFiles = await FileUtils.getFileList({
+            startPath: startPath,
+            filter: /variables.yml/
+        });
+        const serverlessFiles = await ServerlessRepositoryReader._readFiles(files, variableFiles);
 
-
-            // read the current db file and add on
-            FileUtils.createFolderStructureIfNeeded(ServerlessRepositoryReader._tempFolderPath);
-            let fileData: { [name: string]: ServerlessFile[] } = {};
-            if (FileUtils.checkIfFolderExists(ServerlessRepositoryReader._serverlessDbPath)) {
-                fileData = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
-            }
-            fileData[repoName] = serverlessFiles;
-            LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Saving data in serverless db file` });
-            FileUtils.writeFileSync(ServerlessRepositoryReader._serverlessDbPath, JSON.stringify(fileData, null, 2));
-
+        // read the current db file and add on
+        FileUtils.createFolderStructureIfNeeded(ServerlessRepositoryReader._tempFolderPath);
+        let fileData: { [name: string]: ServerlessFile[] } = {};
+        if (FileUtils.checkIfFolderExists(ServerlessRepositoryReader._serverlessDbPath)) {
+            fileData = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
+        }
+        fileData[repoName] = serverlessFiles;
+        // LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Saving data in serverless db file` });
+        FileUtils.writeFileSync(ServerlessRepositoryReader._serverlessDbPath, JSON.stringify(fileData, null, 2));
+        LoggerUtils.success({ origin: this._origin, message: `Repository read` });
     }
 
     private static _ymlToJson(data: string) {
@@ -42,10 +42,14 @@ export class ServerlessRepositoryReader {
     private static async _readFiles(files: string[], variableFiles: string[]): Promise<ServerlessFile[]> {
         const serverlessFiles: ServerlessFile[] = [];
 
+        let bar = new Bar({
+            format: `serverless.yml [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
+            clearOnComplete: true
+        }, Presets.shades_grey);
+        bar.start(files.length, 1);
         for (let i = 0; i < files.length; i++) {
-            LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Reading file ${i + 1} of ${files.length}` });
-            const element = files[i];
-            const fileString = await FileUtils.readFile(files[i]);
+            bar.update(i + 1);
+            const fileString = FileUtils.readFileSync(files[i]);
 
             const serverlessFile: ServerlessFile = new ServerlessFile(ServerlessRepositoryReader._ymlToJson(fileString));
             serverlessFile.fileName = files[i];
@@ -56,7 +60,7 @@ export class ServerlessRepositoryReader {
             let hasVariables = false;
             if (variableFileName) {
                 hasVariables = true;
-                const variableFileString = await FileUtils.readFile(variableFileName);
+                const variableFileString = FileUtils.readFileSync(variableFileName);
                 variables = ServerlessRepositoryReader._ymlToJson(variableFileString);
             }
 
@@ -90,7 +94,7 @@ export class ServerlessRepositoryReader {
             });
             serverlessFiles.push(serverlessFile);
         }
-        LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `All files read` });
+        bar.stop();
         return serverlessFiles;
     }
 
@@ -98,7 +102,6 @@ export class ServerlessRepositoryReader {
         filter = filter || '';
         let regex: RegExp = new RegExp(filter);
         const fileData: { [name: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
-        console.log(fileData);
         
         if (!fileData) {
             LoggerUtils.warning({ origin: ServerlessRepositoryReader._origin, message: 'No functions found' });
@@ -116,8 +119,6 @@ export class ServerlessRepositoryReader {
                     functionsAndServices.unshift('');
                     return functionsAndServices;
                 }).reduce((agg, curr) => agg.concat(curr), []);
-            let functionsAsString: string = '';
-            console.log(functions.join('\n'));
         }
 
     }

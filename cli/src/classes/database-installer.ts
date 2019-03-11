@@ -1,11 +1,9 @@
 import { DatabaseVersionFile, DatabaseObject } from "../models/database-file.model";
-import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { FileUtils } from "../utils/file.utils";
 import { LoggerUtils } from "../utils/logger.utils";
 import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../utils/postgres.utils";
 import {exec} from 'child_process';
-import { resolve } from "url";
 import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {
