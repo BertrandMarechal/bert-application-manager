@@ -53,10 +53,17 @@ export class FileUtils {
             }
             else {
                 return new Promise((resolve) => {
-                    resolve(files.map((x: string) => params.startPath + '/' + x));
+                    resolve(files.map((x: string) => FileUtils.replaceSlashes(params.startPath) + '/' + FileUtils.replaceSlashes(x)));
                 });
             }
         }
+    }
+
+    static replaceSlashes(path: string) {
+        return path
+        .replace(/\/\//g, '/')
+        .replace(/\\\\/g, '/')
+        .replace(/\\/g, '/');
     }
 
     static getFolderList(params: {

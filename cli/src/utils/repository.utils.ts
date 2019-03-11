@@ -5,7 +5,7 @@ import { LoggerUtils } from "./logger.utils";
 import { DatabaseRepositoryReader } from "../classes/database-repo-reader";
 import { FrontendRepositoryReader } from "../classes/frontend-repo-reader";
 
-export type RepositoryType = 'postgres' | 'serverless';
+export type RepositoryType = 'postgres' | 'serverless' | 'frontend';
 
 export class RepositoryUtils {
     private static origin = 'RepositoryUtils';

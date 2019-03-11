@@ -18,7 +18,6 @@ export class DatabaseRepositoryReader {
         // read the current db files file and add on
         await DatabaseHelper.updateApplicationDatabaseFiles(repoName, await DatabaseRepositoryReader._readFiles(versionFiles));
 
-        
         // read the current db objects file and add on
         await DatabaseHelper.updateApplicationDatabaseObject(repoName,
             await DatabaseRepositoryReader._extractObjectInformation(
@@ -26,7 +25,31 @@ export class DatabaseRepositoryReader {
                 startPath
             )
         );
-        LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Repository read` });
+
+        // read all the SQL files, to see if they are all in the installation scripts
+        const fileList = (await FileUtils.getFileList({
+            filter: /\.sql/,
+            startPath: path.resolve(startPath, 'postgres')
+        })).map(FileUtils.replaceSlashes);
+        
+        const databaseFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(repoName);
+        const files = databaseFiles.reduce((agg: string[], versionFile) => {
+            return agg.concat(versionFile.versions.reduce((agg2: string[], version) => {
+                return agg2.concat(version.files.map(y => y.fileName))
+            }, []));
+        }, []).map(FileUtils.replaceSlashes);
+        
+        const unmappedFiles = fileList.filter(file => files.indexOf(file) === -1);
+        const incorrectlyMappedFiles = files.filter(file => fileList.indexOf(file) === -1);
+        
+        let feedback = 'Repository read';
+        if (unmappedFiles.length) {
+            feedback += `, ` + colors.yellow(`${unmappedFiles.length} unmapped files`);
+        }
+        if (incorrectlyMappedFiles.length) {
+            feedback += `, ` +  colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
+        }
+        LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
     }
 
     static async updateVersionFile(params: {
@@ -51,7 +74,7 @@ export class DatabaseRepositoryReader {
         const fileList = (await FileUtils.getFileList({
             filter: /\.sql/,
             startPath: path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version)
-        })).map(x => x.replace(/\\\\/g, '/')).map(x => x.replace(/\\/g, '/'));
+        }));
 
         // read the files, see if they have dependencies
         const replacedPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version).replace(/\\\\/g, '/').replace(/\\/g, '/');
