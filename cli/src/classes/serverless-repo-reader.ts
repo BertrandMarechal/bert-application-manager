@@ -124,8 +124,6 @@ export class ServerlessRepositoryReader {
                     return functionsAndServices;
                 }).reduce((agg, curr) => agg.concat(curr), []).filter(Boolean);
             console.log(functions.join('\n'));
-            
         }
-
     }
 }

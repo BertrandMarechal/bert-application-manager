@@ -7,14 +7,15 @@ import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";
 
-const intentationSpaceNumber = 4;
-const indentationSpaces = ' '.repeat(intentationSpaceNumber);
+export const intentationSpaceNumber = 4;
+export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
 
 export class DatabaseFileHelper {
     private static _origin = 'DatabaseFileHelper';
     static async createFunctions(params: {
         applicationName: string;
         version: string;
+
         filter: string;
     }): Promise<boolean> {
         LoggerUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
@@ -180,9 +181,6 @@ export class DatabaseFileHelper {
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
                     if (!databaseObject.table[tableName].tags[`no-${action}`]) {
-                        if (FileUtils.checkIfFolderExists(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`))) {
-                            // todo what do we do if the file does exist ?
-                        }
                         let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, `${action}.sql`));
         
                         for (let j = 0; j < dbParamsFields.length; j++) {

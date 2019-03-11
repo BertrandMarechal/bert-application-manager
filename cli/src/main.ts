@@ -6,6 +6,7 @@ import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database-installer';
 import { DatabaseFileHelper } from './classes/databse-file-helper';
+import { ServerlessFileHelper } from './classes/serverless-file-helper';
 import { DatabaseRepositoryReader } from './classes/database-repo-reader';
 
 const mainOptions = [
@@ -68,6 +69,7 @@ const main = async () => {
                     { name: 'action', defaultOption: true },
                     { name: 'all', alias: 'e', type: String, description: 'environment' },
                     { name: 'type', alias: 't', type: String, description: 'Type of the repository to read' },
+                    { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
                 ]
                 const serverlessOptions = commandLineArgs(serverlessOptionsDefinitions, { argv, stopAtFirstUnknown: true });
@@ -76,6 +78,12 @@ const main = async () => {
                     case 'l':
                     case 'list-functions':
                         await RepositoryUtils.listFunctions(serverlessOptions.filter);
+                    case 'gf':
+                    case 'generate-functions':
+                        await ServerlessFileHelper.generateFunctions({
+                            applicationName: serverlessOptions['application-name'],
+                            filter: serverlessOptions.filter
+                        });
                     default:
                         break;
                 }

@@ -1,0 +1,29 @@
+service: service_name
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: ${file(./variables.yml):stage}
+  region: eu-west-1
+  profile: default
+  deploymentBucket: serverless-deployments
+  environment:
+    stage: ${file(./variables.yml):stage}
+    cpi: ${file(./variables.yml):candidatePoolId}
+    pgConnStr: ${file(./variables.yml):postgresConnectionString}
+    pgConnStrRo: ${file(./variables.yml):postgresConnectionStringReadOnly}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ec2:CreateNetworkInterface"
+        - "ec2:DescribeNetworkInterfaces"
+        - "ec2:DetachNetworkInterface"
+        - "ec2:DeleteNetworkInterface"
+      Resource: "*"
+  vpc:
+   securityGroupIds:
+    - ${file(./variables.yml):securityGroups}
+   subnetIds:
+     - subnet-sub
+functions:
+  dummy:
+    handler: dummy
