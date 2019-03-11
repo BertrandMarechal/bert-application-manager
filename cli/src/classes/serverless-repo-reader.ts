@@ -100,6 +100,7 @@ export class ServerlessRepositoryReader {
 
     static async listFunctions(filter: string): Promise<void> {
         filter = filter || '';
+        
         let regex: RegExp = new RegExp(filter);
         const fileData: { [name: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
         
@@ -114,11 +115,17 @@ export class ServerlessRepositoryReader {
                             return `\t${colors.green(serverlessFile.serviceName)}-${colors.cyan(f.name)}`;
                         });
                     }).reduce((agg, curr) => agg.concat(curr), []);
-                    functionsAndServices = functionsAndServices.filter(str => regex.test(str));
-                    functionsAndServices.unshift(colors.yellow(repo));
-                    functionsAndServices.unshift('');
+                    if (!regex.test(repo)) {
+                        functionsAndServices = functionsAndServices.filter(str => regex.test(str));
+                    }
+                    if (functionsAndServices.length > 0) {
+                        functionsAndServices.unshift(colors.yellow(repo));
+                        functionsAndServices.unshift('');
+                    }
                     return functionsAndServices;
-                }).reduce((agg, curr) => agg.concat(curr), []);
+                }).reduce((agg, curr) => agg.concat(curr), []).filter(Boolean);
+            console.log(functions.join('\n'));
+            
         }
 
     }

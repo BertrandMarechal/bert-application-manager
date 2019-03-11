@@ -62,6 +62,24 @@ const main = async () => {
                         break;
                 }
                 break;
+            case 's':
+            case 'serverless':
+                const serverlessOptionsDefinitions = [
+                    { name: 'action', defaultOption: true },
+                    { name: 'all', alias: 'e', type: String, description: 'environment' },
+                    { name: 'type', alias: 't', type: String, description: 'Type of the repository to read' },
+                    { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
+                ]
+                const serverlessOptions = commandLineArgs(serverlessOptionsDefinitions, { argv, stopAtFirstUnknown: true });
+                
+                switch (serverlessOptions.action) {
+                    case 'l':
+                    case 'list-functions':
+                        await RepositoryUtils.listFunctions(serverlessOptions.filter);
+                    default:
+                        break;
+                }
+                break;
             case 'repo':
             case 'r':
                 const repoOptionsDefinitions = [
@@ -73,7 +91,7 @@ const main = async () => {
                 switch (repoOptions.action) {
                     case 'read':
                     case 'r':
-                        await RepositoryUtils.readRepository(path.resolve(process.cwd()), options.type);
+                        await RepositoryUtils.readRepository(path.resolve(process.cwd()), repoOptions.type);
                         break;
                     default:
                         break;
@@ -95,9 +113,6 @@ const main = async () => {
                 break;
             case 'start-server':
                 await ServerUtils.startServer();
-                break;
-            case 'list-functions':
-                await RepositoryUtils.listFunctions(options.filter);
                 break;
             default:
                 break;
