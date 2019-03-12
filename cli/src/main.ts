@@ -7,6 +7,7 @@ import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database-installer';
 import { DatabaseFileHelper } from './classes/databse-file-helper';
 import { ServerlessFileHelper } from './classes/serverless-file-helper';
+import { FrontendFileHelper } from './classes/frontend-file-helper';
 import { DatabaseRepositoryReader } from './classes/database-repo-reader';
 
 const mainOptions = [
@@ -83,6 +84,30 @@ const main = async () => {
                         await ServerlessFileHelper.generateFunctions({
                             applicationName: serverlessOptions['application-name'],
                             filter: serverlessOptions.filter
+                        });
+                    default:
+                        break;
+                }
+                break;
+            case 'frontend':
+            case 'f':
+                const frontendOptionsDefinitions = [
+                    { name: 'action', defaultOption: true },
+                    { name: 'all', alias: 'e', type: String, description: 'environment' },
+                    { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
+                    { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
+                ]
+                const frontendOptions = commandLineArgs(frontendOptionsDefinitions, { argv, stopAtFirstUnknown: true });
+                
+                switch (frontendOptions.action) {
+                    case 'l':
+                    case 'list-functions':
+                        await RepositoryUtils.listFunctions(frontendOptions.filter);
+                    case 'g':
+                    case 'generate-code':
+                        await FrontendFileHelper.generateCode({
+                            applicationName: frontendOptions['application-name'],
+                            filter: frontendOptions.filter
                         });
                     default:
                         break;

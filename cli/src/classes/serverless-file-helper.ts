@@ -31,9 +31,6 @@ export class ServerlessFileHelper {
         if (!databaseObject) {
             throw 'This application does not exist';
         }
-        // from those functions, create a service
-
-
         
         const actions = [
             'save',

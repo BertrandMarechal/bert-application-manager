@@ -245,7 +245,7 @@ export class DatabaseTable extends DatabaseSubObject {
             });
             for (let i = 0; i < newFields.length; i++) {
                 const field = newFields[i];
-                if (TableConstraintsFirstWord.find(fw => field.split[0].indexOf(fw) > -1)) {
+                if (TableConstraintsFirstWord.find(fw => field.split[0].toLowerCase().indexOf(fw) > -1)) {
                     continue;
                 }
                 this.fields[field.split[0]] = new DatabaseTableField(field, this.tableSuffix);
