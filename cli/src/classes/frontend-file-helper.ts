@@ -58,6 +58,7 @@ export class FrontendFileHelper {
         const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
         const serviceFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'service.ts'));
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'model.ts'));
+        const ngrxActionsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'ngrx-actions.ts'));
 
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
@@ -88,6 +89,18 @@ export class FrontendFileHelper {
                     .replace(/<name_with_dashes>/g, nameWithDashes)
             };
             const serviceFunctions: string[] = [];
+            // ngrx actions
+            const ngrxActionsFile: FileAndContent = {
+                path: path.resolve(frontendPath, 'src', 'app', 'store', 'actions', `${nameWithDashes}.actions.ts`),
+                fileContent: ngrxActionsFileTemplate
+                    .replace(/<snake_case_actions_upper_case>/g, nameWithoutPrefixAndSuffix.toUpperCase())
+                    .replace(/<snake_case_actions_lower_case>/g, nameWithoutPrefixAndSuffix.toLowerCase())
+            };
+            const ngrxActions: {
+                names: string;
+                classes: string;
+                types: string;
+            }[] = [];
 
             if (!databaseObject.table[tableName].tags.ignore) {
                 // create service file
@@ -102,6 +115,11 @@ export class FrontendFileHelper {
                         serviceFunctionName: functionName,
                         serviceName: databaseObject._properties.dbName + '-s'
                     }));
+
+                    ngrxActions.push(FrontendFileHelper._createActions({
+                        action: action,
+                        dbObjectName: nameWithoutUnderscore
+                    }));
                 }
             }
             if (serviceFunctions.length) {
@@ -110,6 +128,22 @@ export class FrontendFileHelper {
                     serviceFunctions.join('\n\n')
                 );
                 filesToCreate.push(serviceFile);
+            }
+            if (ngrxActions.length) {
+                ngrxActionsFile.fileContent = ngrxActionsFile.fileContent
+                    .replace(
+                        /<action_names>/,
+                        ngrxActions.map(x => x.names).join('\n\n')
+                    )
+                    .replace(
+                        /<action_classes>/,
+                        ngrxActions.map(x => x.classes).join('\n\n')
+                    )
+                    .replace(
+                        /<action_types>/,
+                        ngrxActions.map(x => x.types).join('\n\n')
+                    );
+                filesToCreate.push(ngrxActionsFile);
             }
         }
         bar.stop();
@@ -209,11 +243,6 @@ export class FrontendFileHelper {
         classes: string;
         types: string;
     } {
-        /*
-            action_names
-            action_classes
-            action_types
-        */
         const parts = [{
             source: 'page',
             state: ''
@@ -232,9 +261,17 @@ export class FrontendFileHelper {
         }];
         return {
             names: parts.map(part => {
-                return `export const ${part.source.toUpperCase()}_${params.action.toUpperCase()}_${params.dbObjectName.toUpperCase()}${part.state ? `_${part.state.toUpperCase()}` : ''}`;
+                let toReturn = `export const ${part.source.toUpperCase()}_${params.action.toUpperCase()}_${params.dbObjectName.toUpperCase()}${part.state ? `_${part.state.toUpperCase()}` : ``}`;
+                toReturn += ` = '[${params.dbObjectName} ${SyntaxUtils.capitalize(part.source)}]' ${params.action} ${params.dbObjectName.replace(/ /g, ' ')}`;
+                return toReturn;
             }).join('\n'),
-            classes: '',
+            classes: parts.map(part => {
+                let toReturn = `export class ${SyntaxUtils.capitalize(part.source)}${SyntaxUtils.capitalize(params.action)}${SyntaxUtils.capitalize(SyntaxUtils.snakeCaseToCamelCase(params.dbObjectName))}${SyntaxUtils.capitalize(part.state)}Action implements Action {`;
+                toReturn += `${indentation}readonly type = ${part.source.toUpperCase()}_${params.action.toUpperCase()}_${params.dbObjectName.toUpperCase()}${part.state ? `_${part.state.toUpperCase()}` : ``}`;
+                toReturn += `${indentation}constructor(public payload?: any) {}`;
+                toReturn += '}';
+                return toReturn;
+            }).join('\n'),
             types: parts.map(part => {
                 return `${indentation}| ${SyntaxUtils.capitalize(part.source)}${SyntaxUtils.capitalize(params.action)}${SyntaxUtils.capitalize(SyntaxUtils.snakeCaseToCamelCase(params.dbObjectName))}${SyntaxUtils.capitalize(part.state)}Action`;
             }).join('\n'),

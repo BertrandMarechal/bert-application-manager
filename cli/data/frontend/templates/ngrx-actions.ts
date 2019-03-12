@@ -1,9 +1,9 @@
 /**
- * Created by Bertrand.Marechal on 07/11/2018
+ * Created by Bertrand.Marechal on 12/03/2018
  */
 import {Action} from '@ngrx/store';
 
-const ADMIN = 'admin';
+const <snake_case_actions_upper_case> = '<snake_case_actions_lower_case>';
 
 <action_names>
 
