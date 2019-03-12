@@ -25,5 +25,5 @@ provider:
    subnetIds:
      - subnet-sub
 functions:
-  dummy:
-    handler: dummy
+  runfunction:
+    handler: handlers/runfunction

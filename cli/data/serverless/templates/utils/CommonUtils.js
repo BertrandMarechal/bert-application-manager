@@ -75,7 +75,7 @@ function _process(event,
 
 }
 
-module.exports.processReadOnly = function (event,
+module.exports.postgresFunctionReadOnly = function (event,
                                            context,
                                            callback,
                                            functionName,
@@ -88,7 +88,7 @@ module.exports.processReadOnly = function (event,
     _process(event,context,callback,functionName,fieldsToPass,successMessage,errorMessage,customCallback,customErrorCallback);
 
 };
-module.exports.process = function (event,
+module.exports.postgresFunction = function (event,
                                    context,
                                    callback,
                                    functionName,
@@ -124,4 +124,15 @@ module.exports.errorCallback = function (
         message: errorMessage,
         error: error.message || error
     });
+};
+
+module.exports.checkWarmup = function (event,
+    callback,
+    curtomCallback) {
+if (event.wu) {
+callback(null, 'Warmed up');
+return console.log('Warmed up');
+} else {
+curtomCallback();
+}
 };

@@ -29,3 +29,4 @@ actions: save (deals with update and insert), delete, get, list
 - roles --roles that can access this resource, overwritten by the action specific tags below
 - #<action!>-roles=['<role 1>', '<role 2>'] --sets the roles for the specific action
 - #no-<action!> --ignores the generation of the file for the specified action
+- #service-name=<service name> -- name of the service that will be used for the serverless function

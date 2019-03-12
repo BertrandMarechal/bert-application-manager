@@ -55,11 +55,8 @@ export class ServerlessRepositoryReader {
             serverlessFile.fileName = files[i];
 
             const variableFileName = variableFiles.find(x => x.replace(/variables\.yml$/, 'serverless.yml') === files[i]);
-            let variableFileString = '';
             let variables: { [name: string]: string } = {};
-            let hasVariables = false;
             if (variableFileName) {
-                hasVariables = true;
                 const variableFileString = FileUtils.readFileSync(variableFileName);
                 variables = ServerlessRepositoryReader._ymlToJson(variableFileString);
             }
