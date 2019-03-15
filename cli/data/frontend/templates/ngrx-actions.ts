@@ -1,5 +1,5 @@
 /**
- * Created by Bertrand.Marechal on 12/03/2018
+ * Created by Bertrand.Marechal
  */
 import {Action} from '@ngrx/store';
 
@@ -9,6 +9,6 @@ const <snake_case_actions_upper_case> = '<snake_case_actions_lower_case>';
 
 <action_classes>
 
-export type AdminActions =
+export type <capitalized_camel_cased_name>Actions =
 <action_types>
   ;
