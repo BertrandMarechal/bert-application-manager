@@ -1,9 +1,9 @@
 import { FileUtils } from "./file.utils";
 import path from "path";
-import { ServerlessRepositoryReader } from "../classes/serverless-repo-reader";
+import { ServerlessRepositoryReader } from "../classes/serverless/serverless-repo-reader";
 import { LoggerUtils } from "./logger.utils";
-import { DatabaseRepositoryReader } from "../classes/database-repo-reader";
-import { FrontendRepositoryReader } from "../classes/frontend-repo-reader";
+import { DatabaseRepositoryReader } from "../classes/database/database-repo-reader";
+import { FrontendRepositoryReader } from "../classes/frontend/frontend-repo-reader";
 
 export type RepositoryType = 'postgres' | 'serverless' | 'frontend';
 

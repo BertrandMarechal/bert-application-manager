@@ -1,7 +1,7 @@
-import { FileUtils } from "../utils/file.utils";
+import { FileUtils } from "../../utils/file.utils";
 import * as YAML from 'yamljs';
-import { LoggerUtils } from "../utils/logger.utils";
-import { ServerlessFile } from "../models/serverless-file.model";
+import { LoggerUtils } from "../../utils/logger.utils";
+import { ServerlessFile } from "../../models/serverless-file.model";
 import path from 'path';
 import colors from 'colors';
 import { Bar, Presets } from 'cli-progress';

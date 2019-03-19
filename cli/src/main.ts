@@ -4,11 +4,11 @@ import { ServerUtils } from './utils/server.utils';
 import { FileUtils } from './utils/file.utils';
 import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
-import { DatabaseInstaller } from './classes/database-installer';
-import { DatabaseFileHelper } from './classes/databse-file-helper';
-import { ServerlessFileHelper } from './classes/serverless-file-helper';
-import { FrontendFileHelper } from './classes/frontend-file-helper';
-import { DatabaseRepositoryReader } from './classes/database-repo-reader';
+import { DatabaseInstaller } from './classes/database/database-installer';
+import { DatabaseFileHelper } from './classes/database/database-file-helper';
+import { ServerlessFileHelper } from './classes/serverless/serverless-file-helper';
+import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
+import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -43,6 +43,12 @@ const main = async () => {
                             applicationName: dbOptions['application-name'],
                             environment: dbOptions.environment,
                             version: dbOptions.version
+                        });
+                        break;
+                    case 'init':
+                    case 'n':
+                        await DatabaseRepositoryReader.initDatabase({
+                            applicationName: dbOptions['application-name']
                         });
                         break;
                     case 'params':

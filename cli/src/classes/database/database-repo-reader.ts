@@ -1,10 +1,16 @@
-import { FileUtils } from "../utils/file.utils";
-import { LoggerUtils } from "../utils/logger.utils";
+import { FileUtils } from "../../utils/file.utils";
+import { LoggerUtils } from "../../utils/logger.utils";
 import path from 'path';
 import colors from 'colors';
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
-import { Bar, Presets } from 'cli-progress';
+
+interface DatabaseStructureNode {
+    fileName?: string;
+    fileSource?: string;
+    folderName?: string;
+    children?: DatabaseStructureNode[];
+}
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
@@ -50,7 +56,87 @@ export class DatabaseRepositoryReader {
         if (incorrectlyMappedFiles.length) {
             feedback += `, ` +  colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
         }
+
         LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
+    }
+
+    static async initDatabase(params: {
+        applicationName: string;
+    }) {
+        if (!params.applicationName) {
+            throw 'Please provide an application name.';
+        }
+        if (!params.applicationName.match(/\-database$/)) {
+            params.applicationName += '-database';
+        }
+    
+        // FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
+            throw 'Invalid application name';
+        }
+        if (FileUtils.checkIfFolderExists(path.resolve(databaseObject._properties.path, 'postgres', 'release'))) {
+            const response = await LoggerUtils.question({
+                text: 'There is already a version in this folder. Are you sure you want to override ? (y/n)',
+                origin: DatabaseRepositoryReader._origin
+            });
+            if (response.toLowerCase() !== 'y') {
+                throw 'Application forlder is not null';
+            }
+        }
+        let dbName = databaseObject._properties.dbName;
+        console.log(dbName);
+        
+        if (!dbName) {
+            while(!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
+                dbName = await LoggerUtils.question({
+                    text: 'Please provide a 2 / 3 letter prefix for your database',
+                    origin: DatabaseRepositoryReader._origin
+                });
+            }
+        }
+        // we create the folder structure, and the default files
+        const dbStructure: DatabaseStructureNode = await FileUtils.readJsonFile(
+            path.resolve(DatabaseHelper.dbFolderStructureFolder, 'folder-structure.json')
+        );
+        await DatabaseRepositoryReader._createDBFolderStructure(dbStructure, databaseObject._properties.path, dbName);
+        LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Database structure created for ${dbName}` });
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, true);
+    }
+
+    private static _isDatabaseNameValid(name: string) {
+        if (!name) {
+            return false;
+        }
+        // todo check the other db names
+        return /^[a-z][a-z0-9]{1,2}$/gi.test(name);
+    }
+
+
+    private static async _createDBFolderStructure(node: DatabaseStructureNode, folderPath: string, dbName: string) {
+        if (node.folderName) {
+            const newFolderPath = path.resolve(folderPath, node.folderName);
+            FileUtils.createFolderStructureIfNeeded(newFolderPath);
+            if (node.children && node.children.length > 0) {
+                for (let i = 0; i < node.children.length; i++) {
+                    const child = node.children[i];
+                    await DatabaseRepositoryReader._createDBFolderStructure(child, newFolderPath, dbName);
+                }
+            } else {
+                FileUtils.writeFileSync(path.resolve(newFolderPath, '.placeholder'), '');
+            }
+        } else if (node.fileName) {
+            let fileContent = '';
+            if (node.fileSource) {
+                fileContent = await FileUtils.readFile(
+                    path.resolve(DatabaseHelper.dbFolderStructureFolder, 'files', node.fileSource)
+                );
+                if (fileContent) {
+                    fileContent = fileContent.replace(/<db>/gi, dbName);
+                }
+            }
+            FileUtils.writeFileSync(path.resolve(folderPath, node.fileName.replace('<db>', dbName)), fileContent);
+        }
     }
 
     static async updateVersionFile(params: {
@@ -213,7 +299,7 @@ export class DatabaseRepositoryReader {
 
     static async checkParams(filter: string, env: string) {
         if (!env) {
-            LoggerUtils.warning({ origin: this._origin, message: 'No environment provided, the check will be ran for local' });
+            LoggerUtils.warning({ origin: DatabaseRepositoryReader._origin, message: 'No environment provided, the check will be ran for local' });
             env = 'local';
         }
         // get the database parameters
@@ -262,7 +348,7 @@ export class DatabaseRepositoryReader {
                 value = databaseParametersFromDb[element.databaseName][env][element.paramName];
             }
             const paramValue = await LoggerUtils.question({
-                origin: this._origin,
+                origin: DatabaseRepositoryReader._origin,
                 text: `Please enter the value for ${colors.yellow(env)} - ${colors.green(element.databaseName)} - ${colors.cyan(element.paramName)} ${value ? `(current : "${value}") ` : ''}:`
             });
             if (paramValue) {
@@ -274,7 +360,7 @@ export class DatabaseRepositoryReader {
                 }
                 databaseParametersFromDb[element.databaseName][env][element.paramName] = paramValue;
             } else {
-                LoggerUtils.info({ origin: this._origin, message: 'No value provided => value not changed' });
+                LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: 'No value provided => value not changed' });
             }
         }
         LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });

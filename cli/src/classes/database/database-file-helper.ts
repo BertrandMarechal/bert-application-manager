@@ -1,8 +1,8 @@
-import { DatabaseObject, DatabaseVersionFile, DatabaseTable } from "../models/database-file.model";
-import { FileUtils } from "../utils/file.utils";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable } from "../../models/database-file.model";
+import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { LoggerUtils } from "../utils/logger.utils";
+import { LoggerUtils } from "../../utils/logger.utils";
 import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";

@@ -1,4 +1,4 @@
-import { LoggerUtils } from "../utils/logger.utils";
+import { LoggerUtils } from "../../utils/logger.utils";
 
 export class FrontendRepositoryReader {
     private static _origin = 'FrontendRepositoryReader';

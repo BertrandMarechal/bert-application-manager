@@ -1,8 +1,8 @@
-import { DatabaseVersionFile, DatabaseObject } from "../models/database-file.model";
-import { FileUtils } from "../utils/file.utils";
-import { LoggerUtils } from "../utils/logger.utils";
+import { DatabaseVersionFile, DatabaseObject } from "../../models/database-file.model";
+import { FileUtils } from "../../utils/file.utils";
+import { LoggerUtils } from "../../utils/logger.utils";
 import { Bar, Presets } from 'cli-progress';
-import { PostgresUtils } from "../utils/postgres.utils";
+import { PostgresUtils } from "../../utils/postgres.utils";
 import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {

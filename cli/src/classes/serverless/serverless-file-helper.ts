@@ -1,13 +1,13 @@
-import {DatabaseHelper} from './database-helper';
+import {DatabaseHelper} from '../database/database-helper';
 import { Bar, Presets } from "cli-progress";
-import { DatabaseObject } from '../models/database-file.model';
-import { LoggerUtils } from '../utils/logger.utils';
-import { FileUtils } from '../utils/file.utils';
+import { DatabaseObject } from '../../models/database-file.model';
+import { LoggerUtils } from '../../utils/logger.utils';
+import { FileUtils } from '../../utils/file.utils';
 import path from 'path';
 import colors from 'colors';
 import yamljs from 'yamljs';
 import {ServerlessRepositoryReader} from './serverless-repo-reader';
-import { indentationSpaces } from './databse-file-helper';
+import { indentationSpaces } from '../database/database-file-helper';
 
 
 export class ServerlessFileHelper {
