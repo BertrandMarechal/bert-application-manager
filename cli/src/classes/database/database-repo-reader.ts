@@ -4,6 +4,7 @@ import path from 'path';
 import colors from 'colors';
 import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
+import { UiUtils } from "../../utils/ui.utils";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -14,7 +15,6 @@ interface DatabaseStructureNode {
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
-
     static async readRepo(startPath: string, repoName: string, silent?: boolean) {
         // we have to get the list of files and read them
         const versionFiles = await FileUtils.getFileList({
@@ -62,7 +62,7 @@ export class DatabaseRepositoryReader {
 
     static async initDatabase(params: {
         applicationName: string;
-    }) {
+    }, uiUtils: UiUtils) {
         if (!params.applicationName) {
             throw 'Please provide an application name.';
         }
@@ -76,7 +76,7 @@ export class DatabaseRepositoryReader {
             throw 'Invalid application name';
         }
         if (FileUtils.checkIfFolderExists(path.resolve(databaseObject._properties.path, 'postgres', 'release'))) {
-            const response = await LoggerUtils.question({
+            const response = await uiUtils.question({
                 text: 'There is already a version in this folder. Are you sure you want to override ? (y/n)',
                 origin: DatabaseRepositoryReader._origin
             });
@@ -89,7 +89,7 @@ export class DatabaseRepositoryReader {
         
         if (!dbName) {
             while(!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
-                dbName = await LoggerUtils.question({
+                dbName = await uiUtils.question({
                     text: 'Please provide a 2 / 3 letter prefix for your database',
                     origin: DatabaseRepositoryReader._origin
                 });
@@ -100,7 +100,7 @@ export class DatabaseRepositoryReader {
             path.resolve(DatabaseHelper.dbFolderStructureFolder, 'folder-structure.json')
         );
         await DatabaseRepositoryReader._createDBFolderStructure(dbStructure, databaseObject._properties.path, dbName);
-        LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Database structure created for ${dbName}` });
+        uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Database structure created for ${dbName}` });
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, true);
     }
 

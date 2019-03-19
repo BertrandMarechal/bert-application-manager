@@ -9,6 +9,7 @@ import { DatabaseFileHelper } from './classes/database/database-file-helper';
 import { ServerlessFileHelper } from './classes/serverless/serverless-file-helper';
 import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
 import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
+import { LoggerUtils } from './utils/logger.utils';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -16,6 +17,8 @@ const mainOptions = [
 
 const options: CommandLineOptions = commandLineArgs(mainOptions, { stopAtFirstUnknown: true });
 let argv = options._unknown || [];
+
+const loggerUtils = new LoggerUtils();
 
 const main = async () => {
     try {
@@ -49,7 +52,7 @@ const main = async () => {
                     case 'n':
                         await DatabaseRepositoryReader.initDatabase({
                             applicationName: dbOptions['application-name']
-                        });
+                        }, loggerUtils);
                         break;
                     case 'params':
                     case 'p':
