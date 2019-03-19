@@ -20,6 +20,7 @@ cls && npm link && aws-mock start-server
 - #sort --sorts on this column
 - #list-filter=<name?> --generates the list code with a filter on this column
 - #camel-cased-name=<name!> --sets the camel cased name
+- #get-with-parent --mark the current object as to get when getting the parent object
 
 ### table
 

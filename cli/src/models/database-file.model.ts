@@ -105,7 +105,7 @@ export class DatabaseTableField {
         this.toUpdate = true;
         this.sort = false;
 
-        const reference = /references (.*?)\((.*?)\)/.exec(field.fullText);
+        const reference = /references (.*?)\((.*?)\)/i.exec(field.fullText);
         if (reference) {
             this.isForeignKey = true
             this.foreignKey = {
@@ -114,7 +114,7 @@ export class DatabaseTableField {
             };
         }
 
-        const primaryKey = /primary key/.exec(field.fullText);
+        const primaryKey = /primary key/i.exec(field.fullText);
         if (primaryKey) {
             this.isPrimaryKey = true;
             this.toUpdate = false;
@@ -133,12 +133,12 @@ export class DatabaseTableField {
             this.camelCasedName = this.tags['camel-cased-name'].value
         } else {
             if (this.isForeignKey) {
-                if (this.name.match(/fk_[a-z0-9]{3}_[a-z0-9]{3}_/)) {
+                if (this.name.match(/fk_[a-z0-9]{3}_[a-z0-9]{3}_/i)) {
                     this.camelCasedName = SyntaxUtils
                         .snakeCaseToCamelCase(this.name.substr(11));
                 }
             } else if (this.isPrimaryKey) {
-                if (this.name.match(/pk_[a-z0-9]{3}_/)) {
+                if (this.name.match(/pk_[a-z0-9]{3}_/i)) {
                     this.camelCasedName = 'id';
                 }
             }
@@ -172,9 +172,10 @@ export class DatabaseTable extends DatabaseSubObject {
     camelCasedName: string;
     name: string;
     tags: { [name: string]: Tag };
+    primaryKey?: DatabaseTableField;
     constructor(params?: any) {
         super(params);
-        this.fields = params.fields || {};
+        this.fields = (params || {}).fields || {};
         this.tableSuffix = '';
         this.dbPrefix = '';
         this.camelCasedName = '';
@@ -250,6 +251,10 @@ export class DatabaseTable extends DatabaseSubObject {
                 }
                 this.fields[field.split[0]] = new DatabaseTableField(field, this.tableSuffix);
             }
+        }
+        const primaryKeyName = Object.keys(this.fields).find(x => this.fields[x].isPrimaryKey);
+        if (primaryKeyName) {
+            this.primaryKey = this.fields[primaryKeyName];
         }
     }
 }

@@ -1,4 +1,4 @@
-import { DatabaseObject, DatabaseVersionFile } from "../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable } from "../models/database-file.model";
 import { FileUtils } from "../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
@@ -111,6 +111,20 @@ export class DatabaseFileHelper {
                 dbParams.primary_key_name = `pk_${databaseObject.table[tableName].tableSuffix}_id`;
     
                 const fields = Object.keys(databaseObject.table[tableName].fields);
+
+                // we now get the list of sub entities relative to this table, with the get-with-parent tag
+                const tablesToRetrieveAlong: {fieldName: string, table: DatabaseTable}[] = Object.keys(databaseObject.table).map(t => {
+                    const fieldsToGet = Object.keys(databaseObject.table[t].fields)
+                        .filter(f => databaseObject.table[t].fields[f].isForeignKey)
+                        .filter(f => databaseObject.table[t].fields[f].foreignKey &&
+                            (databaseObject.table[t].fields[f].foreignKey || {table: ''}).table === tableName);
+                    if (fieldsToGet.filter(f => databaseObject.table[t].fields[f].tags['get-with-parent']).length) {
+                        return fieldsToGet.map(field => ({fieldName: field, table: databaseObject.table[t]}));
+                    }
+                    return [{fieldName: '', table: new DatabaseTable()}];
+                })
+                    .reduce((agg, curr) => agg.concat(curr), [])
+                    .filter(x => !!x.fieldName);
     
                 const 
                     camelCasedFields: string[] = [],
@@ -127,6 +141,27 @@ export class DatabaseFileHelper {
                     const field = databaseObject.table[tableName].fields[fields[i]];
                     camelCasedFields.push(`${indentationSpaces.repeat(2)}"${field.camelCasedName}" ${field.type}`);
                     tableFields.push(indentationSpaces.repeat(2) + field.name);
+                    
+                    if (tablesToRetrieveAlong.length) {
+                        for (let j = 0; j < tablesToRetrieveAlong.length; j++) {
+                            const subTable = tablesToRetrieveAlong[j];
+                            camelCasedFields.push(`${indentationSpaces.repeat(2)}"${subTable.table.camelCasedName}" json`);
+
+                            let subQuery = `${indentationSpaces.repeat(2)}(\n`;
+                            subQuery += `${indentationSpaces.repeat(3)}SELECT COALESCE(JSON_AGG(\n`;
+                            subQuery += `${indentationSpaces.repeat(4)}json_build_object(\n`;
+                            subQuery += Object.keys(subTable.table.fields).map(field => {
+                                return `${indentationSpaces.repeat(5)}'${subTable.table.fields[field].camelCasedName}', ${subTable.table.fields[field].name}`;
+                            }).join(',\n');
+                            subQuery += `${indentationSpaces.repeat(4)})\n`;
+                            subQuery += `${indentationSpaces.repeat(3)}) FILTER(where sub${j}.modified_at is not null), '[]'::json)\n`;
+                            subQuery += `${indentationSpaces.repeat(3)}FROM ${subTable.table.name} sub${j}\n`;
+                            subQuery += `${indentationSpaces.repeat(4)}where sub${j}.${subTable.table.primaryKey ? subTable.table.primaryKey.name : 'id'} = ${subTable.fieldName}\n`;
+                            subQuery += `${indentationSpaces.repeat(2)})\n`;
+                            tableFields.push(subQuery);
+                        }
+                    }
+
                     if (field.toUpdate) {
                         tableFieldsUpdate.push(`${indentationSpaces.repeat(4)}${field.name} = (i_params->>'${field.camelCasedName}')::${field.type}`);
                     }
@@ -171,12 +206,11 @@ export class DatabaseFileHelper {
                 } else {
                     dbParams.list_sorting = '';
                 }
-    
-                // deal with joins later
+                
+                // todo deal with joins later
                 dbParams.joins = '';
     
                 const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, '07-functions', nameWithoutPrefixAndSuffix);
-    
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
