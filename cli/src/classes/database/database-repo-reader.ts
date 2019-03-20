@@ -277,19 +277,21 @@ export class DatabaseRepositoryReader {
 
         for (let i = 0; i < filesToWatch.length; i++) {
             const element = filesToWatch[i];
-            const data = await FileUtils.readFile(element);
-            const variablesArray: string[] = (data.match(variableRegex) || []);
-            if (variablesArray.length > 0) {
-                const startArray: string[] = [];
-                const variablesForFile = variablesArray
-                    .reduce((agg, curr) => (agg.indexOf(curr) > -1 ? agg : [...agg, curr]), startArray)
-                    .map((x: string) => x.substr(1, x.length - 2));
-                for (let j = 0; j < variablesForFile.length; j++) {
-                    const variable = variablesForFile[j];
-                    if (!variablesPerFiles[variable]) {
-                        variablesPerFiles[variable] = [];
+            if (FileUtils.checkIfFolderExists(element)) {
+                const data = await FileUtils.readFile(element);
+                const variablesArray: string[] = (data.match(variableRegex) || []);
+                if (variablesArray.length > 0) {
+                    const startArray: string[] = [];
+                    const variablesForFile = variablesArray
+                        .reduce((agg, curr) => (agg.indexOf(curr) > -1 ? agg : [...agg, curr]), startArray)
+                        .map((x: string) => x.substr(1, x.length - 2));
+                    for (let j = 0; j < variablesForFile.length; j++) {
+                        const variable = variablesForFile[j];
+                        if (!variablesPerFiles[variable]) {
+                            variablesPerFiles[variable] = [];
+                        }
+                        variablesPerFiles[variable].push(element);
                     }
-                    variablesPerFiles[variable].push(element);
                 }
             }
         }
