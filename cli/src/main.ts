@@ -48,6 +48,13 @@ const main = async () => {
                             version: dbOptions.version
                         });
                         break;
+                    case 'create-table':
+                    case 'ct':
+                        await DatabaseFileHelper.createTable({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions.version
+                        }, loggerUtils);
+                        break;
                     case 'init':
                     case 'n':
                         await DatabaseRepositoryReader.initDatabase({

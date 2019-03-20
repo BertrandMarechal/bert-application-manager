@@ -73,7 +73,7 @@ export class LoggerUtils extends UiUtils {
                 output: process.stdout
             });
             rl.question(text, (answer) => {
-                resolve(answer);
+                resolve(answer.trim());
                 rl.close();
             });
         });
@@ -142,7 +142,7 @@ export class LoggerUtils extends UiUtils {
                 output: process.stdout
             });
             rl.question(text, (answer) => {
-                resolve(answer);
+                resolve(answer.trim());
                 rl.close();
             });
         });
