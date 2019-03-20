@@ -5,6 +5,7 @@ import colors from 'colors';
 import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
+import { RepositoryUtils } from "../../utils/repository.utils";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -63,14 +64,8 @@ export class DatabaseRepositoryReader {
     static async initDatabase(params: {
         applicationName: string;
     }, uiUtils: UiUtils) {
-        if (!params.applicationName) {
-            throw 'Please provide an application name.';
-        }
-        if (!params.applicationName.match(/\-database$/)) {
-            params.applicationName += '-database';
-        }
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
     
-        // FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'Invalid application name';
@@ -146,12 +141,7 @@ export class DatabaseRepositoryReader {
         if (!params.version) {
             throw 'Please provide a version.';
         }
-        if (!params.applicationName) {
-            throw 'Please provide an application name.';
-        }
-        if (!params.applicationName.match(/\-database$/)) {
-            params.applicationName += '-database';
-        }
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
 
         const databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -256,7 +246,19 @@ export class DatabaseRepositoryReader {
             });
         }
 
-        if (Object.keys(databaseObject.table).length > 0 && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
+        // get the db name from the drop script if we have one
+        if (databaseObject.setup['01-drop-database']) {
+            const fileContent = await FileUtils.readFile(databaseObject.setup['01-drop-database'].latestFile);
+            const dbMatched = fileContent.match(/\<env\>_[a-z][a-z0-9]{1,2}/i);
+            if (dbMatched) {
+                databaseObject._properties.dbName = dbMatched[0].replace('<env>_', '');
+            }
+        }
+
+
+        if (!databaseObject._properties.dbName &&
+            Object.keys(databaseObject.table).length > 0
+            && Object.keys(databaseObject.table)[0].match(/^([a-z]{2,4})t_/)) {
             const dbNameRegex = /^([a-z]{2,4})t_/g.exec(Object.keys(databaseObject.table)[0]);
             Object.keys(databaseObject.table)[0];
             if (dbNameRegex) {

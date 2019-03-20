@@ -8,13 +8,7 @@ let _spaces = '';
 
 export class LoggerUtils extends UiUtils {
     static logTitle() {
-        console.log(colors.red('\n' +
-            '  ____        _        _                 _           \n' +
-            ' |  _ \\  __ _| |_ __ _| | ___   __ _  __| | ___ _ __ \n' +
-            ' | | | |/ _` | __/ _` | |/ _ \\ / _` |/ _` |/ _ \\ \'__|\n' +
-            ' | |_| | (_| | || (_| | | (_) | (_| | (_| |  __/ |   \n' +
-            ' |____/ \\__,_|\\__\\__,_|_|\\___/ \\__,_|\\__,_|\\___|_|   \n' +
-            '                                                     \n'));
+        console.log(colors.red('### - Application Manager - ###'));
     }
 
     static log(params: LoggingParams) {
@@ -40,7 +34,6 @@ export class LoggerUtils extends UiUtils {
                 typeColor = 'grey';
         }
         const origin = `[${params.origin}${_spaces}`.slice(0, _originMaxLength + 1) + ']';
-        // [MSSQL] - Batch 60:Mark batch as FINISHED
         console.log(
             new Date().toISOString().substr(0, 19) +
             ' - ' +

@@ -4,9 +4,9 @@
         "databaseToUse": "postgres",
         "dependencies": [],
         "fileList": [
-            "..//postgres/schema/00-database-setup/00-stop-connections.sql",
-            "..//postgres/schema/00-database-setup/01-drop-database.sql",
-            "..//postgres/schema/00-database-setup/02-create-database.sql"
+            "..//postgres/release/0.0.0.0/schema/00-database-setup/00-stop-connections.sql",
+            "..//postgres/release/0.0.0.0/schema/00-database-setup/01-drop-database.sql",
+            "..//postgres/release/0.0.0.0/schema/00-database-setup/02-create-database.sql"
         ],
         "changeLog": [
             "Created the database"
@@ -16,7 +16,7 @@
         "userToUse": "root",
         "dependencies": [],
         "fileList": [
-            "..//postgres/schema/00-database-setup/03-timezone.sql"
+            "..//postgres/release/0.0.0.0/schema/00-database-setup/03-timezone.sql"
         ],
         "changeLog": [
             "Changed the timezone"

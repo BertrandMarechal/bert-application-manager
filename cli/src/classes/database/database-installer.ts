@@ -4,6 +4,7 @@ import { LoggerUtils } from "../../utils/logger.utils";
 import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../../utils/postgres.utils";
 import { DatabaseHelper } from "./database-helper";
+import { RepositoryUtils } from "../../utils/repository.utils";
 
 export class DatabaseInstaller {
     private static _origin = 'DatabaseInstaller';
@@ -17,12 +18,7 @@ export class DatabaseInstaller {
             LoggerUtils.warning({ origin: this._origin, message: 'No environment provided, the installation will be ran for local' });
             params.environment = 'local';
         }
-        if (!params.applicationName) {
-            throw 'No application name provided, please use the -an parameter.';
-        }
-        if (!params.applicationName.match(/\-database$/)) {
-            params.applicationName += '-database';
-        }
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
 
         // get the application and its versions
         const databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);

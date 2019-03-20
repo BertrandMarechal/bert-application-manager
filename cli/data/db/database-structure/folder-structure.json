@@ -10,6 +10,32 @@
                         {
                             "fileName": "version.json",
                             "fileSource": "0.0.0.0.json"
+                        },
+                        {
+                            "folderName": "schema",
+                            "children": [
+                                {
+                                    "folderName": "00-database-setup",
+                                    "children": [
+                                        {
+                                            "fileName": "00-stop-connections.sql",
+                                            "fileSource": "stop_database_connections.sql"
+                                        },
+                                        {
+                                            "fileName": "01-drop-database.sql",
+                                            "fileSource": "drop_database.sql"
+                                        },
+                                        {
+                                            "fileName": "02-create-database.sql",
+                                            "fileSource": "create_database.sql"
+                                        },
+                                        {
+                                            "fileName": "03-timezone.sql",
+                                            "fileSource": "timezone.sql"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -19,6 +45,20 @@
                         {
                             "fileName": "version.json",
                             "fileSource": "0.1.0.0.json"
+                        },
+                        {
+                            "folderName": "schema",
+                            "children": [
+                                {
+                                    "folderName": "03-tables",
+                                    "children": [
+                                        {
+                                            "fileName": "<db>t_version_ver.sql",
+                                            "fileSource": "version_table.sql"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 }
@@ -28,25 +68,7 @@
             "folderName": "schema",
             "children": [
                 {
-                    "folderName": "00-database-setup",
-                    "children": [
-                        {
-                            "fileName": "00-stop-connections.sql",
-                            "fileSource": "stop_database_connections.sql"
-                        },
-                        {
-                            "fileName": "01-drop-database.sql",
-                            "fileSource": "drop_database.sql"
-                        },
-                        {
-                            "fileName": "02-create-database.sql",
-                            "fileSource": "create_database.sql"
-                        },
-                        {
-                            "fileName": "03-timezone.sql",
-                            "fileSource": "timezone.sql"
-                        }
-                    ]
+                    "folderName": "00-database-setup"
                 },
                 {
                     "folderName": "01-types"
@@ -86,13 +108,7 @@
                     ]
                 },
                 {
-                    "folderName": "03-tables",
-                    "children": [
-                        {
-                            "fileName": "<db>_version_ver.sql",
-                            "fileSource": "version_table.sql"
-                        }
-                    ]
+                    "folderName": "03-tables"
                 },
                 {
                     "folderName": "04-sequences"

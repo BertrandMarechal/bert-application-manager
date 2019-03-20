@@ -10,11 +10,21 @@ export type RepositoryType = 'postgres' | 'serverless' | 'frontend';
 export class RepositoryUtils {
     private static origin = 'RepositoryUtils';
 
-    private static processFileName(fileName: string) {
-        return fileName.replace(/[\/\/]|[\\\\]/g, '/');
+    static async checkOrGetApplicationName(params: {applicationName: string}, type: string) {
+        if (!params.applicationName) {
+            params.applicationName = await RepositoryUtils.getRepoName();
+            if (!params.applicationName) {
+                throw 'No application name provided, please use the -an parameter.';
+            }
+        }
+        if (type && !params.applicationName.match(new RegExp(`\-${type}$`))) {
+            params.applicationName += `-${type}`;
+        }
     }
-    static async readRepository (startPath: string, type: RepositoryType, subRepo: boolean = false) {
-        let repoName = '';
+
+    static async getRepoName(): Promise<string> {
+        let repoName = '';        
+        const startPath = path.resolve(process.cwd());
         if (FileUtils.checkIfFolderExists(path.resolve(startPath, '.git'))) {
             const gitFileData = await FileUtils.readFile(path.resolve(startPath, '.git', 'config'));
             const repoUrlRegexResult = gitFileData.match(/\/.*?\.git$/gim);
@@ -24,8 +34,18 @@ export class RepositoryUtils {
                 LoggerUtils.info({ origin: 'RepositoryUtils', message: `Wotking with "${repoName}"` });
             }
         }
+        return repoName;
+    }
+
+    static async readRepository (params: {
+        startPath?: string,
+        type: RepositoryType,
+        subRepo?: boolean
+    }) {
+        const repoName: string = await RepositoryUtils.getRepoName();
+        const startPath = params.startPath || path.resolve(process.cwd());
         if (!repoName) {
-            if (!subRepo) {
+            if (!params.subRepo) {
                 // check if the sub folders are git folders
                 const gitFileList = await FileUtils.getFileList({
                     startPath: startPath,
@@ -37,7 +57,11 @@ export class RepositoryUtils {
                         const subFolder = gitFileList[i].replace(/\/.git\/config$/, '');
                         
                         try {
-                            await RepositoryUtils.readRepository(subFolder, type, true);
+                            await RepositoryUtils.readRepository({
+                                startPath: subFolder,
+                                type: params.type,
+                                subRepo: true
+                            });
                         } catch (error) {
                             LoggerUtils.info({origin: this.origin, message: error});
                         }
@@ -50,22 +74,22 @@ export class RepositoryUtils {
             }
         } else {
 
-            if (!type) {
+            if (!params.type) {
                 if (repoName.match(/\-middle\-tier$/g)) {
-                    type = 'serverless';
+                    params.type = 'serverless';
                 } else if (repoName.match(/\-database$/g)) {
-                    type = 'postgres';
+                    params.type = 'postgres';
                 } else if (repoName.match(/\-frontend$/g)) {
-                    type = 'frontend';
+                    params.type = 'frontend';
                 } else {
                     throw 'No repository type provided. Please ensure you provide it through the "--type (-t)" option';
                 }
             }
-            if (type === 'serverless') {
+            if (params.type === 'serverless') {
                 await ServerlessRepositoryReader.readRepo(startPath, repoName);
-            } else if (type === 'postgres') {
+            } else if (params.type === 'postgres') {
                 await DatabaseRepositoryReader.readRepo(startPath, repoName);
-            } else if (type === 'frontend') {
+            } else if (params.type === 'frontend') {
                 await FrontendRepositoryReader.readRepo(startPath, repoName);
             }
         }

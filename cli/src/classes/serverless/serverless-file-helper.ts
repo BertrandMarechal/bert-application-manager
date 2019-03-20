@@ -8,6 +8,7 @@ import colors from 'colors';
 import yamljs from 'yamljs';
 import {ServerlessRepositoryReader} from './serverless-repo-reader';
 import { indentationSpaces } from '../database/database-file-helper';
+import { RepositoryUtils } from '../../utils/repository.utils';
 
 
 export class ServerlessFileHelper {
@@ -18,12 +19,8 @@ export class ServerlessFileHelper {
         applicationName: string;
         filter: string;
     }) {
-        if (!params.applicationName) {
-            throw 'Please provide an application name';
-        }
-        if (!params.applicationName.match(/\-middle-tier$/)) {
-            params.applicationName += '-middle-tier';
-        }
+        await RepositoryUtils.checkOrGetApplicationName(params, 'middle-tier');
+        
         const applicationDatabaseName = params.applicationName.replace(/\-middle-tier$/, '-database');
 
         // read the db File, to get the list of functions

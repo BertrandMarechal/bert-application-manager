@@ -6,6 +6,7 @@ import { FileUtils } from '../../utils/file.utils';
 import { LoggerUtils } from '../../utils/logger.utils';
 import { SyntaxUtils } from '../../utils/syntax.utils';
 import {NgrxFileHelper} from './angular/ngrx-file-herlper';
+import { RepositoryUtils } from '../../utils/repository.utils';
 
 const indentation = '  ';
 
@@ -23,12 +24,8 @@ export class FrontendFileHelper {
         filter: string;
     }) {
 
-        if (!params.applicationName) {
-            throw 'Please provide an application name';
-        }
-        if (!params.applicationName.match(/\-frontend$/)) {
-            params.applicationName += '-frontend';
-        }
+        await RepositoryUtils.checkOrGetApplicationName(params, 'frontend');
+        
         const applicationDatabaseName = params.applicationName.replace(/\-frontend$/, '-database');
 
         // read the db File, to get the list of functions

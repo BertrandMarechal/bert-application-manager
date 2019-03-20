@@ -5,7 +5,7 @@ import { FileUtils } from '../../utils/file.utils';
 export class DatabaseHelper {
     static dbTemplatesFolder = path.resolve(process.argv[1], '../../data/db/templates');
     static dbFolderStructureFolder = path.resolve(process.argv[1], '../../data/db/database-structure');
-    static tempFolderPath = path.resolve(process.argv[1], '../../../../temp');
+    static tempFolderPath = path.resolve(process.argv[1], '../../../temp');
     static postgresDbFilesPath = DatabaseHelper.tempFolderPath + '/postgres-dbs.json';
     static postgresDbParamsPath = DatabaseHelper.tempFolderPath + '/postgres-db-params.json';
     static postgresDbDataPath = DatabaseHelper.tempFolderPath + '/postgres-db-data.json';

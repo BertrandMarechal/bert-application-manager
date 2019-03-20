@@ -95,8 +95,8 @@ export class FileUtils {
         }
     }
 
-    static readFile(fileName: string): Promise<string> {
-        return new Promise((resolve, reject) => {
+    static async readFile(fileName: string): Promise<string> {
+        return await new Promise((resolve, reject) => {
             fs.readFile(fileName, (error, data) => {
                 if (error) {
                     console.log(error);

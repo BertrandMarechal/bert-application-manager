@@ -133,7 +133,9 @@ const main = async () => {
                 switch (repoOptions.action) {
                     case 'read':
                     case 'r':
-                        await RepositoryUtils.readRepository(path.resolve(process.cwd()), repoOptions.type);
+                        await RepositoryUtils.readRepository({
+                            type: repoOptions.type
+                        });
                         break;
                     default:
                         break;

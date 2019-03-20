@@ -6,6 +6,7 @@ import { LoggerUtils } from "../../utils/logger.utils";
 import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";
+import { RepositoryUtils } from "../../utils/repository.utils";
 
 export const intentationSpaceNumber = 4;
 export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
@@ -19,14 +20,9 @@ export class DatabaseFileHelper {
         filter: string;
     }): Promise<boolean> {
         LoggerUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
-
-        if (!params.applicationName) {
-            throw 'Please provide an application name';
-        }
-        if (!params.applicationName.match(/\-database$/)) {
-            params.applicationName += '-database';
-        }
-
+        
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
+        
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'This application does not exist';
@@ -78,7 +74,7 @@ export class DatabaseFileHelper {
 
         LoggerUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
 
-        bar.start(tables.length * 4, 0);
+        // bar.start(tables.length * 4, 0);
 
         
         const functionsToAdd: string[] = [];
@@ -101,7 +97,7 @@ export class DatabaseFileHelper {
                     'list_json_object': '',
                     'list_sorting': '',
                 }
-                const dbParamsFields = Object.keys(dbParams);
+                const dbParamsFields = Object.keys(dbParams);                
                 const nameWithoutPrefixAndSuffix = tableName
                     .replace(new RegExp(`\_${databaseObject.table[tableName].tableSuffix}$`), '')
                     .replace(new RegExp(`^${databaseObject._properties.dbName}t\_`), '');
@@ -210,7 +206,7 @@ export class DatabaseFileHelper {
                 // todo deal with joins later
                 dbParams.joins = '';
     
-                const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, '07-functions', nameWithoutPrefixAndSuffix);
+                const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix);
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
@@ -270,7 +266,7 @@ export class DatabaseFileHelper {
                             filesCreated++;
                             
                             functionsToAdd.push(
-                                ['../','postgres', 'release', versionToChange, '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
+                                ['../','postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
                             );
                         }
                         bar.update(4 * t + i);
@@ -278,7 +274,7 @@ export class DatabaseFileHelper {
                 }
             }
         }
-        bar.stop();
+        // bar.stop();
         let feedback = 'No files created.';
 
         if (filesCreated) {
