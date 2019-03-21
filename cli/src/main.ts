@@ -38,7 +38,7 @@ const main = async () => {
                         await DatabaseRepositoryReader.updateVersionFile({
                             applicationName: dbOptions['application-name'],
                             version: dbOptions.version
-                        });
+                        }, loggerUtils);
                         break;
                     case 'install':
                     case 'i':
@@ -46,7 +46,7 @@ const main = async () => {
                             applicationName: dbOptions['application-name'],
                             environment: dbOptions.environment,
                             version: dbOptions.version
-                        });
+                        }, loggerUtils);
                         break;
                     case 'create-table':
                     case 'ct':
@@ -63,10 +63,10 @@ const main = async () => {
                         break;
                     case 'params':
                     case 'p':
-                        await RepositoryUtils.checkDbParams(
-                            dbOptions.filter,
-                            dbOptions.environment
-                        );
+                        await RepositoryUtils.checkDbParams({
+                            filter: dbOptions.filter,
+                            environment: dbOptions.environment
+                        }, loggerUtils);
                         break;
                     case 'gf':
                     case 'generate-functions':
@@ -74,7 +74,7 @@ const main = async () => {
                             applicationName: dbOptions['application-name'],
                             version: dbOptions['version'],
                             filter: dbOptions.filter,
-                        });
+                        }, loggerUtils);
                         break;
                     default:
                         break;
@@ -94,13 +94,13 @@ const main = async () => {
                 switch (serverlessOptions.action) {
                     case 'l':
                     case 'list-functions':
-                        await RepositoryUtils.listFunctions(serverlessOptions.filter);
+                        await RepositoryUtils.listFunctions(serverlessOptions.filter, loggerUtils);
                     case 'gf':
                     case 'generate-functions':
                         await ServerlessFileHelper.generateFunctions({
                             applicationName: serverlessOptions['application-name'],
                             filter: serverlessOptions.filter
-                        });
+                        }, loggerUtils);
                     default:
                         break;
                 }
@@ -118,13 +118,13 @@ const main = async () => {
                 switch (frontendOptions.action) {
                     case 'l':
                     case 'list-functions':
-                        await RepositoryUtils.listFunctions(frontendOptions.filter);
+                        await RepositoryUtils.listFunctions(frontendOptions.filter, loggerUtils);
                     case 'g':
                     case 'generate-code':
                         await FrontendFileHelper.generateCode({
                             applicationName: frontendOptions['application-name'],
                             filter: frontendOptions.filter
-                        });
+                        }, loggerUtils);
                     default:
                         break;
                 }
@@ -142,7 +142,7 @@ const main = async () => {
                     case 'r':
                         await RepositoryUtils.readRepository({
                             type: repoOptions.type
-                        });
+                        }, loggerUtils);
                         break;
                     default:
                         break;

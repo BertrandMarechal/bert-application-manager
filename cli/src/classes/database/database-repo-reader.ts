@@ -1,5 +1,4 @@
 import { FileUtils } from "../../utils/file.utils";
-import { LoggerUtils } from "../../utils/logger.utils";
 import path from 'path';
 import colors from 'colors';
 import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../../models/database-file.model";
@@ -16,7 +15,7 @@ interface DatabaseStructureNode {
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
-    static async readRepo(startPath: string, repoName: string, silent?: boolean) {
+    static async readRepo(startPath: string, repoName: string, uiUtils: UiUtils, silent?: boolean) {
         // we have to get the list of files and read them
         const versionFiles = await FileUtils.getFileList({
             startPath: path.resolve(startPath, DatabaseHelper.releasesPath),
@@ -30,7 +29,8 @@ export class DatabaseRepositoryReader {
         await DatabaseHelper.updateApplicationDatabaseObject(repoName,
             await DatabaseRepositoryReader._extractObjectInformation(
                 await DatabaseHelper.getApplicationDatabaseFiles(repoName),
-                startPath
+                startPath,
+                uiUtils
             )
         );
 
@@ -58,13 +58,13 @@ export class DatabaseRepositoryReader {
             feedback += `, ` +  colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
         }
 
-        LoggerUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
+        uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
     }
 
     static async initDatabase(params: {
         applicationName: string;
     }, uiUtils: UiUtils) {
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
     
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -96,7 +96,7 @@ export class DatabaseRepositoryReader {
         );
         await DatabaseRepositoryReader._createDBFolderStructure(dbStructure, databaseObject._properties.path, dbName);
         uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Database structure created for ${dbName}` });
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, true);
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils, true);
     }
 
     private static _isDatabaseNameValid(name: string) {
@@ -137,11 +137,11 @@ export class DatabaseRepositoryReader {
     static async updateVersionFile(params: {
         applicationName: string;
         version: string;
-    }) {
+    }, uiUtils: UiUtils) {
         if (!params.version) {
             throw 'Please provide a version.';
         }
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -168,7 +168,7 @@ export class DatabaseRepositoryReader {
                 fileList: fileList,
                 databaseToUse: ''
             }],
-        }], databaseObject._properties.path);
+        }], databaseObject._properties.path, uiUtils);
         
         const versionFileList: string[] = [];
         // order the objects
@@ -184,7 +184,7 @@ export class DatabaseRepositoryReader {
         return filesRead;
     }
 
-    private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[], path: string): Promise<DatabaseObject> {
+    private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[], path: string, uiUtils: UiUtils): Promise<DatabaseObject> {
         databaseFiles = databaseFiles.filter(x => x.versionName === 'current' || x.versionName.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/));
         databaseFiles.sort((a, b) => {
             let vA = 0, vB = 0;
@@ -242,7 +242,7 @@ export class DatabaseRepositoryReader {
         if (Object.keys(databaseObject.table).length > 0) {
             Object.keys(databaseObject.table).forEach(async key => {
                 databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
-                await databaseObject.table[key].analyzeFile();
+                await databaseObject.table[key].analyzeFile(uiUtils);
             });
         }
 
@@ -301,10 +301,13 @@ export class DatabaseRepositoryReader {
         return databaseObject;
     }
 
-    static async checkParams(filter: string, env: string) {
-        if (!env) {
-            LoggerUtils.warning({ origin: DatabaseRepositoryReader._origin, message: 'No environment provided, the check will be ran for local' });
-            env = 'local';
+    static async checkParams(params: {
+        filter: string,
+        environment: string
+    }, uiUtils: UiUtils) {
+        if (!params.environment) {
+            uiUtils.warning({ origin: DatabaseRepositoryReader._origin, message: 'No environment provided, the check will be ran for local' });
+            params.environment = 'local';
         }
         // get the database parameters
         FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
@@ -315,8 +318,8 @@ export class DatabaseRepositoryReader {
         let databasesToCheck = Object.keys(fileDataDatabaseObject);
         
         // filter them if needed
-        if (filter) {
-            databasesToCheck = databasesToCheck.filter(x => x.indexOf(filter) > -1);
+        if (params.filter) {
+            databasesToCheck = databasesToCheck.filter(x => x.indexOf(params.filter) > -1);
         }
         // get the parameters to set
         let databaseParams: { databaseName: string; paramName: string }[] = [];
@@ -347,27 +350,27 @@ export class DatabaseRepositoryReader {
             let value = '';
             if (databaseParametersFromDb &&
                 databaseParametersFromDb[element.databaseName] &&
-                databaseParametersFromDb[element.databaseName][env] &&
-                databaseParametersFromDb[element.databaseName][env][element.paramName]) {
-                value = databaseParametersFromDb[element.databaseName][env][element.paramName];
+                databaseParametersFromDb[element.databaseName][params.environment] &&
+                databaseParametersFromDb[element.databaseName][params.environment][element.paramName]) {
+                value = databaseParametersFromDb[element.databaseName][params.environment][element.paramName];
             }
-            const paramValue = await LoggerUtils.question({
+            const paramValue = await uiUtils.question({
                 origin: DatabaseRepositoryReader._origin,
-                text: `Please enter the value for ${colors.yellow(env)} - ${colors.green(element.databaseName)} - ${colors.cyan(element.paramName)} ${value ? `(current : "${value}") ` : ''}:`
+                text: `Please enter the value for ${colors.yellow(params.environment)} - ${colors.green(element.databaseName)} - ${colors.cyan(element.paramName)} ${value ? `(current : "${value}") ` : ''}:`
             });
             if (paramValue) {
                 if (!databaseParametersFromDb[element.databaseName]) {
                     databaseParametersFromDb[element.databaseName] = {};
                 }
-                if (!databaseParametersFromDb[element.databaseName][env]) {
-                    databaseParametersFromDb[element.databaseName][env] = {};
+                if (!databaseParametersFromDb[element.databaseName][params.environment]) {
+                    databaseParametersFromDb[element.databaseName][params.environment] = {};
                 }
-                databaseParametersFromDb[element.databaseName][env][element.paramName] = paramValue;
+                databaseParametersFromDb[element.databaseName][params.environment][element.paramName] = paramValue;
             } else {
-                LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: 'No value provided => value not changed' });
+                uiUtils.info({ origin: DatabaseRepositoryReader._origin, message: 'No value provided => value not changed' });
             }
         }
-        LoggerUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
+        uiUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
         FileUtils.writeFileSync(DatabaseHelper.postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
     }
 }

@@ -2,7 +2,7 @@ import { threadId } from "worker_threads";
 import { inherits } from "util";
 import { FileUtils } from "../utils/file.utils";
 import { SyntaxUtils } from "../utils/syntax.utils";
-import { LoggerUtils } from "../utils/logger.utils";
+import { UiUtils } from "../utils/ui.utils";
 
 export type DatabaseFileType =
     | 'setup'
@@ -184,12 +184,12 @@ export class DatabaseTable extends DatabaseSubObject {
         this.tags = {};
     }
 
-    async analyzeFile() {
+    async analyzeFile(uiUtils: UiUtils) {
         let tableFile = '';
         try {
             tableFile = await FileUtils.readFile(this.latestFile);
         } catch (error) {
-            LoggerUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
+            uiUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
             return;
         }
         while (tableFile.match(/  /)) {

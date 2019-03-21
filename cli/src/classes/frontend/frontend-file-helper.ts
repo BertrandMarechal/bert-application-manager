@@ -3,10 +3,10 @@ import {DatabaseHelper} from '../database/database-helper';
 import { Bar, Presets } from "cli-progress";
 import { DatabaseObject, DatabaseTableField } from '../../models/database-file.model';
 import { FileUtils } from '../../utils/file.utils';
-import { LoggerUtils } from '../../utils/logger.utils';
 import { SyntaxUtils } from '../../utils/syntax.utils';
 import {NgrxFileHelper} from './angular/ngrx-file-herlper';
 import { RepositoryUtils } from '../../utils/repository.utils';
+import { UiUtils } from '../../utils/ui.utils';
 
 const indentation = '  ';
 
@@ -22,9 +22,9 @@ export class FrontendFileHelper {
     static async generateCode(params: {
         applicationName: string;
         filter: string;
-    }) {
+    }, uiUtils: UiUtils) {
 
-        await RepositoryUtils.checkOrGetApplicationName(params, 'frontend');
+        await RepositoryUtils.checkOrGetApplicationName(params, 'frontend', uiUtils);
         
         const applicationDatabaseName = params.applicationName.replace(/\-frontend$/, '-database');
 
@@ -77,7 +77,7 @@ export class FrontendFileHelper {
                     .replace(/<fields>/g, FrontendFileHelper._createModelFile(
                         Object.keys(databaseObject.table[tableName].fields).map(key => 
                             databaseObject.table[tableName].fields[key]
-                        )
+                        ), uiUtils
                     ))
             });
             // functions
@@ -230,9 +230,9 @@ export class FrontendFileHelper {
         }
         bar.stop();
         if (filesToCreate.length) {
-            LoggerUtils.success({origin: this._origin, message: `Created ${filesToCreate.length} files`});
+            uiUtils.success({origin: this._origin, message: `Created ${filesToCreate.length} files`});
         } else {
-            LoggerUtils.warning({origin: this._origin, message: `No files created`});
+            uiUtils.warning({origin: this._origin, message: `No files created`});
         }
     }
 
@@ -273,14 +273,14 @@ export class FrontendFileHelper {
         return f;
     }
 
-    private static _createModelFile(fields: DatabaseTableField[]) {
+    private static _createModelFile(fields: DatabaseTableField[], uiUtils: UiUtils) {
         
         return fields.map(field => {
-            return `${indentation}${field.camelCasedName}: ${FrontendFileHelper._databaseTypeToFrontendType(field.type)};`
+            return `${indentation}${field.camelCasedName}: ${FrontendFileHelper._databaseTypeToFrontendType(field.type, uiUtils)};`
         }).join('\n');
     }
 
-    private static _databaseTypeToFrontendType(databaseType: string): string {
+    private static _databaseTypeToFrontendType(databaseType: string, uiUtils: UiUtils): string {
         const type = databaseType
             .trim()
             .toLowerCase()
@@ -308,7 +308,7 @@ export class FrontendFileHelper {
             case 'jsonb':
                 return 'any';
             default:
-                LoggerUtils.warning({origin: this._origin, message: `Database Type "${databaseType}" not mapped`})
+                uiUtils.warning({origin: this._origin, message: `Database Type "${databaseType}" not mapped`})
                 break;
         }
         return 'any';

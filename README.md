@@ -16,7 +16,7 @@ cls && npm link && aws-mock start-server
   - [ ] create modules files
   - [ ] create components files
 - [ ] read version files on install (version files only), and check file orders
-- [ ] pass the uiUtils object to the lower levels (for later integration)
+- [x] pass the uiUtils object to the lower levels (for later integration)
 - [ ] check connection parameters on DB installtion
 
 

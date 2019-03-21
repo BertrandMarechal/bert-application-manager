@@ -1,7 +1,6 @@
 import {DatabaseHelper} from '../database/database-helper';
 import { Bar, Presets } from "cli-progress";
 import { DatabaseObject } from '../../models/database-file.model';
-import { LoggerUtils } from '../../utils/logger.utils';
 import { FileUtils } from '../../utils/file.utils';
 import path from 'path';
 import colors from 'colors';
@@ -9,6 +8,7 @@ import yamljs from 'yamljs';
 import {ServerlessRepositoryReader} from './serverless-repo-reader';
 import { indentationSpaces } from '../database/database-file-helper';
 import { RepositoryUtils } from '../../utils/repository.utils';
+import { UiUtils } from '../../utils/ui.utils';
 
 
 export class ServerlessFileHelper {
@@ -18,8 +18,8 @@ export class ServerlessFileHelper {
     static async generateFunctions(params: {
         applicationName: string;
         filter: string;
-    }) {
-        await RepositoryUtils.checkOrGetApplicationName(params, 'middle-tier');
+    }, uiUtils: UiUtils) {
+        await RepositoryUtils.checkOrGetApplicationName(params, 'middle-tier', uiUtils);
         
         const applicationDatabaseName = params.applicationName.replace(/\-middle-tier$/, '-database');
 
@@ -157,9 +157,9 @@ export class ServerlessFileHelper {
         }
 
         if (filesCreated) {
-            LoggerUtils.success({origin: this._origin, message: feedback});
+            uiUtils.success({origin: this._origin, message: feedback});
         } else {
-            LoggerUtils.warning({origin: this._origin, message: feedback});
+            uiUtils.warning({origin: this._origin, message: feedback});
         }
 
         const takenNames: {
@@ -297,7 +297,8 @@ export class ServerlessFileHelper {
             
             await ServerlessRepositoryReader.readRepo(
                 databaseObject._properties.path.replace('database', 'middle-tier'),
-                params.applicationName
+                params.applicationName,
+                uiUtils
             );
         }
         return await Promise.resolve(true);

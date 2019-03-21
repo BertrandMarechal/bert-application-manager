@@ -1,18 +1,18 @@
 import { FileUtils } from "./file.utils";
 import path from "path";
 import { ServerlessRepositoryReader } from "../classes/serverless/serverless-repo-reader";
-import { LoggerUtils } from "./logger.utils";
 import { DatabaseRepositoryReader } from "../classes/database/database-repo-reader";
 import { FrontendRepositoryReader } from "../classes/frontend/frontend-repo-reader";
+import { UiUtils } from "./ui.utils";
 
 export type RepositoryType = 'postgres' | 'serverless' | 'frontend';
 
 export class RepositoryUtils {
     private static origin = 'RepositoryUtils';
 
-    static async checkOrGetApplicationName(params: {applicationName: string}, type: string) {
+    static async checkOrGetApplicationName(params: {applicationName: string}, type: string, uiUtils: UiUtils) {
         if (!params.applicationName) {
-            params.applicationName = await RepositoryUtils.getRepoName();
+            params.applicationName = await RepositoryUtils.getRepoName(uiUtils);
             if (!params.applicationName) {
                 throw 'No application name provided, please use the -an parameter.';
             }
@@ -22,7 +22,7 @@ export class RepositoryUtils {
         }
     }
 
-    static async getRepoName(): Promise<string> {
+    static async getRepoName(uiUtils: UiUtils): Promise<string> {
         let repoName = '';        
         const startPath = path.resolve(process.cwd());
         if (FileUtils.checkIfFolderExists(path.resolve(startPath, '.git'))) {
@@ -31,7 +31,7 @@ export class RepositoryUtils {
             if (repoUrlRegexResult) {
                 const repoUrlRegexResultSplit = repoUrlRegexResult[0].split(/\//);
                 repoName = repoUrlRegexResultSplit[repoUrlRegexResultSplit.length - 1].replace('.git', '');
-                LoggerUtils.info({ origin: 'RepositoryUtils', message: `Wotking with "${repoName}"` });
+                uiUtils.info({ origin: 'RepositoryUtils', message: `Wotking with "${repoName}"` });
             }
         }
         return repoName;
@@ -41,8 +41,8 @@ export class RepositoryUtils {
         startPath?: string,
         type: RepositoryType,
         subRepo?: boolean
-    }) {
-        const repoName: string = await RepositoryUtils.getRepoName();
+    }, uiUtils: UiUtils) {
+        const repoName: string = await RepositoryUtils.getRepoName(uiUtils);
         const startPath = params.startPath || path.resolve(process.cwd());
         if (!repoName) {
             if (!params.subRepo) {
@@ -61,9 +61,9 @@ export class RepositoryUtils {
                                 startPath: subFolder,
                                 type: params.type,
                                 subRepo: true
-                            });
+                            }, uiUtils);
                         } catch (error) {
-                            LoggerUtils.info({origin: this.origin, message: error});
+                            uiUtils.info({origin: this.origin, message: error});
                         }
                     }
                 } else {
@@ -86,20 +86,20 @@ export class RepositoryUtils {
                 }
             }
             if (params.type === 'serverless') {
-                await ServerlessRepositoryReader.readRepo(startPath, repoName);
+                await ServerlessRepositoryReader.readRepo(startPath, repoName, uiUtils);
             } else if (params.type === 'postgres') {
-                await DatabaseRepositoryReader.readRepo(startPath, repoName);
+                await DatabaseRepositoryReader.readRepo(startPath, repoName, uiUtils);
             } else if (params.type === 'frontend') {
-                await FrontendRepositoryReader.readRepo(startPath, repoName);
+                await FrontendRepositoryReader.readRepo(startPath, repoName, uiUtils);
             }
         }
     }
 
-    static async checkDbParams(filter: string, environment: string) {
-        await DatabaseRepositoryReader.checkParams(filter, environment);
+    static async checkDbParams(params: {filter: string, environment: string}, uiUtils: UiUtils) {
+        await DatabaseRepositoryReader.checkParams(params, uiUtils);
     }
 
-    static async listFunctions(filter: string) {
-        await ServerlessRepositoryReader.listFunctions(filter);
+    static async listFunctions(filter: string, uiUtils: UiUtils) {
+        await ServerlessRepositoryReader.listFunctions(filter, uiUtils);
     }
 }

@@ -1,11 +1,11 @@
-import { LoggerUtils } from "../../utils/logger.utils";
+import { UiUtils } from "../../utils/ui.utils";
 
 export class FrontendRepositoryReader {
     private static _origin = 'FrontendRepositoryReader';
 
-    static async readRepo(startPath: string, repoName: string, silent?: boolean) {
+    static async readRepo(startPath: string, repoName: string, uiUtils: UiUtils, silent?: boolean) {
         // todo
-        LoggerUtils.success({ origin: FrontendRepositoryReader._origin, message: `Repository read` });
+        uiUtils.success({ origin: FrontendRepositoryReader._origin, message: `Repository read` });
     }
 
 }

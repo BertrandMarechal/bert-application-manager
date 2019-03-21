@@ -1,5 +1,5 @@
 import PGP from 'pg-promise';
-import { LoggerUtils } from './logger.utils';
+import { UiUtils } from './ui.utils';
 
 export class PostgresUtils {
     db: any;
@@ -15,14 +15,14 @@ export class PostgresUtils {
         this.connections = {};
     }
 
-    setConnectionString(connectionString: string) {
+    setConnectionString(connectionString: string, uiUtils: UiUtils) {
         if (this.connectionString !== connectionString) {
             this.connectionString = connectionString;
             if (!this.connections[this.connectionString]) {
                 this.connections[this.connectionString] = this.pgp(this.connectionString);
             }
             this.db = this.connections[this.connectionString];
-            LoggerUtils.info({
+            uiUtils.info({
                 origin: 'PostgresUtils',
                 message: `Updated connection string, ${this.connectionString.replace(/\:.*?\@/gi, ':XXXXXXXXX@')}`
             });

@@ -2,7 +2,6 @@ import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag } from "../../m
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { LoggerUtils } from "../../utils/logger.utils";
 import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";
@@ -18,7 +17,7 @@ export class DatabaseFileHelper {
 
     private static async _getVersionToChange(params: {
         version: string;
-    }, databaseVersionFiles: DatabaseVersionFile[]): Promise<string> {
+    }, databaseVersionFiles: DatabaseVersionFile[], uiUtils: UiUtils): Promise<string> {
         const databaseVersionFile: DatabaseVersionFile | undefined = databaseVersionFiles[databaseVersionFiles.length - 1];
         let versionToChange = params.version;
         if (params.version && databaseVersionFile.versionName !== params.version) {
@@ -32,14 +31,14 @@ export class DatabaseFileHelper {
             if (lastVersion.versionName !== 'current') {
                 let ok = false;
                 while (!ok) {
-                    const response = await LoggerUtils.question({origin: this._origin, text: `The last version is not current (last version = ${versionToChange}). If you wish to amend this version, please use "y". If you want to create a new version (current folder), please use "c".`});
+                    const response = await uiUtils.question({origin: this._origin, text: `The last version is not current (last version = ${versionToChange}). If you wish to amend this version, please use "y". If you want to create a new version (current folder), please use "c".`});
                     if (response === 'c') {
                         versionToChange = 'current';
                         ok = true;
                     } else if (response === 'y') {
                         ok = true;
                     } else {
-                        LoggerUtils.warning({origin: this._origin, message: 'Incorrect response'});
+                        uiUtils.warning({origin: this._origin, message: 'Incorrect response'});
                     }
                 }
             }
@@ -50,10 +49,10 @@ export class DatabaseFileHelper {
         applicationName: string;
         version: string;
         filter: string;
-    }): Promise<boolean> {
-        LoggerUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
+    }, uiUtils: UiUtils): Promise<boolean> {
+        uiUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
         
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
         
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -61,7 +60,7 @@ export class DatabaseFileHelper {
         }
 
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles);
+        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
 
         const actions = [
             'save',
@@ -79,7 +78,7 @@ export class DatabaseFileHelper {
             clearOnComplete: true
         }, Presets.shades_grey);
 
-        LoggerUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
+        uiUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
 
         // bar.start(tables.length * 4, 0);
 
@@ -295,19 +294,19 @@ export class DatabaseFileHelper {
         }
 
         if (filesCreated) {
-            LoggerUtils.success({origin: this._origin, message: feedback});
+            uiUtils.success({origin: this._origin, message: feedback});
         } else {
-            LoggerUtils.warning({origin: this._origin, message: feedback});
+            uiUtils.warning({origin: this._origin, message: feedback});
         }
 
         if (filesCreated || filesOverwritten) {
             // if something has been changed, we update the file
-            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, functionsToAdd, params.applicationName);
+            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, functionsToAdd, params.applicationName, uiUtils);
         }
         return await Promise.resolve(true);
     }
 
-    private static async updateVersionFile(filePath: string, version: string, filePaths: string[], applicationName: string) {
+    private static async updateVersionFile(filePath: string, version: string, filePaths: string[], applicationName: string, uiUtils: UiUtils) {
         
             // if something has been changed, we update the file
             const newVersionJsonPath = path.resolve(filePath, 'postgres', 'release', version, 'version.json');
@@ -328,7 +327,7 @@ export class DatabaseFileHelper {
             FileUtils.createFolderStructureIfNeeded(newVersionJsonPath);
             FileUtils.writeFileSync(newVersionJsonPath, JSON.stringify(versionJsonFile, null, 2));
             
-            await DatabaseRepositoryReader.readRepo(filePath, applicationName);
+            await DatabaseRepositoryReader.readRepo(filePath, applicationName, uiUtils);
     }
 
     static async createTable(params: {
@@ -353,8 +352,8 @@ export class DatabaseFileHelper {
             }[]
         }
     }, uiUtils: UiUtils) {
-        LoggerUtils.info({origin: this._origin, message: `Getting ready to create table.`});
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database');
+        uiUtils.info({origin: this._origin, message: `Getting ready to create table.`});
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
         
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -362,7 +361,7 @@ export class DatabaseFileHelper {
         }
         
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles);
+        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
 
         if (!params.tableDetails) {
             // we have User Interraction to build the table
@@ -396,13 +395,14 @@ export class DatabaseFileHelper {
             let newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a field name'});
             while (!finished) {
                 while (!DatabaseFileHelper._checkNewNameHasUnderscoresAndAlphanumerics(newFieldName)) {
-                    newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a field name'});
+                    newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a field name (basic types offered here, you can also type your own type)'});
                 }
                 const types = [
                     'text',
                     'integer',
                     'timestamp',
                     'date',
+                    'float',
                     'boolean'
                 ];
                 let selectedType = await uiUtils.question({origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
@@ -477,7 +477,7 @@ export class DatabaseFileHelper {
         
         await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, [
             ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
-        ], params.applicationName);
+        ], params.applicationName, uiUtils);
     }
     private static _checkNewNameHasUnderscoresAndAlphanumerics(tableName: string): boolean {
         return /^[a-z0-9_]+$/i.test(tableName);

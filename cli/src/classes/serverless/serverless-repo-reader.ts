@@ -1,22 +1,21 @@
 import { FileUtils } from "../../utils/file.utils";
 import * as YAML from 'yamljs';
-import { LoggerUtils } from "../../utils/logger.utils";
 import { ServerlessFile } from "../../models/serverless-file.model";
 import path from 'path';
 import colors from 'colors';
 import { Bar, Presets } from 'cli-progress';
+import { UiUtils } from "../../utils/ui.utils";
 
 export class ServerlessRepositoryReader {
     private static _origin = 'ServerlessRepositoryReader';
     private static _tempFolderPath = path.resolve(process.argv[1], '../../../temp');
     private static _serverlessDbPath = ServerlessRepositoryReader._tempFolderPath + '/serverless-db.json';
 
-    static async readRepo(startPath: string, repoName: string) {
+    static async readRepo(startPath: string, repoName: string, uiUtils: UiUtils) {
         const files = await FileUtils.getFileList({
             startPath: startPath,
             filter: /serverless.yml/
         });
-        // LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `${files.length} files found` });
         const variableFiles = await FileUtils.getFileList({
             startPath: startPath,
             filter: /variables.yml/
@@ -30,9 +29,8 @@ export class ServerlessRepositoryReader {
             fileData = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
         }
         fileData[repoName] = serverlessFiles;
-        // LoggerUtils.info({ origin: ServerlessRepositoryReader._origin, message: `Saving data in serverless db file` });
         FileUtils.writeFileSync(ServerlessRepositoryReader._serverlessDbPath, JSON.stringify(fileData, null, 2));
-        LoggerUtils.success({ origin: this._origin, message: `Repository read` });
+        uiUtils.success({ origin: this._origin, message: `Repository read` });
     }
 
     private static _ymlToJson(data: string) {
@@ -94,14 +92,14 @@ export class ServerlessRepositoryReader {
         return serverlessFiles;
     }
 
-    static async listFunctions(filter: string): Promise<void> {
+    static async listFunctions(filter: string, uiUtils: UiUtils): Promise<void> {
         filter = filter || '';
         
         let regex: RegExp = new RegExp(filter);
         const fileData: { [name: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
         
         if (!fileData) {
-            LoggerUtils.warning({ origin: ServerlessRepositoryReader._origin, message: 'No functions found' });
+            uiUtils.warning({ origin: ServerlessRepositoryReader._origin, message: 'No functions found' });
         } else {
 
             const functions: string[] = Object.keys(fileData)
