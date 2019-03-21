@@ -461,6 +461,7 @@ export class DatabaseFileHelper {
         let tableString = `CREATE OR REPLACE TABLE public."${params.tableDetails.name}" (\n`;
         tableString += params.tableDetails.fields.map(field => {
             let fieldString = `${indentation}${field.name} ${field.type}`;
+            fieldString += `${field.isPrimaryKey ? ' PRIMARY KEY' : ''}`;
             fieldString += `${field.unique ? ' UNIQUE' : ''}`;
             fieldString += `${field.notNull ? ' NOT' : ''} NULL`;
             fieldString += `${field.notNull && field.default ? ` DEFAULT ${field.default}` : ''}`;
