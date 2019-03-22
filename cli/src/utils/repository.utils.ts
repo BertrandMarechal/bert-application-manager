@@ -18,7 +18,11 @@ export class RepositoryUtils {
             }
         }
         if (type && !params.applicationName.match(new RegExp(`\-${type}$`))) {
-            params.applicationName += `-${type}`;
+            if (params.applicationName.match(/-database$|-frontend$|-middle-tier$/)) {
+                params.applicationName = params.applicationName.replace(/database$|frontend$|middle-tier$/, type);
+            } else {
+                params.applicationName += `-${type}`;
+            }
         }
     }
 

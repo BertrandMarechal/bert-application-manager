@@ -3,6 +3,11 @@ import * as path from 'path';
 import { LoggerUtils } from './logger.utils';
 import {exec} from 'child_process';
 
+export interface FileAndContent {
+    path: string;
+    fileContent: string;
+}
+
 export class FileUtils {
     static getFileList(params: {
         startPath: string;

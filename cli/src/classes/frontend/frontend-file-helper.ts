@@ -2,18 +2,14 @@ import path from 'path';
 import {DatabaseHelper} from '../database/database-helper';
 import { Bar, Presets } from "cli-progress";
 import { DatabaseObject, DatabaseTableField } from '../../models/database-file.model';
-import { FileUtils } from '../../utils/file.utils';
+import { FileUtils, FileAndContent } from '../../utils/file.utils';
 import { SyntaxUtils } from '../../utils/syntax.utils';
 import {NgrxFileHelper} from './angular/ngrx-file-herlper';
 import { RepositoryUtils } from '../../utils/repository.utils';
 import { UiUtils } from '../../utils/ui.utils';
+import {AngularComponentHelper, ComponentTypes} from './angular/angular-component-helper';
 
 const indentation = '  ';
-
-interface FileAndContent {
-    path: string;
-    fileContent: string;
-}
 
 export class FrontendFileHelper {
     private static _origin = 'FrontendFileHelper';
@@ -27,7 +23,8 @@ export class FrontendFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'frontend', uiUtils);
         
         const applicationDatabaseName = params.applicationName.replace(/\-frontend$/, '-database');
-
+        console.log(applicationDatabaseName);
+        
         // read the db File, to get the list of functions
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(applicationDatabaseName);
         if (!databaseObject) {
@@ -55,10 +52,20 @@ export class FrontendFileHelper {
         const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
         const serviceFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'service.ts'));
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'model.ts'));
+        const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
+        const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
         const ngrxActionsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-actions.ts'));
         const ngrxReducersFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-reducers.ts'));
         const ngrxEffectsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-effects.ts'));
 
+
+        /*
+            name_with_dashes
+            camel_cased_name
+            capitalized_camel_cased_name
+            components_imports
+            components_class_names
+        */
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             const nameWithoutPrefixAndSuffix = tableName
@@ -80,7 +87,7 @@ export class FrontendFileHelper {
                         ), uiUtils
                     ))
             });
-            // functions
+            // service
             const serviceFile: FileAndContent = {
                 path: path.resolve(frontendPath, 'src', 'app', 'services', `${nameWithDashes}.service.ts`),
                 fileContent: serviceFileTemplate
@@ -89,6 +96,7 @@ export class FrontendFileHelper {
                     .replace(/<name_with_dashes>/g, nameWithDashes)
             };
             const serviceFunctions: string[] = [];
+
             // ngrx actions
             const ngrxActionsFile: FileAndContent = {
                 path: path.resolve(frontendPath, 'src', 'app', 'store', 'actions', `${nameWithDashes}.actions.ts`),
@@ -127,11 +135,38 @@ export class FrontendFileHelper {
                     .replace(/<capitalized_camel_cased_name>/g, capitalizedCamelCasedName)
             };
             const ngrxEffects: string[] = [];
+            let components: {
+                name: string;
+                path: string;
+                type: ComponentTypes;
+            }[] = [];
+            const hasAction = {
+                hasList: false,
+                hasGet: false,
+                hasSave: false,
+                hasDelete: false,
+            };
 
             if (!databaseObject.table[tableName].tags.ignore) {
                 // create service file
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
+                    if (!databaseObject.table[tableName].tags[`no-${action}`]) {
+                        switch (action) {
+                            case 'list':
+                                hasAction.hasList = true;
+                                break;
+                            case 'get':
+                                hasAction.hasGet = true;
+                                break;
+                            case 'delete':
+                                hasAction.hasDelete = true;
+                                break;
+                            case 'save':
+                                hasAction.hasSave = true;
+                                break;
+                        }
+                    }
                     
                     bar.update(4 * t + i + 1);
                     const upperCaseObjectName = nameWithoutPrefixAndSuffix.toUpperCase();
@@ -170,6 +205,28 @@ export class FrontendFileHelper {
                         route: ''
                     }));
                 }
+
+                components = [{
+                    name: `${capitalizedCamelCasedName}Component`,
+                    path: `${nameWithDashes}.component`,
+                    type: 'default'
+                }, {
+                    name: `${capitalizedCamelCasedName}ViewComponent`,
+                    path: `${nameWithDashes}-view/${nameWithDashes}-view.component`,
+                    type: 'view'
+                }, {
+                    name: `${capitalizedCamelCasedName}ListComponent`,
+                    path: `${nameWithDashes}-list/${nameWithDashes}-list.component`,
+                    type: 'list'
+                }, {
+                    name: `${capitalizedCamelCasedName}DetailsComponent`,
+                    path: `${nameWithDashes}-details/${nameWithDashes}-details.component`,
+                    type: 'details'
+                }, {
+                    name: `${capitalizedCamelCasedName}EditComponent`,
+                    path: `${nameWithDashes}-edit/${nameWithDashes}-edit.component`,
+                    type: 'edit'
+                }];
             }
             if (serviceFunctions.length) {
                 serviceFile.fileContent = serviceFile.fileContent.replace(
@@ -218,6 +275,70 @@ export class FrontendFileHelper {
                     );
                 filesToCreate.push(ngrxEffectsFile);
             }
+            for (let i = 0; i < components.length; i++) {
+                const component = components[i];
+                const componentFiles = await AngularComponentHelper.getComponentFiles({
+                    ...hasAction,
+                    type: component.type,
+                    path: component.path,
+                    nameWithDashes: nameWithDashes,
+                    camelCasedName: camelCasedName,
+                    capitalizedCamelCasedName: capitalizedCamelCasedName,
+                });
+                
+
+                for (let j = 0; j < componentFiles.length; j++) {
+                    const componentFile = componentFiles[j];
+                    filesToCreate.push({
+                        fileContent: componentFile.fileContent,
+                        path: path.resolve(frontendPath, 'src', 'app', 'modules', nameWithDashes, componentFile.path)
+                    });
+                }
+            }
+
+            // module
+            const moduleFile: FileAndContent = {
+                path: path.resolve(frontendPath, 'src', 'app', 'modules', nameWithDashes, `${nameWithDashes}.module.ts`),
+                fileContent: moduleFileTemplate
+                    .replace(/<camel_cased_name>/g, camelCasedName)
+                    .replace(/<capitalized_camel_cased_name>/g, capitalizedCamelCasedName)
+                    .replace(/<name_with_dashes>/g, nameWithDashes)
+                    .replace(/<components_imports>/g, components.map(component => {
+                        return `import {${component.name}} from './${component.path}';`
+                    }).join('\n'))
+                    .replace(/<components_class_names>/g, components.map(component => {
+                        return `${indentation.repeat(2)}${component.name},`
+                    }).join('\n'))
+            };
+            // routing
+            const routingFile: FileAndContent = {
+                path: path.resolve(frontendPath, 'src', 'app','modules', nameWithDashes, `${nameWithDashes}.routing.ts`),
+                fileContent: routingFileTemplate
+                    .replace(/<camel_cased_name>/g, camelCasedName)
+                    .replace(/<capitalized_camel_cased_name>/g, capitalizedCamelCasedName)
+                    .replace(/<name_with_dashes>/g, nameWithDashes)
+                    .replace(/<components_imports>/g, components.map(component => {
+                        return `import {${component.name}} from './${component.path}';`
+                    }).join('\n'))
+                    .replace(/<components_routes>/g, `${indentation}{\n`+
+                        `${indentation.repeat(2)}path: '',\n` +
+                        `${indentation.repeat(2)}component: ${capitalizedCamelCasedName}Component,\n` +
+                        `${indentation.repeat(2)}children: [{\n` +
+                        `${indentation.repeat(3)}path: ':id',\n` +
+                        `${indentation.repeat(3)}component: ${capitalizedCamelCasedName}ViewComponent,\n` +
+                        `${indentation.repeat(3)}children: [{\n` +
+                        `${indentation.repeat(4)}path: 'details',\n` +
+                        `${indentation.repeat(4)}component: ${capitalizedCamelCasedName}DetailsComponent\n` +
+                        `${indentation.repeat(3)}}, {\n` +
+                        `${indentation.repeat(4)}path: 'edit',\n` +
+                        `${indentation.repeat(4)}component: ${capitalizedCamelCasedName}EditComponent\n` +
+                        `${indentation.repeat(3)}}]\n` +
+                        `${indentation.repeat(2)}}]\n` +
+                        `${indentation}}\n`)
+                    
+            };
+            filesToCreate.push(moduleFile);
+            filesToCreate.push(routingFile);
         }
         bar.stop();
 
