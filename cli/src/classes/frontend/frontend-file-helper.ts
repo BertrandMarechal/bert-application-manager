@@ -284,6 +284,7 @@ export class FrontendFileHelper {
                     nameWithDashes: nameWithDashes,
                     camelCasedName: camelCasedName,
                     capitalizedCamelCasedName: capitalizedCamelCasedName,
+                    fields: Object.keys(databaseObject.table[tableName].fields).map(key => databaseObject.table[tableName].fields[key])
                 });
                 
 

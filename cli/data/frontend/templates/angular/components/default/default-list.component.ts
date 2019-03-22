@@ -7,8 +7,7 @@ import {Store} from '@ngrx/store';
 
 @Component({
   selector: 'app-<name_with_dashes>',
-  templateUrl: './<name_with_dashes>.component.html',
-  styleUrls: ['./<name_with_dashes>.component.scss']
+  templateUrl: './<name_with_dashes>.component.html'
 })
 export class <capitalized_camel_cased_name>Component implements OnInit {
     <camel_cased_name>$: Observable<from<capitalized_camel_cased_name>.State>;

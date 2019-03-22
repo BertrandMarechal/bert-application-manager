@@ -2,6 +2,7 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {StoreModule} from '@ngrx/store';
 import {EffectsModule} from '@ngrx/effects';
+import {ReactiveFormsModule} from '@angular/forms';
 import {AngularSplitModule} from 'angular-split';
 import {PaginatedTableModule} from '@app/modules/paginated-table/paginated-table.module';
 
@@ -22,6 +23,7 @@ import {<capitalized_camel_cased_name>Effects} from '@app/store/effects/<name_wi
     AngularSplitModule,
     <capitalized_camel_cased_name>RoutingModule,
     <capitalized_camel_cased_name>MaterialModule,
+    ReactiveFormsModule,
     PaginatedTableModule,
     StoreModule.forFeature('<camel_cased_name>Store', <camel_cased_name>Reducers),
     EffectsModule.forFeature([

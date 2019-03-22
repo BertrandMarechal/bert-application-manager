@@ -108,14 +108,14 @@ export class DatabaseTableField {
 
         const reference = /references (.*?)\((.*?)\)/i.exec(field.fullText);
         if (reference) {
-            this.isForeignKey = true
+            this.isForeignKey = true;
             this.foreignKey = {
                 table: reference[1],
                 key: reference[2]
             };
         }
 
-        const primaryKey = /primary key/i.exec(field.fullText);
+        const primaryKey = /primary key/i.test(field.fullText);
         if (primaryKey) {
             this.isPrimaryKey = true;
             this.toUpdate = false;
@@ -139,7 +139,7 @@ export class DatabaseTableField {
                         .snakeCaseToCamelCase(this.name.substr(11));
                 }
             } else if (this.isPrimaryKey) {
-                if (this.name.match(/pk_[a-z0-9]{3}_/i)) {
+                if (this.name.match(/pk_[a-z0-9]{3}_id/gi)) {
                     this.camelCasedName = 'id';
                 }
             }
