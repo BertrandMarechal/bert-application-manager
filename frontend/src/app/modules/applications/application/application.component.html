@@ -1,5 +1,4 @@
 <app-details-view
   [name]="(applications$|async).application?.name">
-  bertrand
   <button mat-button *ngIf="(applications$|async).application?.database">Database</button>
 </app-details-view>
