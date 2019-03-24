@@ -8,3 +8,5 @@ server/build/
 cli/build/
 
 temp/
+
+graphql/node_modules/

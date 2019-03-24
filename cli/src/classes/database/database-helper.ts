@@ -20,6 +20,15 @@ export class DatabaseHelper {
         return fileData[applicationName];
     }
 
+    static async getApplicationDatabaseObjects(): Promise<{[dbName: string]: DatabaseObject}> {
+        FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
+        let fileData: { [name: string]: DatabaseObject } = {};
+        if (FileUtils.checkIfFolderExists(DatabaseHelper.postgresDbDataPath)) {
+            fileData = await FileUtils.readJsonFile(DatabaseHelper.postgresDbDataPath);
+        }
+        return fileData;
+    }
+
     static async getApplicationDatabaseParameters(applicationName: string): Promise<{ [env: string]: { [param: string]: string } }> {
         FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
         let fileParameters: { [database: string]: { [env: string]: { [param: string]: string } } } = {};

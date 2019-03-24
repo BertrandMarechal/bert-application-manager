@@ -1,0 +1,20 @@
+<mat-card style="padding: 2px; color: #FFFFFF;" [ngStyle]="{'background-color': color || '#123456'}">
+  <mat-card-title>
+    <div style="padding: 10px">
+        {{name}}
+    </div>
+  </mat-card-title>
+  <mat-card-content style="background-color: white; color: black; padding: 10px;">
+    <nav mat-tab-nav-bar *ngIf="tabs">
+      <a mat-tab-link
+        *ngFor="let tab of tabs"
+        [routerLink]="tab.link"
+        routerLinkActive
+        #rla1="routerLinkActive"
+        [active]="rla1.isActive">
+        {{tab.name}}
+      </a>
+    </nav>
+    <ng-content></ng-content>
+  </mat-card-content>
+</mat-card>

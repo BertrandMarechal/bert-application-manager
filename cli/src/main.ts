@@ -80,8 +80,8 @@ const main = async () => {
                         break;
                 }
                 break;
-            case 's':
-            case 'serverless':
+            case 'm':
+            case 'middle-tier':
                 const serverlessOptionsDefinitions = [
                     { name: 'action', defaultOption: true },
                     { name: 'all', alias: 'e', type: String, description: 'environment' },
@@ -152,19 +152,29 @@ const main = async () => {
             case 'clear':
                 await FileUtils.deleteFolderRecursiveSync(path.resolve(__dirname, '../../temp'));
                 break;
-            default:
-                break;
-        }
-        switch (options.action) {
-            case 'check-server':
-                await ServerUtils.checkServer(true)
-                break;
-            case 'stop-server':
-                await ServerUtils.stopServer();
-                break;
-            case 'start-server':
-                await ServerUtils.startServer();
-                break;
+            case 's':
+            case 'server':
+                const serverOptionsDefinitions = [
+                    { name: 'action', defaultOption: true },
+                ]
+                const serverOptions = commandLineArgs(serverOptionsDefinitions, { argv, stopAtFirstUnknown: true });
+                switch (serverOptions.action) {
+                    case 'start':
+                    case 's':
+                        await ServerUtils.startServer();
+                        process.exit();
+                        break;
+                    case 'stop':
+                    case 'p':
+                        await ServerUtils.stopServer();
+                        break;
+                    case 'check':
+                    case 'c':
+                        await ServerUtils.checkServer(true);
+                        break;
+                    default:
+                        break;
+                }
             default:
                 break;
         }

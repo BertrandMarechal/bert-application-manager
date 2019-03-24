@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import path from 'path';
-import { fork } from 'child_process';
+import { fork, spawn } from 'child_process';
 
 export class ServerUtils {
     static async checkServer(check?: boolean): Promise<boolean> {
@@ -38,21 +38,18 @@ export class ServerUtils {
     static async startServer() {
         if (!await ServerUtils.checkServer()) {
             try {
-
                 const args = [
-                    path.resolve(process.argv[1], '../../../server/build/main.js')
+                    '/c',
+                    'node',
+                    path.resolve(process.argv[1], '../../../cli/build/server.js'),
+                    '/b'
                 ];
-                const child = fork(args[0]);
-
-                child.on('exit', code => {
-                    console.log(`Exit code is: ${code}`);
+                // const child = fork(args[0]);
+                const child = spawn('cmd', args, {
+                    detached: true,
+                    stdio: 'ignore'
                 });
-                child.on('error', code => {
-                    console.log(`error code is: ${code}`);
-                });
-
                 console.log('Should be started now...');
-                
             } catch (error) {
                 console.log(error);
                 console.log('Error starting the server');

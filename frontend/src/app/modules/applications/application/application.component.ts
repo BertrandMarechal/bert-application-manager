@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { Store, select } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import * as fromApplications from '@app/store/reducers/applications.reducers';
 
 @Component({
   selector: 'app-application',
@@ -6,10 +9,11 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./application.component.scss']
 })
 export class ApplicationComponent implements OnInit {
+  applications$: Observable<fromApplications.FeatureState>;
 
-  constructor() { }
+  constructor(private store: Store<fromApplications.State>) {}
 
   ngOnInit() {
+    this.applications$ = this.store.pipe(select('applications'));
   }
-
 }
