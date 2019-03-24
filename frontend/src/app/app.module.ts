@@ -13,6 +13,8 @@ import { applicationsReducers } from './store/reducers/applications.reducers';
 import { ApplicationsEffects } from './store/effects/applications.effect';
 import { HttpClientModule } from '@angular/common/http';
 import { AngularSplitModule } from 'angular-split';
+import { DatabasesEffects } from './store/effects/databases.effect';
+import { databasesReducers } from './store/reducers/databases.reducers';
 
 @NgModule({
   declarations: [
@@ -32,8 +34,10 @@ import { AngularSplitModule } from 'angular-split';
     StoreModule.forRoot(reducers),
     EffectsModule.forRoot([]),
     StoreModule.forFeature('applications', applicationsReducers),
+    StoreModule.forFeature('databases', databasesReducers),
     EffectsModule.forFeature([
       ApplicationsEffects,
+      DatabasesEffects,
     ])
   ],
   providers: [],

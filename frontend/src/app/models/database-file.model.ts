@@ -59,6 +59,8 @@ export class DatabaseTableField {
     isListFilter: boolean;
     listFilterName: string;
     sort: boolean;
+    default: boolean;
+    defaultValue: string;
 }
 
 export class DatabaseTable extends DatabaseSubObject {
@@ -99,7 +101,7 @@ export class DatabaseObject {
     };
     _parameters: {
         [name: string]: string[];
-    }
+    };
 }
 
 export class DatabaseFile {

@@ -1,5 +1,6 @@
 import {DatabaseHelper} from '../database/database-helper';
 import { Application } from '../../models/application.model';
+import { DatabaseObject } from '../../models/database-file.model';
 
 export class ApplicationHelper {
     static async getApplications(): Promise<string[]> {
@@ -15,5 +16,9 @@ export class ApplicationHelper {
             name: name,
             database: databaseObject
         };
+    }
+    static async getDatabase(name: string): Promise<DatabaseObject> {
+        return await DatabaseHelper.getApplicationDatabaseObject(name + '-database');
+        
     }
 }

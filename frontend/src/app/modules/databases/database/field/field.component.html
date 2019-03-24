@@ -1,3 +1,53 @@
-<p>
-  field works!
-</p>
+<br>
+<form [formGroup]="form" *ngIf="_edit">
+  <mat-form-field style="margin-left: 5px; width: 150px;">
+    <input matInput type="text" formControlName="name" placeholder="Name">
+  </mat-form-field>
+  <mat-form-field style="margin-left: 5px; width: 130px;">
+    <input matInput type="text" formControlName="type" placeholder="Type">
+  </mat-form-field>
+  <mat-form-field style="margin-left: 5px; width: 100px;">
+    <mat-select formControlName="notNull" placeholder="Not null">
+      <mat-option [value]="true">NOT NULL</mat-option>
+      <mat-option [value]="false">NULL</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field style="margin-left: 5px; width: 100px;">
+    <mat-select formControlName="default" placeholder="Default">
+      <mat-option [value]="false"></mat-option>
+      <mat-option [value]="true">DEFAULT</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field style="margin-left: 5px; width: 150px;">
+    <input matInput type="text" formControlName="defaultValue" placeholder="Default Value">
+  </mat-form-field>
+  <button mat-icon-button [disabled]="!form.valid">
+    <mat-icon>save</mat-icon>
+  </button>
+  <button mat-icon-button (click)="onCancel()">
+    <mat-icon>clear</mat-icon>
+  </button>
+  <button mat-icon-button (click)="onDelete()">
+    <mat-icon>delete</mat-icon>
+  </button>
+  ,
+</form>
+<span *ngIf="!_edit" (click)="_edit = true" style="cursor: pointer;">
+  <span style="margin-left: 20px;">{{field.name}}</span>
+  <span style="color:blueviolet">&nbsp;{{field.type}}</span>
+  <span *ngIf="field.isPrimaryKey; else null" style="color: #128496">
+    &nbsp;PRIMARY KEY
+  </span>
+  <ng-container style="color: orange" *ngIf="field.notNul; else null">
+    &nbsp;NOT NULL
+  </ng-container>
+  <ng-template #null style="color: orange">
+    &nbsp;NULL
+  </ng-template>
+  <span *ngIf="field.isForeignKey; else null">
+    &nbsp;REFERENCES {{field.foreignKey.table}}({{field.foreignKey.key}})
+  </span>
+  <span *ngIf="field.default; else null">
+    &nbsp;DEFAULT {{field.defaultValue}}
+  </span>,
+</span>

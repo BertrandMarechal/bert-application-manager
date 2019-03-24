@@ -1,3 +1,11 @@
-<p>
-  table works!
-</p>
+<h3>{{table.name}} - {{table.latestVersion}}</h3>
+CREATE TABLE IF NOT EXISTS {{table.name}} (
+<app-field *ngFor="let field of table.fields|objectKeys" [field]="field" [table]="table"></app-field>
+<br>
+<button mat-stroked-button color="primary" (click)="showNewField = true" *ngIf="!showNewField">Add</button>
+<app-field
+    [table]="table"
+    (close)="showNewField = false;"
+    (delete)="showNewField = false;"
+    *ngIf="showNewField"></app-field>
+);

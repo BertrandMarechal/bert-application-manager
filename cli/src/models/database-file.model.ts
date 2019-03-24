@@ -80,7 +80,8 @@ export class DatabaseTableField {
     isListFilter: boolean;
     listFilterName: string;
     sort: boolean;
-
+    default: boolean;
+    defaultValue: string;
 
     constructor(field: {
         fullText: string;
@@ -105,6 +106,8 @@ export class DatabaseTableField {
         this.listFilterName = '';
         this.toUpdate = true;
         this.sort = false;
+        this.default = false;
+        this.defaultValue = '';
 
         const reference = /references (.*?)\((.*?)\)/i.exec(field.fullText);
         if (reference) {
@@ -113,6 +116,12 @@ export class DatabaseTableField {
                 table: reference[1],
                 key: reference[2]
             };
+        }
+        const def = /default (.*)/i.exec(field.fullText);
+        if (def) {
+            
+            this.default = true;
+            this.defaultValue = def[1];
         }
 
         const primaryKey = /primary key/i.test(field.fullText);

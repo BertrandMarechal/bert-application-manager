@@ -1,3 +1,19 @@
-<p>
-  database works!
-</p>
+<app-details-view [name]="(databases$|async).database?._properties?.dbName">
+  <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
+    <as-split-area size="30">
+      <mat-form-field>
+        <input type="text" matInput [(ngModel)]="filter" autocomplete="off">
+      </mat-form-field>
+      <mat-nav-list *ngIf="filter">
+        <mat-list-item
+          *ngFor="let table of (databases$|async).database?.table|objectKeys|objectListFilter:filter:'name'"
+          (click)="onClickTable(table)">
+          <a matLine>{{ table.name }}</a>
+        </mat-list-item>
+      </mat-nav-list>
+    </as-split-area>
+    <as-split-area size="70" *ngIf="databaseTable">
+      <app-table [table]="databaseTable"></app-table>
+    </as-split-area>
+  </as-split>
+</app-details-view>

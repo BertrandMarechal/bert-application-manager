@@ -46,6 +46,9 @@ export class Server {
         this.app.get('/applications/:name', async (req: Request, res: Response) => {
             res.send(await ApplicationHelper.getApplication(req.params.name));
         });
+        this.app.get('/databases/:name', async (req: Request, res: Response) => {
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
         this.io.on('connection', (client: IO.Socket) => {
             console.log('Client connected');
             this._attachSocket(client);

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+import { DatabaseTable } from '@app/models/database-file.model';
 
 @Component({
   selector: 'app-table',
@@ -6,6 +7,8 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./table.component.scss']
 })
 export class TableComponent implements OnInit {
+  @Input() table: DatabaseTable;
+  showNewField: boolean;
 
   constructor() { }
 

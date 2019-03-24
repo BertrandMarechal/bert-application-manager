@@ -1,16 +1,20 @@
 <mat-card style="padding: 2px; color: #FFFFFF;" [ngStyle]="{'background-color': color || '#123456'}">
   <mat-card-title>
-    <div style="padding: 10px">
+    <div style="padding: 10px" class="line-container">
+      <div>
         {{name}}
+      </div>
+      <div class=buttons-container>
+        <button mat-stroked-button [matMenuTriggerFor]="appMenu" style="border: 1px #a2a2a2 solid;">
+          Actions
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+      </div>
     </div>
   </mat-card-title>
   <mat-card-content style="background-color: white; color: black; padding: 10px;">
     <nav mat-tab-nav-bar *ngIf="tabs">
-      <a mat-tab-link
-        *ngFor="let tab of tabs"
-        [routerLink]="tab.link"
-        routerLinkActive
-        #rla1="routerLinkActive"
+      <a mat-tab-link *ngFor="let tab of tabs" [routerLink]="tab.link" routerLinkActive #rla1="routerLinkActive"
         [active]="rla1.isActive">
         {{tab.name}}
       </a>
@@ -18,3 +22,7 @@
     <ng-content></ng-content>
   </mat-card-content>
 </mat-card>
+<mat-menu #appMenu="matMenu">
+  <button mat-menu-item>Settings</button>
+  <button mat-menu-item>Help</button>
+</mat-menu>

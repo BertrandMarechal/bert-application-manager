@@ -6,12 +6,10 @@ import {
 @NgModule({
   imports: [
     MatListModule,
-    MatCardModule,
     MatButtonModule,
   ],
   exports: [
     MatListModule,
-    MatCardModule,
     MatButtonModule,
   ],
   declarations: []
