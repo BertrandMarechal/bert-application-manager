@@ -5,6 +5,7 @@ import { PostgresUtils } from "../../utils/postgres.utils";
 import { DatabaseHelper } from "./database-helper";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
+import { DatabaseRepositoryReader } from "./database-repo-reader";
 
 export class DatabaseInstaller {
     private static _origin = 'DatabaseInstaller';
@@ -19,13 +20,21 @@ export class DatabaseInstaller {
             params.environment = 'local';
         }
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        // get the application and its versions
-        const databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         
-        if (!databaseData) {
+        // get the db as object to get the params
+        let databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        // get the application and its versions
+        let databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        if (!databaseData || !databaseObject) {
             throw 'Invalid application name. Please run the "am repo read" command in the desired folder beforehand.';
         }
+        await DatabaseRepositoryReader.readRepo(params.applicationName, databaseObject._properties.path, uiUtils);
+        // we get the database objects again after we read the repo
+        // get the db as object to get the params
+        databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        // get the application and its versions
+        databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+
         let versionsToInstall: DatabaseVersionFile[] = [];
         if (params.version) {
             const databaseVersion = databaseData.find(x => x.versionName === params.version);
@@ -39,8 +48,6 @@ export class DatabaseInstaller {
         if (!versionsToInstall[0]) {
             throw 'Invalid version name. Please run the "am repo read" again if this version is missing.';
         }
-        // get the db as object to get the params
-        const DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
 
         // get the application parameters
         const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);
@@ -50,12 +57,12 @@ export class DatabaseInstaller {
                 value: string;
             }[];
         } = {};
-        if (DatabaseObject && DatabaseObject._parameters) {
+        if (databaseObject && databaseObject._parameters) {
 
-            for (let i = 0; i < Object.keys(DatabaseObject._parameters).length; i++) {
-                const parameterName = Object.keys(DatabaseObject._parameters)[i];
-                for (let j = 0; j < DatabaseObject._parameters[parameterName].length; j++) {
-                    const fileName = DatabaseObject._parameters[parameterName][j];
+            for (let i = 0; i < Object.keys(databaseObject._parameters).length; i++) {
+                const parameterName = Object.keys(databaseObject._parameters)[i];
+                for (let j = 0; j < databaseObject._parameters[parameterName].length; j++) {
+                    const fileName = databaseObject._parameters[parameterName][j];
                     if (!paramsPerFile[fileName]) {
                         paramsPerFile[fileName] = [];
                     }
