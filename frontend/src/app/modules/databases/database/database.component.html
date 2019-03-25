@@ -1,4 +1,7 @@
-<app-details-view [name]="(databases$|async).database?._properties?.dbName">
+<app-details-view
+  [name]="(databases$|async).database?._properties?.dbName"
+  [actions]="actions"
+  (actionClicked)="onActionClicked($event)">
   <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
     <as-split-area size="30">
       <mat-form-field>
@@ -11,6 +14,7 @@
           <a matLine>{{ table.name }}</a>
         </mat-list-item>
       </mat-nav-list>
+      <p>{{((databases$|async).database?.table|objectKeys).length}} tables available. Pleae type to filter</p>
     </as-split-area>
     <as-split-area size="70" *ngIf="databaseTable">
       <app-table [table]="databaseTable"></app-table>

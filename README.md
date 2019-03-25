@@ -13,7 +13,7 @@ cls && npm link && aws-mock start-server
 - [-] create Angular files
   - [x] create store files
   - [x] create model files
-  - [ ] create modules files
+  - [x] create modules files
   - [ ] create components files
 - [ ] read version files on install (version files only), and check file orders
 - [x] pass the uiUtils object to the lower levels (for later integration)

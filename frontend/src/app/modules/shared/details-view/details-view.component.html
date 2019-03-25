@@ -5,7 +5,7 @@
         {{name}}
       </div>
       <div class=buttons-container>
-        <button mat-stroked-button [matMenuTriggerFor]="appMenu" style="border: 1px #a2a2a2 solid;">
+        <button mat-stroked-button [matMenuTriggerFor]="appMenu" *ngIf="actions" style="border: 1px #a2a2a2 solid;">
           Actions
           <mat-icon>arrow_drop_down</mat-icon>
         </button>
@@ -23,6 +23,8 @@
   </mat-card-content>
 </mat-card>
 <mat-menu #appMenu="matMenu">
-  <button mat-menu-item>Settings</button>
-  <button mat-menu-item>Help</button>
+  <button
+    mat-menu-item
+    (click)="actionClicked.emit(action)"
+    *ngFor="let action of actions">{{action.name}}</button>
 </mat-menu>

@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Effect, Actions } from '@ngrx/effects';
-import { Store, Action } from '@ngrx/store';
+import { Store, Action, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { NgrxUtilsService } from 'app/services/ngrx-utils';
 import * as DatabasesActions from '../actions/databases.actions';
+import * as fromDatabases from '../reducers/databases.reducers';
 import { RouterUtilsService, RouteNavigationParams } from 'app/services/router-utils.service';
 import { map } from 'rxjs/operators';
 import { DatabaseService } from 'app/services/database.service';
@@ -24,9 +25,30 @@ export class DatabasesEffects {
         ],
         serviceMethod: this.databasesService.getDatabase.bind(this.databasesService)
     });
+
+    @Effect() createDatabaseTable: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_CREATE_DATABASE_TABLE
+        ],
+        store: this.store.pipe(select('databases')),
+        payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
+        serviceMethod: this.databasesService.createDatabaseTable.bind(this.databasesService)
+    });
+
+    @Effect() createDatabaseFunctions: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_CREATE_DATABASE_FUNCTIONS
+        ],
+        store: this.store.pipe(select('databases')),
+        payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
+        serviceMethod: this.databasesService.createDatabaseFunctions.bind(this.databasesService)
+    });
     constructor(
         private actions$: Actions,
-        private databasesService: DatabaseService
+        private databasesService: DatabaseService,
+        private store: Store<fromDatabases.FeatureState>
         ) {
     }
 }

@@ -11,4 +11,12 @@ export class DatabaseService {
   async getDatabase(name: string): Promise<DatabaseObject> {
     return await this.localhostService.get(`databases/${name}`);
   }
+
+  async createDatabaseTable(name: string): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${name}/create-table`);
+  }
+
+  async createDatabaseFunctions(name: string): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${name}/create-functions`);
+  }
 }

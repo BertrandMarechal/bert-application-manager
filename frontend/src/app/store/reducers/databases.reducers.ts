@@ -9,11 +9,13 @@ export interface FeatureState extends AppState {
 export interface State {
     gettingDatabase: boolean;
     database: DatabaseObject;
+    databaseName: string;
 }
 
 const databasesInitialState: State = {
     gettingDatabase: false,
-    database: null
+    database: null,
+    databaseName: null,
 };
 
 export function databasesReducers(
@@ -21,10 +23,13 @@ export function databasesReducers(
     action: DatabasesActions.DatabasesActions
 ) {
     switch (action.type) {
+        case DatabasesActions.ROUTER_GET_DATABASE:
         case DatabasesActions.EFFECT_GET_DATABASE:
+        case DatabasesActions.PAGE_GET_DATABASE:
             return {
                 ...state,
                 gettingDatabase: true,
+                databaseName: action.payload,
             };
         case DatabasesActions.SERVICE_GET_DATABASE_COMPLETE:
             return {
@@ -36,6 +41,12 @@ export function databasesReducers(
             return {
                 ...state,
                 gettingDatabase: false
+            };
+        case DatabasesActions.SERVICE_CREATE_DATABASE_TABLE_COMPLETE:
+        case DatabasesActions.SERVICE_CREATE_DATABASE_FUNCTIONS_COMPLETE:
+            return {
+                ...state,
+                database: action.payload
             };
         default:
             break;

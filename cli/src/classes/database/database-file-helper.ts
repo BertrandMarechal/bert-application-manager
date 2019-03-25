@@ -16,7 +16,7 @@ export class DatabaseFileHelper {
     private static _origin = 'DatabaseFileHelper';
 
     private static async _getVersionToChange(params: {
-        version: string;
+        version?: string;
     }, databaseVersionFiles: DatabaseVersionFile[], uiUtils: UiUtils): Promise<string> {
         const databaseVersionFile: DatabaseVersionFile | undefined = databaseVersionFiles[databaseVersionFiles.length - 1];
         let versionToChange = params.version;
@@ -47,8 +47,8 @@ export class DatabaseFileHelper {
     }
     static async createFunctions(params: {
         applicationName: string;
-        version: string;
-        filter: string;
+        version?: string;
+        filter?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
         uiUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
         
@@ -332,7 +332,7 @@ export class DatabaseFileHelper {
 
     static async createTable(params: {
         applicationName: string;
-        version: string;
+        version?: string;
         tableDetails?: {
             name: string;
             tags?: Tag[];
@@ -362,8 +362,8 @@ export class DatabaseFileHelper {
         
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
-
-        if (!params.tableDetails) {
+        
+        if (!params.tableDetails || (params.tableDetails && !params.tableDetails.name)) {
             // we have User Interraction to build the table
             let tableName = '';
             while (!tableName) {
