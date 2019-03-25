@@ -1,5 +1,7 @@
-import {indentation, SyntaxUtils} from '../../../utils/syntax.utils';
-
+import { indentation, SyntaxUtils } from '../../../utils/syntax.utils';
+import { FileAndContent, FileUtils } from '../../../utils/file.utils';
+import path from 'path';
+import { FrontendFileHelper } from '../frontend-file-helper';
 
 const ngrxParts: {
     source: string;
@@ -55,7 +57,153 @@ const ngrxParts: {
 }];
 
 export class NgrxFileHelper {
-    static createReducers(params: {
+    actionsFile: FileAndContent;
+    reducersFile: FileAndContent;
+    effectsFile: FileAndContent;
+    actions: {
+        names: string;
+        classes: string;
+        types: string;
+    }[];
+
+    reducers: {
+        stateTypes: string;
+        stateInitialState: string;
+        stateCase: string;
+    }[];
+
+    effects: string[];
+    params: {
+        frontendPath: string;
+        nameWithDashes: string;
+        upperCaseObjectName: string;
+        capitalizedCamelCasedName: string;
+        camelCasedName: string;
+        nameWithoutPrefixAndSuffix: string;
+    };
+
+    constructor() {
+        this.actionsFile = {
+            path: '',
+            fileContent: ''
+        };
+        this.reducersFile = {
+            path: '',
+            fileContent: ''
+        };
+        this.effectsFile = {
+            path: '',
+            fileContent: ''
+        };
+        this.actions = [];
+        this.reducers = [];
+        this.effects = [];
+
+        this.params = {
+            frontendPath: '',
+            nameWithDashes: '',
+            upperCaseObjectName: '',
+            capitalizedCamelCasedName: '',
+            camelCasedName: '',
+            nameWithoutPrefixAndSuffix: '',
+        };
+    }
+    async init(params: {
+        frontendPath: string;
+        nameWithDashes: string;
+        upperCaseObjectName: string;
+        capitalizedCamelCasedName: string;
+        camelCasedName: string;
+        nameWithoutPrefixAndSuffix: string;
+    }) {
+        this.params = params;
+        const ngrxActionsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-actions.ts'));
+        const ngrxReducersFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-reducers.ts'));
+        const ngrxEffectsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-effects.ts'));
+
+        this.actionsFile = {
+            path: path.resolve(params.frontendPath, 'src', 'app', 'store', 'actions', `${params.nameWithDashes}.actions.ts`),
+            fileContent: ngrxActionsFileTemplate
+        };
+        this.reducersFile = {
+            path: path.resolve(params.frontendPath, 'src', 'app', 'store', 'reducers', `${params.nameWithDashes}.reducers.ts`),
+            fileContent: ngrxReducersFileTemplate
+        };
+        this.effectsFile = {
+            path: path.resolve(params.frontendPath, 'src', 'app', 'store', 'effects', `${params.nameWithDashes}.effects.ts`),
+            fileContent: ngrxEffectsFileTemplate
+        };
+        this.actions = [];
+        this.reducers = [];
+        this.effects = [];
+    }
+
+    addAction(params: {
+        action: string;
+        upperCaseActionName: string;
+        capitalizedActionName: string;
+    }) {
+
+        this.actions.push(NgrxFileHelper._createActions({
+            action: params.action,
+            upperCaseObjectName: this.params.upperCaseObjectName,
+            upperCaseActionName: params.upperCaseActionName,
+            capitalizedActionName: params.capitalizedActionName,
+            capitalizedCamelCasedName: this.params.capitalizedCamelCasedName,
+        }));
+
+        this.reducers.push(NgrxFileHelper._createReducers({
+            action: params.action,
+            camelCaseName: this.params.camelCasedName,
+            capitalizedCamelCaseName: this.params.capitalizedCamelCasedName,
+            upperCaseActionName: params.upperCaseActionName,
+        }));
+
+        this.effects.push(NgrxFileHelper._createEffect({
+            action: params.action,
+            camelCaseName: this.params.camelCasedName,
+            capitalizedCamelCaseName: this.params.capitalizedCamelCasedName,
+            upperCaseActionName: params.upperCaseActionName,
+            nameWithDashes: this.params.nameWithDashes,
+            route: ''
+        }));
+    }
+
+    getFiles(): FileAndContent[] {
+        const toReturn: FileAndContent[] = [];
+        if (this.actions.length) {
+            this.actionsFile.fileContent
+                .replace(/<snake_case_actions_upper_case>/g, this.params.nameWithoutPrefixAndSuffix.toUpperCase())
+                .replace(/<snake_case_actions_lower_case>/g, this.params.nameWithoutPrefixAndSuffix.toLowerCase())
+                .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
+                .replace(/<action_names>/,this.actions.map(x => x.names).join('\n\n'))
+                .replace(/<action_classes>/,this.actions.map(x => x.classes).join('\n\n'))
+                .replace(/<action_types>/,this.actions.map(x => x.types).join('\n\n'));
+            toReturn.push(this.actionsFile);
+        }
+        if (this.reducers.length) {
+            this.reducersFile.fileContent
+                .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
+                .replace(/<name_with_dashes>/g, this.params.nameWithDashes)
+                .replace(/<camel_cased_name>/g, this.params.camelCasedName)
+                .replace(/<types>/,this.reducers.map(x => x.stateTypes).filter(Boolean).join('\n'))
+                .replace(/<initial_state>/,this.reducers.map(x => x.stateInitialState).filter(Boolean).join('\n'))
+                .replace(/<cases>/,this.reducers.map(x => x.stateCase).filter(Boolean).join('\n'));
+            toReturn.push(this.reducersFile);
+        }
+
+        if (this.effects.length) {
+            this.effectsFile.fileContent
+                .replace(/<name_with_dashes>/g, this.params.nameWithDashes)
+                .replace(/<camel_cased_name>/g, this.params.camelCasedName)
+                .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
+                .replace(/<effects>/,this.effects.join('\n'));
+            toReturn.push(this.effectsFile);
+        }
+        return toReturn;
+    }
+
+    static _createReducers(params: {
         action: string;
         camelCaseName: string;
         capitalizedCamelCaseName: string;
@@ -88,7 +236,7 @@ export class NgrxFileHelper {
             default:
                 break;
         }
-        
+
         types = [
             `${indentation}${actionBooleanPrefix}${params.capitalizedCamelCaseName}${actionvariablesSuffix}: boolean;`,
             `${indentation}${params.camelCaseName}${actionvariablesSuffix}: ${params.capitalizedCamelCaseName}${params.action === 'list' ? '[]' : ''};`,
@@ -111,9 +259,9 @@ export class NgrxFileHelper {
                     }
                 }
                 toReturn += `${indentation.repeat(3)}};`;
-                return {actionLine, actionText: toReturn};
+                return { actionLine, actionText: toReturn };
             })
-            .reduce((agg: {actionLine: string, actionText: string}[], current) => {
+            .reduce((agg: { actionLine: string, actionText: string }[], current) => {
                 // we add the similar actions to the same case
                 if (agg.length > 0 && current.actionText === agg[agg.length - 1].actionText) {
                     agg[agg.length - 1].actionLine += current.actionLine;
@@ -121,23 +269,23 @@ export class NgrxFileHelper {
                     agg.push(current)
                 }
                 return agg;
-            },[]).map(({actionLine, actionText}) => actionLine + actionText);
+            }, []).map(({ actionLine, actionText }) => actionLine + actionText);
 
         return {
-            stateTypes: types.length > 0 ? types.join('\n'): '',
-            stateInitialState: initialState.length > 0 ? initialState.join('\n'): '',
-            stateCase: cases.length > 0 ? cases.join('\n'): ''
+            stateTypes: types.length > 0 ? types.join('\n') : '',
+            stateInitialState: initialState.length > 0 ? initialState.join('\n') : '',
+            stateCase: cases.length > 0 ? cases.join('\n') : ''
         };
     }
 
-    static createEffect(params: {
+    static _createEffect(params: {
         action: string,
         camelCaseName: string;
         capitalizedCamelCaseName: string;
         upperCaseActionName: string;
         nameWithDashes: string;
         route: string;
-    }) : string {
+    }): string {
         let effectToReturn = '';
         switch (params.action) {
             case 'get':
@@ -221,8 +369,8 @@ export class NgrxFileHelper {
         return effectToReturn;
     }
 
-    
-    static createActions(params: {
+
+    static _createActions(params: {
         action: string;
         upperCaseObjectName: string;
         upperCaseActionName: string;
