@@ -28,7 +28,27 @@ export class DatabaseInstaller {
         if (!databaseData || !databaseObject) {
             throw 'Invalid application name. Please run the "am repo read" command in the desired folder beforehand.';
         }
+
         await DatabaseRepositoryReader.readRepo(params.applicationName, databaseObject._properties.path, uiUtils);
+        
+        // get the application parameters
+        const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);
+        if (!fileParameters[params.environment] || !fileParameters[params.environment].password_root || fileParameters[params.environment].server) {
+            while(!fileParameters[params.environment].password_root) {
+                fileParameters[params.environment].password_root = await uiUtils.question({
+                    origin: DatabaseInstaller._origin,
+                    text: 'Please provide the root password'
+                });
+            }
+            while(!fileParameters[params.environment].server) {
+                fileParameters[params.environment].server = await uiUtils.question({
+                    origin: DatabaseInstaller._origin,
+                    text: 'Please provide the root password'
+                });
+            }
+            await DatabaseHelper.updateApplicationDatabaseParameters(params.applicationName, fileParameters);
+        }
+
         // we get the database objects again after we read the repo
         // get the db as object to get the params
         databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
@@ -49,8 +69,6 @@ export class DatabaseInstaller {
             throw 'Invalid version name. Please run the "am repo read" again if this version is missing.';
         }
 
-        // get the application parameters
-        const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);
         let paramsPerFile: {
             [fileName: string]: {
                 paramName: string;
@@ -94,7 +112,7 @@ export class DatabaseInstaller {
                     if (subVersion.databaseToUse === 'postgres') {
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/postgres`, uiUtils);
                     } else {                        
-                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/${params.environment}_${DatabaseObject._properties.dbName}`, uiUtils);
+                        postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/${params.environment}_${databaseObject._properties.dbName}`, uiUtils);
                     }
                     let bar = new Bar({
                         format: `${params.applicationName} - ${version.versionName}  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,

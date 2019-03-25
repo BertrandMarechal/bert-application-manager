@@ -77,4 +77,14 @@ export class DatabaseHelper {
         fileData[applicationName] = data;
         FileUtils.writeFileSync(DatabaseHelper.postgresDbFilesPath, JSON.stringify(fileData, null, 2));
     }
+
+    static async updateApplicationDatabaseParameters(applicationName: string, data: { [env: string]: { [param: string]: string } }) {
+        FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
+        let fileData: { [database: string]: { [env: string]: { [param: string]: string } } } = {};
+        if (FileUtils.checkIfFolderExists(DatabaseHelper.postgresDbParamsPath)) {
+            fileData = await FileUtils.readJsonFile(DatabaseHelper.postgresDbParamsPath);
+        }
+        fileData[applicationName] = data;
+        FileUtils.writeFileSync(DatabaseHelper.postgresDbParamsPath, JSON.stringify(fileData, null, 2));
+    }
 }
