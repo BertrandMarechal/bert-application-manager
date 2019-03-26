@@ -1,0 +1,44 @@
+<mat-form-field>
+  <input matInput type="text" [formControl]="tableNameControl" placeholder="Table Name" autocomplete="off">
+</mat-form-field>
+<br>
+CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbName}}t_</span><span
+  [ngStyle]="{'color': tableNameControl.valid ? 'green' : 'grey'}">{{tableNameControl.value}}</span> (
+<div *ngIf="tableNameControl.valid">
+  <span>&nbsp;&nbsp;pk_{{_tableSuffix}}_id SERIAL PRIMARY KEY NOT NULL,</span><br>
+  <span style="color: blueviolet" *ngFor="let field of _fields">  <app-field *ngFor="let field of _fields" [field]="field"></app-field></span>
+  &nbsp;&nbsp;<button mat-stroked-button [swal]="swalAddField">Add</button><br>
+  <span>&nbsp;&nbsp;created_by CHAR(4),</span><br>
+  <span>&nbsp;&nbsp;created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,</span><br>
+  <span>&nbsp;&nbsp;modified_by CHAR(4),</span><br>
+  <span>&nbsp;&nbsp;modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP</span>
+</div>
+);
+<swal title="Add field" #swalAddField [showCloseButton]="true" [showConfirmButton]="false">
+  <form [formGroup]="fieldFormGroup" *swalPartial>
+    <mat-form-field>
+      <input matInput type="text" [formControl]="fieldFormGroup.get('name')" placeholder="Field Name" autocomplete="off">
+    </mat-form-field>
+    <mat-form-field>
+      <input matInput type="text" [formControl]="fieldFormGroup.get('type')" placeholder="Field Type" autocomplete="off">
+    </mat-form-field>
+    <br>
+    <mat-checkbox [formControl]="fieldFormGroup.get('isNotNull')">Not Null</mat-checkbox>
+    <mat-checkbox [formControl]="fieldFormGroup.get('isUnique')">Unique</mat-checkbox>
+    <br>
+    <mat-checkbox [formControl]="fieldFormGroup.get('isForeignKey')">Is foreign Key</mat-checkbox>
+    <mat-form-field *ngIf="fieldFormGroup.get('isForeignKey').value">
+      <mat-select [formControl]="fieldFormGroup.get('foreignKeyTable')">
+        <mat-option *ngFor="let table of database.table|objectKeys" [value]="table.name">{{table.name}}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <br>
+    <mat-checkbox [formControl]="fieldFormGroup.get('hasDefault')">Default ?</mat-checkbox>
+    <mat-form-field *ngIf="fieldFormGroup.get('hasDefault').value">
+      <input matInput type="text" [formControl]="fieldFormGroup.get('defaultValue')" placeholder="Default" autocomplete="off">
+    </mat-form-field>
+    <br>
+    <button mat-stroked-button [disabled]="!fieldFormGroup.valid" (click)="swalAddField.close()">Cancel</button>
+    <button mat-stroked-button (click)="onAddField()">Add</button>
+  </form>
+</swal>

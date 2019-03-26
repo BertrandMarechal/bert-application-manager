@@ -44,23 +44,23 @@ export class DatabaseSubObject {
 
 export class DatabaseTableField {
     name: string;
-    camelCasedName: string;
+    camelCasedName?: string;
     type: string;
     notNull: boolean;
-    toUpdate: boolean;
-    tags: { [name: string]: Tag };
+    toUpdate?: boolean;
+    tags?: { [name: string]: Tag };
     isForeignKey: boolean;
     foreignKey?: {
         table: String;
         key: String;
     };
     isPrimaryKey: boolean;
-    retrieveInList: boolean;
-    isListFilter: boolean;
-    listFilterName: string;
-    sort: boolean;
+    retrieveInList?: boolean;
+    isListFilter?: boolean;
+    listFilterName?: string;
+    sort?: boolean;
     default: boolean;
-    defaultValue: string;
+    defaultValue?: string;
 }
 
 export class DatabaseTable extends DatabaseSubObject {

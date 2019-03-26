@@ -19,6 +19,7 @@ export class DatabaseComponent implements OnInit {
 
   filter: string;
   databaseTable: DatabaseTable;
+  newTable: boolean;
   actions = [{
     name: 'Add table',
     value: 'add-table'
@@ -30,10 +31,21 @@ export class DatabaseComponent implements OnInit {
   ngOnInit() {
     this.databases$ = this.store.pipe(select('databases'));
     this.databases$.subscribe((state: fromDatabases.State) => {
+      console.log(state.database);
+
       if (!state.database || !state.database._properties.dbName) {
         this.actions = [{
           name: 'Initialize',
           value: 'init'
+        }];
+      } else {
+
+        this.actions = [{
+          name: 'Add table',
+          value: 'add-table'
+        }, {
+          name: 'Generate Functions',
+          value: 'generate-functions'
         }];
       }
     });
@@ -45,7 +57,8 @@ export class DatabaseComponent implements OnInit {
 
   onActionClicked(action: { name: string; value: string; }) {
     if (action.value === 'add-table') {
-      this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable());
+      this.newTable = true;
+      // this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable());
     } else if (action.value === 'generate-functions') {
       this.store.dispatch(new DatabasesActions.PageCreateDatabaseFunctions());
     } else if (action.value === 'init') {

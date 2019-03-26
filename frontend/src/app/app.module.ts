@@ -15,6 +15,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { AngularSplitModule } from 'angular-split';
 import { DatabasesEffects } from './store/effects/databases.effect';
 import { databasesReducers } from './store/reducers/databases.reducers';
+import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @NgModule({
   declarations: [
@@ -26,6 +27,7 @@ import { databasesReducers } from './store/reducers/databases.reducers';
     HttpClientModule,
     AppRoutingModule,
     AppMaterialModule,
+    SweetAlert2Module.forRoot({}),
     BrowserAnimationsModule,
     AngularSplitModule.forRoot(),
     StoreRouterConnectingModule.forRoot({

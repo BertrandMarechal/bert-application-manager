@@ -8,9 +8,11 @@ import { FunctionComponent } from './database/function/function.component';
 import { DatabasesRoutingModule } from './databases-routing.module';
 import { DetailsViewModule } from '../shared/details-view/details-view.module';
 import { UtilsModule } from '../shared/utils/utils.module';
-import { DatabasesMaterialModule } from './material/applications.material.module';
+import { DatabasesMaterialModule } from './material/databases.material.module';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AngularSplitModule } from 'angular-split';
+import { NewTableComponent } from './database/new-table/new-table.component';
+import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @NgModule({
   declarations: [
@@ -18,10 +20,12 @@ import { AngularSplitModule } from 'angular-split';
     DatabaseComponent,
     TableComponent,
     FieldComponent,
-    FunctionComponent
+    FunctionComponent,
+    NewTableComponent
   ],
   imports: [
     CommonModule,
+    SweetAlert2Module,
     DatabasesRoutingModule,
     DatabasesMaterialModule,
     DetailsViewModule,
