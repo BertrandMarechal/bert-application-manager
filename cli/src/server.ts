@@ -6,6 +6,7 @@ import { SocketUtils } from './utils/socket.utils';
 import { ApplicationHelper } from './classes/application/application-helper';
 import IO from "socket.io";
 import { DatabaseFileHelper } from './classes/database/database-file-helper';
+import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
 // const graphqlHTTP = require('express-graphql');
 // import {buildSchema} from 'graphql';
 
@@ -73,6 +74,18 @@ export class Server {
                 await DatabaseFileHelper.createFunctions({
                     applicationName: req.params.name + '-database',
                     filter: req.query.filter
+                }, this.socketUtils);
+                res.send(await ApplicationHelper.getDatabase(req.params.name));
+            } catch (error) {
+                console.log(error);
+
+                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+            }
+        });
+        this.app.get('/databases/:name/init', async (req: Request, res: Response) => {
+            try {
+                await DatabaseRepositoryReader.initDatabase({
+                    applicationName: req.params.name + '-database'
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {

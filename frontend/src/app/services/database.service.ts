@@ -19,4 +19,8 @@ export class DatabaseService {
   async createDatabaseFunctions(name: string): Promise<DatabaseObject> {
     return await this.localhostService.get(`databases/${name}/create-functions`);
   }
+
+  async initializeDatabase(name: string): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${name}/init`);
+  }
 }

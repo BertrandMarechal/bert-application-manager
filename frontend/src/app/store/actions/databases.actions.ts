@@ -71,6 +71,25 @@ export class ServiceCreateDatabaseFunctionsFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_INITIALIZE_DATABASE = '[Databases Page] initialize database';
+export const SERVICE_INITIALIZE_DATABASE_COMPLETE = '[Databases Service] initialize database complete';
+export const SERVICE_INITIALIZE_DATABASE_FAILED = '[Databases Service] initialize database failed';
+
+export class PageInitializeDatabase implements Action {
+    readonly type = PAGE_INITIALIZE_DATABASE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceInitializeDatabaseComplete implements Action {
+    readonly type = SERVICE_INITIALIZE_DATABASE_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceInitializeDatabaseFailed implements Action {
+    readonly type = SERVICE_INITIALIZE_DATABASE_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -86,4 +105,8 @@ export type DatabasesActions =
     | PageCreateDatabaseFunctions
     | ServiceCreateDatabaseFunctionsComplete
     | ServiceCreateDatabaseFunctionsFailed
+
+    | PageInitializeDatabase
+    | ServiceInitializeDatabaseComplete
+    | ServiceInitializeDatabaseFailed
     ;

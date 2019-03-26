@@ -54,19 +54,9 @@ export class FrontendFileHelper {
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'model.ts'));
         const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
         const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
-        const ngrxActionsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-actions.ts'));
-        const ngrxReducersFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-reducers.ts'));
-        const ngrxEffectsFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'ngrx', 'ngrx-effects.ts'));
 
         const ngrxFileHelper = new NgrxFileHelper();
 
-        /*
-        name_with_dashes
-        camel_cased_name
-        capitalized_camel_cased_name
-        components_imports
-        components_class_names
-        */
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             const nameWithoutPrefixAndSuffix = tableName

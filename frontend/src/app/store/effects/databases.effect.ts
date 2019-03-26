@@ -45,6 +45,16 @@ export class DatabasesEffects {
         payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
         serviceMethod: this.databasesService.createDatabaseFunctions.bind(this.databasesService)
     });
+
+    @Effect() initializeDatabase: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_INITIALIZE_DATABASE
+        ],
+        store: this.store.pipe(select('databases')),
+        payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
+        serviceMethod: this.databasesService.initializeDatabase.bind(this.databasesService)
+    });
     constructor(
         private actions$: Actions,
         private databasesService: DatabaseService,

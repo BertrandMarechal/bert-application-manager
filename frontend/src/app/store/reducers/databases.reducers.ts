@@ -44,6 +44,7 @@ export function databasesReducers(
             };
         case DatabasesActions.SERVICE_CREATE_DATABASE_TABLE_COMPLETE:
         case DatabasesActions.SERVICE_CREATE_DATABASE_FUNCTIONS_COMPLETE:
+        case DatabasesActions.SERVICE_INITIALIZE_DATABASE_COMPLETE:
             return {
                 ...state,
                 database: action.payload

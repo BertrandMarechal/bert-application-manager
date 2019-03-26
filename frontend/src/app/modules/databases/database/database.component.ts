@@ -11,7 +11,7 @@ import { DatabaseTable } from '@app/models/database-file.model';
   styleUrls: ['./database.component.scss']
 })
 export class DatabaseComponent implements OnInit {
-  databases$: Observable<fromDatabases.FeatureState>;
+  databases$: Observable<fromDatabases.State>;
 
   constructor(
     private store: Store<fromDatabases.State>
@@ -29,6 +29,14 @@ export class DatabaseComponent implements OnInit {
 
   ngOnInit() {
     this.databases$ = this.store.pipe(select('databases'));
+    this.databases$.subscribe((state: fromDatabases.State) => {
+      if (!state.database || !state.database._properties.dbName) {
+        this.actions = [{
+          name: 'Initialize',
+          value: 'init'
+        }];
+      }
+    });
   }
 
   onClickTable(table: DatabaseTable) {
@@ -40,6 +48,8 @@ export class DatabaseComponent implements OnInit {
       this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable());
     } else if (action.value === 'generate-functions') {
       this.store.dispatch(new DatabasesActions.PageCreateDatabaseFunctions());
+    } else if (action.value === 'init') {
+      this.store.dispatch(new DatabasesActions.PageInitializeDatabase());
     }
   }
 }
