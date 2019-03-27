@@ -11,6 +11,7 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 export class FieldComponent implements OnInit {
   @Input() field: DatabaseTableField;
   @Input() table: DatabaseTable;
+  @Input() canEdit: boolean;
   @Output() close = new EventEmitter();
   @Output() delete = new EventEmitter();
   form: FormGroup;

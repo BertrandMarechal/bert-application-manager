@@ -32,7 +32,7 @@
   </button>
   ,
 </form>
-<span *ngIf="!_edit" (click)="_edit = true" style="cursor: pointer;">
+<span *ngIf="!_edit" (click)="canEdit ? _edit = true : null" style="cursor: pointer;">
   <span style="margin-left: 20px;">{{field.name}}</span>
   <span style="color:blueviolet">&nbsp;{{field.type}}</span>
   <span *ngIf="field.isPrimaryKey; else null" style="color: #128496">
