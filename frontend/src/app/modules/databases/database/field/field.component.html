@@ -44,7 +44,7 @@
   <ng-template #null style="color: orange">
     &nbsp;NULL
   </ng-template>
-  <span *ngIf="field.isForeignKey; else null">
+  <span *ngIf="field.isForeignKey && field.foreignKey; else null">
     &nbsp;REFERENCES {{field.foreignKey.table}}({{field.foreignKey.key}})
   </span>
   <span *ngIf="field.default; else null">

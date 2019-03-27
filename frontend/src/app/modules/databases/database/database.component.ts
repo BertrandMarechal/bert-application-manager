@@ -31,8 +31,6 @@ export class DatabaseComponent implements OnInit {
   ngOnInit() {
     this.databases$ = this.store.pipe(select('databases'));
     this.databases$.subscribe((state: fromDatabases.State) => {
-      console.log(state.database);
-
       if (!state.database || !state.database._properties.dbName) {
         this.actions = [{
           name: 'Initialize',
