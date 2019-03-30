@@ -1,3 +1,4 @@
+/* #ignore */
 create table <db>t_entity_type_ety (
     pk_ety_id serial primary key,
     ety_name text UNIQUE not null,
