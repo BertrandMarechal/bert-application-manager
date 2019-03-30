@@ -1,38 +1,63 @@
 <app-details-view [name]="(databases$|async).database?._properties?.dbName" [actions]="actions"
   (actionClicked)="onActionClicked($event)">
-  <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
-    <as-split-area size="30">
-      <mat-form-field>
-        <input type="text" matInput [(ngModel)]="filter" autocomplete="off">
-      </mat-form-field>
-      <mat-nav-list *ngIf="filter">
-        <mat-list-item
-          *ngFor="let table of (databases$|async).database?.table|objectKeys|objectListFilter:filter:'name'"
-          (click)="onClickTable(table)">
-          <a matLine>{{ table.name }}</a>
-        </mat-list-item>
-      </mat-nav-list>
-      <mat-nav-list *ngIf="filter">
-        <mat-list-item
-          *ngFor="let function of (databases$|async).database?.function|objectKeys|objectListFilter:filter:'name'">
-          <a matLine>{{ function.name }}</a>
-        </mat-list-item>
-      </mat-nav-list>
-      <p>{{((databases$|async).database?.table|objectKeys).length}} tables, {{((databases$|async).database?.function|objectKeys).length}} functions available. Pleae type to filter</p>
-    </as-split-area>
-    <as-split-area size="70" *ngIf="databaseTable || editTable">
-      <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
-      <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
-        (save)="onSave($event)"></app-edit-table>
-    </as-split-area>
-  </as-split>
+  <mat-tab-group>
+    <mat-tab label="Tables">
+      <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-128px);">
+        <as-split-area size="30">
+          <mat-form-field>
+            <input type="text" matInput [(ngModel)]="filter" autocomplete="off">
+          </mat-form-field>
+          <mat-nav-list>
+            <mat-list-item
+              *ngFor="let table of (databases$|async).database?.table|objectKeys|objectListFilter:filter:'name'"
+              (click)="onClickTable(table)">
+              <a matLine>{{ table.name }}</a>
+            </mat-list-item>
+          </mat-nav-list>
+          <p>{{((databases$|async).database?.table|objectKeys).length}} tables</p>
+        </as-split-area>
+        <as-split-area size="70" *ngIf="databaseTable || editTable">
+          <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
+          <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
+            (save)="onSave($event)"></app-edit-table>
+        </as-split-area>
+      </as-split>
+    </mat-tab>
+    <mat-tab label="Functions">
+      <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
+        <as-split-area size="30">
+          <mat-form-field>
+            <input type="text" matInput [(ngModel)]="filter" autocomplete="off">
+          </mat-form-field>
+          <mat-nav-list>
+            <mat-list-item
+              *ngFor="let function of (databases$|async).database?.function|objectKeys|objectListFilter:filter:'name'"
+              (click)="onClickFunction(function)">
+              <a matLine>{{ function.name }}</a>
+            </mat-list-item>
+          </mat-nav-list>
+          <p>{{((databases$|async).database?.function|objectKeys).length}} functions</p>
+        </as-split-area>
+        <as-split-area size="70" *ngIf="databaseFunction || editFunction">
+          <app-function [function]="databaseFunction" *ngIf="databaseFunction && !editFunction"></app-function>
+          <!-- <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
+        <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
+          (save)="onSave($event)"></app-edit-table> -->
+        </as-split-area>
+      </as-split>
+    </mat-tab>
+  </mat-tab-group>
 </app-details-view>
 
-<swal title="Template" #swalTemplate [showCloseButton]="true" [showConfirmButton]="true" [showCancelButton]="true" (confirm)="onChoseTemplate($event)">
+
+<swal title="Template" #swalTemplate [showCloseButton]="true" [showConfirmButton]="true" [showCancelButton]="true"
+  (confirm)="onChoseTemplate($event)">
   <div *swalPartial>
     <mat-form-field>
       <mat-select placeholder="Template" [formControl]="templateFormControl">
-        <mat-option value="lookup" *ngIf="!(databases$|async).database.table[(databases$|async).database?._properties?.dbName + 't_lookup_lkp']">Lookup - provides values for drop downs</mat-option>
+        <mat-option value="lookup"
+          *ngIf="!(databases$|async).database.table[(databases$|async).database?._properties?.dbName + 't_lookup_lkp']">
+          Lookup - provides values for drop downs</mat-option>
       </mat-select>
     </mat-form-field>
   </div>

@@ -3,7 +3,7 @@ import * as fromDatabases from '@app/store/reducers/databases.reducers';
 import * as DatabasesActions from '@app/store/actions/databases.actions';
 import { Observable } from 'rxjs';
 import { Store, select } from '@ngrx/store';
-import { DatabaseTable, DatabaseTableForSave } from '@app/models/database-file.model';
+import { DatabaseTable, DatabaseTableForSave, DatabaseSubObject } from '@app/models/database-file.model';
 import { SwalComponent } from '@sweetalert2/ngx-sweetalert2';
 import { SweetAlertResult } from 'sweetalert2';
 import { FormControl } from '@angular/forms';
@@ -24,7 +24,9 @@ export class DatabaseComponent implements OnInit {
 
   filter: string;
   databaseTable: DatabaseTable;
+  databaseFunction: DatabaseSubObject;
   editTable: boolean;
+  editFunction: boolean;
   actions = [{
     name: 'Refresh',
     value: 'refresh'
@@ -73,6 +75,11 @@ export class DatabaseComponent implements OnInit {
   onClickTable(table: DatabaseTable) {
     this.databaseTable = table;
   }
+  onClickFunction(f: DatabaseSubObject) {
+    console.log(f);
+    
+    this.databaseFunction = f;
+  }
 
   onActionClicked(action: { name: string; value: string; }) {
     if (action.value === 'add-table') {
@@ -89,7 +96,7 @@ export class DatabaseComponent implements OnInit {
     }
   }
 
-  onChoseTemplate(swalResult: SweetAlertResult) {
+  onChoseTemplate() {
     this.store.dispatch(new DatabasesActions.PageAddTemplate(this.templateFormControl.value));
   }
 
