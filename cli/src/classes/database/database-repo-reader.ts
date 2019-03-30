@@ -219,6 +219,7 @@ export class DatabaseRepositoryReader {
                         }
                         if (!databaseObject[file.type][file.objectName]) {
                             databaseObject[file.type][file.objectName] = {
+                                name: file.objectName,
                                 latestFile: file.fileName,
                                 latestVersion: databaseFile.versionName,
                                 versions: [{
@@ -227,6 +228,7 @@ export class DatabaseRepositoryReader {
                                 }]
                             };
                         } else {
+                            databaseObject[file.type][file.objectName].name = file.objectName;
                             databaseObject[file.type][file.objectName].latestFile = file.fileName;
                             databaseObject[file.type][file.objectName].latestVersion = databaseFile.versionName;
                             databaseObject[file.type][file.objectName].versions.push({

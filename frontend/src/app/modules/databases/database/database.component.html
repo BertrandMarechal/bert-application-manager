@@ -12,7 +12,13 @@
           <a matLine>{{ table.name }}</a>
         </mat-list-item>
       </mat-nav-list>
-      <p>{{((databases$|async).database?.table|objectKeys).length}} tables available. Pleae type to filter</p>
+      <mat-nav-list *ngIf="filter">
+        <mat-list-item
+          *ngFor="let function of (databases$|async).database?.function|objectKeys|objectListFilter:filter:'name'">
+          <a matLine>{{ function.name }}</a>
+        </mat-list-item>
+      </mat-nav-list>
+      <p>{{((databases$|async).database?.table|objectKeys).length}} tables, {{((databases$|async).database?.function|objectKeys).length}} functions available. Pleae type to filter</p>
     </as-split-area>
     <as-split-area size="70" *ngIf="databaseTable || editTable">
       <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>

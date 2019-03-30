@@ -55,6 +55,7 @@ export interface DatabaseTableForSave {
 export class DatabaseSubObject {
     latestVersion: string;
     latestFile: string;
+    name: string;
     versions: {
         version: string;
         file: string;
@@ -90,7 +91,6 @@ export class DatabaseTable extends DatabaseSubObject {
     tableSuffix: string;
     dbPrefix: string;
     camelCasedName: string;
-    name: string;
     tags: { [name: string]: Tag };
     primaryKey?: DatabaseTableField;
 }

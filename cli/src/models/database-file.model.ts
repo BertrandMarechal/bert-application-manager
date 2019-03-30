@@ -68,6 +68,7 @@ export interface DatabaseTableForSave {
 
 export class DatabaseSubObject {
     latestVersion: string;
+    name: string;
     latestFile: string;
     versions: {
         version: string;
@@ -75,6 +76,7 @@ export class DatabaseSubObject {
     }[];
 
     constructor(params?: any) {
+        this.name = '';
         params = params || {};
         this.latestVersion = params.latestVersion;
         this.latestFile = params.latestFile || '';
@@ -205,7 +207,6 @@ export class DatabaseTable extends DatabaseSubObject {
     tableSuffix: string;
     dbPrefix: string;
     camelCasedName: string;
-    name: string;
     tags: { [name: string]: Tag };
     primaryKey?: DatabaseTableField;
     constructor(params?: any) {
