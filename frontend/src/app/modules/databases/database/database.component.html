@@ -17,8 +17,8 @@
       <p>{{((databases$|async).database?.table|objectKeys).length}} tables available. Pleae type to filter</p>
     </as-split-area>
     <as-split-area size="70" *ngIf="databaseTable || newTable">
-      <app-table [table]="databaseTable" *ngIf="databaseTable"></app-table>
-      <app-new-table [database]="(databases$|async).database" *ngIf="newTable"></app-new-table>
+      <app-table [table]="databaseTable" *ngIf="databaseTable && !newTable"></app-table>
+      <app-new-table [database]="(databases$|async).database" *ngIf="newTable" (cancel)="newTable = false" (save)="onSave($event)"></app-new-table>
     </as-split-area>
   </as-split>
 </app-details-view>

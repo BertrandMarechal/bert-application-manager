@@ -107,13 +107,11 @@ export class LocalhostService {
       cache: 'no-cache',
       credentials: 'same-origin',
     };
-    return <T>(
-      await this.httpClient
+    return <T>await this.httpClient
         .get(`http://localhost:${environment.nodeServerPort}/${url}`, httpOptions)
-        .toPromise()
-    );
+        .toPromise();
   }
-  async post(url: string, body?: any) {
+  async post<T>(url: string, body?: any): Promise<T> {
     const httpOptions = {
       method: 'POST',
       headers: {
@@ -124,7 +122,7 @@ export class LocalhostService {
       credentials: 'same-origin',
     };
     await this._waitForConnection();
-    await this.httpClient.post(
+    return <T>await this.httpClient.post(
       `http://localhost:${environment.nodeServerPort}/${url}`,
       body,
       httpOptions).toPromise();

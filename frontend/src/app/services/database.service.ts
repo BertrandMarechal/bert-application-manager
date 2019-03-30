@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LocalhostService } from './localhost.service';
-import { DatabaseObject } from 'app/models/database-file.model';
+import { DatabaseObject, DatabaseTableForSave } from 'app/models/database-file.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +12,8 @@ export class DatabaseService {
     return await this.localhostService.get(`databases/${name}`);
   }
 
-  async createDatabaseTable(name: string): Promise<DatabaseObject> {
-    return await this.localhostService.get(`databases/${name}/create-table`);
+  async createDatabaseTable(params: {name: string, details: DatabaseTableForSave}): Promise<DatabaseObject> {
+    return await this.localhostService.post(`databases/${params.name}/create-table`, params.details);
   }
 
   async createDatabaseFunctions(name: string): Promise<DatabaseObject> {

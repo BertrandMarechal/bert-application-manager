@@ -32,7 +32,8 @@ export class DatabasesEffects {
             DatabasesActions.PAGE_CREATE_DATABASE_TABLE
         ],
         store: this.store.pipe(select('databases')),
-        payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
+        payloadTransform: (action: DatabasesActions.PageCreateDatabaseTable, state: fromDatabases.State) =>
+            ({name: state.databaseName, details: action.payload}),
         serviceMethod: this.databasesService.createDatabaseTable.bind(this.databasesService)
     });
 

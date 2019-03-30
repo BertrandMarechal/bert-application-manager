@@ -18,6 +18,12 @@
       <mat-option [value]="true">DEFAULT</mat-option>
     </mat-select>
   </mat-form-field>
+  <mat-form-field style="margin-left: 5px; width: 100px;">
+    <mat-select formControlName="unique" placeholder="Unique">
+      <mat-option [value]="false"></mat-option>
+      <mat-option [value]="true">UNIQUE</mat-option>
+    </mat-select>
+  </mat-form-field>
   <mat-form-field style="margin-left: 5px; width: 150px;">
     <input matInput type="text" formControlName="defaultValue" placeholder="Default Value">
   </mat-form-field>
@@ -38,12 +44,15 @@
   <span *ngIf="field.isPrimaryKey; else null" style="color: #128496">
     &nbsp;PRIMARY KEY
   </span>
-  <ng-container style="color: orange" *ngIf="field.notNul; else null">
+  <ng-container style="color: orange" *ngIf="field.notNull; else nullField">
     &nbsp;NOT NULL
   </ng-container>
-  <ng-template #null style="color: orange">
+  <ng-template #nullField style="color: orange">
     &nbsp;NULL
   </ng-template>
+  <span *ngIf="field.unique" style="color: #128496">
+    &nbsp;UNIQUE
+  </span>
   <span *ngIf="field.isForeignKey && field.foreignKey; else null">
     &nbsp;REFERENCES {{field.foreignKey.table}}({{field.foreignKey.key}})
   </span>

@@ -8,24 +8,23 @@ CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbN
     <input matInput type="text" [formControl]="tableSuffixControl" (keyup)="onTableNameKeyup($event)"
       (blur)="onTableNameBlur()" placeholder="Table Suffix" autocomplete="off">
   </mat-form-field>
-  <span *ngIf="!_editTableName" (click)="_editTableName = true"
-    [ngStyle]="{'color': tableNameControl.valid ? 'green' : 'grey'}">{{tableNameControl.value}}</span>
-  <span *ngIf="!_editTableName" (click)="_editTableName = true"
-    [ngStyle]="{'color': tableSuffixControl.valid ? 'green' : 'grey'}">_{{tableSuffixControl.value}}</span>
+  <span *ngIf="!_editTableName"
+    (click)="_editTableName = true"
+    [ngStyle]="{'cursor': 'pointer', 'color': tableNameControl.valid ? 'green' : 'grey'}">{{tableNameControl.value}}</span>
+  <span *ngIf="!_editTableName"
+    (click)="_editTableName = true"
+    [ngStyle]="{'cursor': 'pointer', 'color': tableSuffixControl.valid ? 'green' : 'grey'}">_{{tableSuffixControl.value}}</span>
 </span> (
 
 <div *ngIf="tableNameControl.valid && tableSuffixControl.valid && !_editTableName" @fieldsAnimation>
-  <span class="field">&nbsp;&nbsp;pk_{{tableSuffixControl.value}}_id SERIAL PRIMARY KEY NOT NULL,</span><br>
-  <span class="field" style="color: blueviolet" *ngFor="let field of _fields">
-    <app-field [field]="field"></app-field><br>
+  <span class="field" *ngFor="let field of _fields"><app-field [field]="field"></app-field><br>
   </span>
   &nbsp;&nbsp;<button class="field" mat-stroked-button [swal]="swalAddField">Add</button><br>
-  <span class="field">&nbsp;&nbsp;created_by CHAR(4),</span><br>
-  <span class="field">&nbsp;&nbsp;created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,</span><br>
-  <span class="field">&nbsp;&nbsp;modified_by CHAR(4),</span><br>
-  <span class="field">&nbsp;&nbsp;modified_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP</span>
 </div>
 );
+<button mat-stroked-button color="primary" (click)="onSave()">Save</button>
+<button mat-stroked-button (click)="onCancel()">Cancel</button>
+
 <swal title="Add field" #swalAddField [showCloseButton]="true" [showConfirmButton]="false">
   <form [formGroup]="fieldFormGroup" *swalPartial>
     <mat-checkbox [formControl]="fieldFormGroup.get('isForeignKey')">Is foreign Key</mat-checkbox>

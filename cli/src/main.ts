@@ -29,6 +29,7 @@ const main = async () => {
                     { name: 'environment', alias: 'e', type: String, description: 'environment' },
                     { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
                     { name: 'version', alias: 'v', type: String, description: 'Version to install' },
+                    { name: 'template', alias: 't', type: String, description: 'Template' },
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
                 ]
                 const dbOptions = commandLineArgs(dbOptionsDefinitions, { argv, stopAtFirstUnknown: true });
@@ -76,6 +77,14 @@ const main = async () => {
                             filter: dbOptions.filter,
                         }, loggerUtils);
                         break;
+                    case 't':
+                    case 'add-template':
+                        await DatabaseFileHelper.addTemplate({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions['version'],
+                            template: dbOptions.template,
+                        }, loggerUtils);
+                        break;
                     default:
                         break;
                 }
@@ -90,7 +99,7 @@ const main = async () => {
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
                 ]
                 const serverlessOptions = commandLineArgs(serverlessOptionsDefinitions, { argv, stopAtFirstUnknown: true });
-                
+
                 switch (serverlessOptions.action) {
                     case 'l':
                     case 'list-functions':
@@ -114,7 +123,7 @@ const main = async () => {
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
                 ]
                 const frontendOptions = commandLineArgs(frontendOptionsDefinitions, { argv, stopAtFirstUnknown: true });
-                
+
                 switch (frontendOptions.action) {
                     case 'l':
                     case 'list-functions':

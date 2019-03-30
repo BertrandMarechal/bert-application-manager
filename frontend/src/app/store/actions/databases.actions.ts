@@ -1,5 +1,5 @@
 import { Action } from '@ngrx/store';
-import { DatabaseObject } from 'app/models/database-file.model';
+import { DatabaseObject, DatabaseTableForSave } from 'app/models/database-file.model';
 
 export const PAGE_GET_DATABASE = '[Databases Page] get database';
 export const ROUTER_GET_DATABASE = '[Databases Router] get database';
@@ -39,7 +39,7 @@ export const SERVICE_CREATE_DATABASE_TABLE_FAILED = '[Databases Service] create 
 
 export class PageCreateDatabaseTable implements Action {
     readonly type = PAGE_CREATE_DATABASE_TABLE;
-    constructor(public payload?: string) {
+    constructor(public payload: DatabaseTableForSave) {
     }
 }
 export class ServiceCreateDatabaseTableComplete implements Action {

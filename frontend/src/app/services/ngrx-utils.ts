@@ -15,13 +15,14 @@ export class NgrxUtilsService {
   public static actionToServiceToAction(params: {
     actionsObs: Actions,
     actionsToListenTo: string[],
-    serviceMethod: Function,
+    serviceMethod: (...arg: any) => any,
     payloadTransform?: (action: any, state?: any) => any,
     condition?: (action: any, state?: any) => boolean,
     outputTransform?: (data: any, action?: any, state?: any) => any,
     store?: Observable<Store<any>>,
     successToastMessage?: (data: any, action?: any, state?: any) => string,
-    successSwalMessage?: (data: any, action?: any, state?: any) => string
+    successSwalMessage?: (data: any, action?: any, state?: any) => string,
+    postServiceAction?: (data: any, action?: any, state?: any) => void
   }): Observable<Action> {
     return params.actionsObs
       .pipe(
@@ -50,6 +51,9 @@ export class NgrxUtilsService {
 
           return obs.pipe(
             mergeMap((data: any) => {
+              if (params.postServiceAction) {
+                params.postServiceAction(data, action, state);
+              }
               if (params.successSwalMessage) {
                 swal.fire({
                   type: 'success',

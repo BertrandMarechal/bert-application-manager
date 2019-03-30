@@ -47,6 +47,25 @@ export class Tag {
     }
 }
 
+export interface DatabaseTableForSave {
+    name: string;
+    tags?: Tag[];
+    fields: {
+        name: string;
+        type: string;
+        default?: string;
+        unique?: boolean;
+        notNull?: boolean;
+        isForeignKey?: boolean;
+        isPrimaryKey?: boolean;
+        foreignKey?: {
+            table: String;
+            key: String;
+        };
+        tags?: { [name: string]: Tag };
+    }[];
+}
+
 export class DatabaseSubObject {
     latestVersion: string;
     latestFile: string;
@@ -81,6 +100,7 @@ export class DatabaseTableField {
     listFilterName: string;
     sort: boolean;
     default: boolean;
+    unique: boolean;
     defaultValue: string;
 
     constructor(field: {
@@ -101,6 +121,7 @@ export class DatabaseTableField {
             }, {});
         this.isForeignKey = false;
         this.isPrimaryKey = false;
+        this.unique = false;
         this.retrieveInList = false;
         this.isListFilter = false;
         this.listFilterName = '';
@@ -116,6 +137,10 @@ export class DatabaseTableField {
                 table: reference[1],
                 key: reference[2]
             };
+        }
+        const unique = / unique[^a-z]/i.exec(field.fullText);
+        if (unique) {
+            this.unique = true;
         }
         const def = /default (.*)/i.exec(field.fullText);
         if (def) {

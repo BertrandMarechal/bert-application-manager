@@ -33,6 +33,25 @@ export class Tag {
     value: any;
 }
 
+export interface DatabaseTableForSave {
+    name: string;
+    tags?: Tag[];
+    fields: {
+        name: string;
+        type: string;
+        default?: string;
+        unique?: boolean;
+        notNull?: boolean;
+        isForeignKey?: boolean;
+        isPrimaryKey?: boolean;
+        foreignKey?: {
+            table: String;
+            key: String;
+        };
+        tags?: { [name: string]: Tag };
+    }[];
+}
+
 export class DatabaseSubObject {
     latestVersion: string;
     latestFile: string;
@@ -61,6 +80,7 @@ export class DatabaseTableField {
     sort?: boolean;
     default: boolean;
     defaultValue?: string;
+    unique: boolean;
 }
 
 export class DatabaseTable extends DatabaseSubObject {

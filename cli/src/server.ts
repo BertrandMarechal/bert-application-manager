@@ -57,10 +57,11 @@ export class Server {
         this.app.get('/databases/:name', async (req: Request, res: Response) => {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
-        this.app.get('/databases/:name/create-table', async (req: Request, res: Response) => {
+        this.app.post('/databases/:name/create-table', async (req: Request, res: Response) => {
             try {
                 await DatabaseFileHelper.createTable({
-                    applicationName: req.params.name + '-database'
+                    applicationName: req.params.name + '-database',
+                    tableDetails: req.body
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {

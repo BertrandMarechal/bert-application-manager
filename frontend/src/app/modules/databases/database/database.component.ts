@@ -3,7 +3,7 @@ import * as fromDatabases from '@app/store/reducers/databases.reducers';
 import * as DatabasesActions from '@app/store/actions/databases.actions';
 import { Observable } from 'rxjs';
 import { Store, select } from '@ngrx/store';
-import { DatabaseTable } from '@app/models/database-file.model';
+import { DatabaseTable, DatabaseTableForSave } from '@app/models/database-file.model';
 
 @Component({
   selector: 'app-database',
@@ -26,6 +26,9 @@ export class DatabaseComponent implements OnInit {
   }, {
     name: 'Generate Functions',
     value: 'generate-functions'
+  }, {
+    name: 'Add Template',
+    value: 'add-template'
   }];
 
   ngOnInit() {
@@ -44,6 +47,9 @@ export class DatabaseComponent implements OnInit {
         }, {
           name: 'Generate Functions',
           value: 'generate-functions'
+        }, {
+          name: 'Add Template',
+          value: 'add-template'
         }];
       }
     });
@@ -61,6 +67,13 @@ export class DatabaseComponent implements OnInit {
       this.store.dispatch(new DatabasesActions.PageCreateDatabaseFunctions());
     } else if (action.value === 'init') {
       this.store.dispatch(new DatabasesActions.PageInitializeDatabase());
+    } else if (action.value === 'add-template') {
+      // todo template list to implement
+      // this.store.dispatch(new DatabasesActions.PageInitializeDatabase());
     }
+  }
+
+  onSave($event: DatabaseTableForSave) {
+    this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable($event));
   }
 }

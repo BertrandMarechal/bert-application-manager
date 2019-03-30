@@ -1,4 +1,4 @@
-import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag } from "../../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
@@ -44,6 +44,69 @@ export class DatabaseFileHelper {
             }
         }
         return versionToChange;
+    }
+
+    static async addTemplate(params: {
+        applicationName: string;
+        version?: string;
+        template?: string;
+    }, uiUtils: UiUtils): Promise<boolean> {
+        uiUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
+        
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
+        
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
+            throw 'This application does not exist';
+        }
+
+        const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
+
+        const templateFiles: string[] = [];
+
+        switch(params.template) {
+            case 'lookup':
+                if (databaseObject.table[databaseObject._properties.dbName + 't_lookup_lkp'] || databaseObject.table[databaseObject._properties.dbName + 't_lookup_type_lty']) {
+                    throw 'This application already has lookup tables';
+                }
+                
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
+
+
+                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `lookup_type.sql`));
+                let fileName = `${databaseObject._properties.dbName}t_lookup_type_lty.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
+                );
+
+                fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `lookup.sql`));
+                fileName = `${databaseObject._properties.dbName}t_lookup_lkp.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
+                );
+
+                folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups');
+
+                fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `get_lookups.sql`));
+                fileName = `${databaseObject._properties.dbName}f_get_lookups.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../','postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups', fileName].join('/')
+                );
+            break;
+            default:
+            throw 'Unknown template';
+        }
+        if (templateFiles.length) {
+            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
+        }
+        return true;
     }
     static async createFunctions(params: {
         applicationName: string;
@@ -333,24 +396,7 @@ export class DatabaseFileHelper {
     static async createTable(params: {
         applicationName: string;
         version?: string;
-        tableDetails?: {
-            name: string;
-            tags?: Tag[];
-            fields: {
-                name: string;
-                type: string;
-                default?: string;
-                unique?: boolean;
-                notNull?: boolean;
-                isForeignKey?: boolean;
-                isPrimaryKey?: boolean;
-                foreignKey?: {
-                    table: String;
-                    key: String;
-                };
-                tags?: Tag[];
-            }[]
-        }
+        tableDetails?: DatabaseTableForSave
     }, uiUtils: UiUtils) {
         uiUtils.info({origin: this._origin, message: `Getting ready to create table.`});
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);

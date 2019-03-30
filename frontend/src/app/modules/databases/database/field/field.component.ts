@@ -11,7 +11,7 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 export class FieldComponent implements OnInit {
   @Input() field: DatabaseTableField;
   @Input() table: DatabaseTable;
-  @Input() canEdit: boolean;
+  @Input() canEdit = true;
   @Output() close = new EventEmitter();
   @Output() delete = new EventEmitter();
   form: FormGroup;
@@ -29,6 +29,7 @@ export class FieldComponent implements OnInit {
       }, [Validators.required, this.nameValidator.bind(this)]),
       type: new FormControl(this.field.type, Validators.required),
       notNull: new FormControl(this.field.notNull),
+      unique: new FormControl(this.field.unique),
       default: new FormControl(this.field.default),
       defaultValue: new FormControl(this.field.defaultValue),
     });
