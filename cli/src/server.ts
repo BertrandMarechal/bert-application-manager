@@ -70,6 +70,19 @@ export class Server {
                 this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
             }
         });
+        this.app.post('/databases/:name/add-template', async (req: Request, res: Response) => {
+            try {
+                await DatabaseFileHelper.addTemplate({
+                    applicationName: req.params.name + '-database',
+                    template: req.body.template
+                }, this.socketUtils);
+                res.send(await ApplicationHelper.getDatabase(req.params.name));
+            } catch (error) {
+                console.log(error);
+
+                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+            }
+        });
         this.app.get('/databases/:name/create-functions', async (req: Request, res: Response) => {
             try {
                 await DatabaseFileHelper.createFunctions({

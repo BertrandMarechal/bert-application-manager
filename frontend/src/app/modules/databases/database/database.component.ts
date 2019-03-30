@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import * as fromDatabases from '@app/store/reducers/databases.reducers';
 import * as DatabasesActions from '@app/store/actions/databases.actions';
 import { Observable } from 'rxjs';
 import { Store, select } from '@ngrx/store';
 import { DatabaseTable, DatabaseTableForSave } from '@app/models/database-file.model';
+import { SwalComponent } from '@sweetalert2/ngx-sweetalert2';
+import { SweetAlertResult } from 'sweetalert2';
+import { FormControl } from '@angular/forms';
 
 @Component({
   selector: 'app-database',
@@ -12,6 +15,8 @@ import { DatabaseTable, DatabaseTableForSave } from '@app/models/database-file.m
 })
 export class DatabaseComponent implements OnInit {
   databases$: Observable<fromDatabases.State>;
+  @ViewChild('swalTemplate') swalTemplate: SwalComponent;
+  templateFormControl: FormControl;
 
   constructor(
     private store: Store<fromDatabases.State>
@@ -19,7 +24,7 @@ export class DatabaseComponent implements OnInit {
 
   filter: string;
   databaseTable: DatabaseTable;
-  newTable: boolean;
+  editTable: boolean;
   actions = [{
     name: 'Add table',
     value: 'add-table'
@@ -32,6 +37,7 @@ export class DatabaseComponent implements OnInit {
   }];
 
   ngOnInit() {
+    this.templateFormControl = new FormControl();
     this.databases$ = this.store.pipe(select('databases'));
     this.databases$.subscribe((state: fromDatabases.State) => {
       if (!state.database || !state.database._properties.dbName) {
@@ -61,16 +67,20 @@ export class DatabaseComponent implements OnInit {
 
   onActionClicked(action: { name: string; value: string; }) {
     if (action.value === 'add-table') {
-      this.newTable = true;
+      this.editTable = true;
       // this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable());
     } else if (action.value === 'generate-functions') {
       this.store.dispatch(new DatabasesActions.PageCreateDatabaseFunctions());
     } else if (action.value === 'init') {
       this.store.dispatch(new DatabasesActions.PageInitializeDatabase());
     } else if (action.value === 'add-template') {
-      // todo template list to implement
-      // this.store.dispatch(new DatabasesActions.PageInitializeDatabase());
+      this.templateFormControl.reset();
+      this.swalTemplate.show();
     }
+  }
+
+  onChoseTemplate(swalResult: SweetAlertResult) {
+    this.store.dispatch(new DatabasesActions.PageAddTemplate(this.templateFormControl.value));
   }
 
   onSave($event: DatabaseTableForSave) {

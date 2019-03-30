@@ -90,6 +90,25 @@ export class ServiceInitializeDatabaseFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_ADD_TEMPLATE = '[Databases Page] add template';
+export const SERVICE_ADD_TEMPLATE_COMPLETE = '[Databases Service] add template complete';
+export const SERVICE_ADD_TEMPLATE_FAILED = '[Databases Service] add template failed';
+
+export class PageAddTemplate implements Action {
+    readonly type = PAGE_ADD_TEMPLATE;
+    constructor(public payload: string) {
+    }
+}
+export class ServiceAddTemplateComplete implements Action {
+    readonly type = SERVICE_ADD_TEMPLATE_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceAddTemplateFailed implements Action {
+    readonly type = SERVICE_ADD_TEMPLATE_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -109,4 +128,8 @@ export type DatabasesActions =
     | PageInitializeDatabase
     | ServiceInitializeDatabaseComplete
     | ServiceInitializeDatabaseFailed
+
+    | PageAddTemplate
+    | ServiceAddTemplateComplete
+    | ServiceAddTemplateFailed
     ;

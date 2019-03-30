@@ -1,6 +1,4 @@
-<app-details-view
-  [name]="(databases$|async).database?._properties?.dbName"
-  [actions]="actions"
+<app-details-view [name]="(databases$|async).database?._properties?.dbName" [actions]="actions"
   (actionClicked)="onActionClicked($event)">
   <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
     <as-split-area size="30">
@@ -16,9 +14,20 @@
       </mat-nav-list>
       <p>{{((databases$|async).database?.table|objectKeys).length}} tables available. Pleae type to filter</p>
     </as-split-area>
-    <as-split-area size="70" *ngIf="databaseTable || newTable">
-      <app-table [table]="databaseTable" *ngIf="databaseTable && !newTable"></app-table>
-      <app-edit-table [database]="(databases$|async).database" *ngIf="newTable" (cancel)="newTable = false" (save)="onSave($event)"></app-edit-table>
+    <as-split-area size="70" *ngIf="databaseTable || editTable">
+      <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
+      <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
+        (save)="onSave($event)"></app-edit-table>
     </as-split-area>
   </as-split>
 </app-details-view>
+
+<swal title="Template" #swalTemplate [showCloseButton]="true" [showConfirmButton]="true" [showCancelButton]="true" (confirm)="onChoseTemplate($event)">
+  <div *swalPartial>
+    <mat-form-field>
+      <mat-select placeholder="Template" [formControl]="templateFormControl">
+        <mat-option value="lookup" *ngIf="!(databases$|async).database.table[(databases$|async).database?._properties?.dbName + 't_lookup_lkp']">Lookup - provides values for drop downs</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</swal>

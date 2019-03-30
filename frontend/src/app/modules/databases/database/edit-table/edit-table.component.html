@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbN
   &nbsp;&nbsp;<button class="field" mat-stroked-button [swal]="swalAddField">Add</button><br>
 </div>
 );
-<button mat-stroked-button color="primary" (click)="onSave()">Save</button>
+<br>
+<button mat-stroked-button color="primary"
+  (click)="onSave()"
+  *ngIf="tableNameControl.valid && tableSuffixControl.valid && !_editTableName">Save</button>
 <button mat-stroked-button (click)="onCancel()">Cancel</button>
 
 <swal title="Add field" #swalAddField [showCloseButton]="true" [showConfirmButton]="false">
@@ -56,6 +59,8 @@ CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbN
     <app-field [field]="_tempField" [canEdit]="false"></app-field><br>
     <br>
     <button mat-stroked-button (click)="swalAddField.close()">Cancel</button>
-    <button mat-stroked-button [disabled]="!fieldFormGroup.valid" (click)="onAddField()">Add</button>
+    <button mat-stroked-button
+      [disabled]="!fieldFormGroup.valid"
+      (click)="onAddField()">Add</button>
   </form>
 </swal>
