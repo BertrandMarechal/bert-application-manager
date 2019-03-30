@@ -3,7 +3,6 @@ import { DatabaseObject, DatabaseTableField, DatabaseTable, DatabaseTableForSave
 import { FormControl, Validators, FormGroup } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { trigger, transition, query, style, stagger, animate, keyframes } from '@angular/animations';
-import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber';
 
 const Toast = Swal.mixin({
   toast: true,
@@ -13,9 +12,9 @@ const Toast = Swal.mixin({
 });
 
 @Component({
-  selector: 'app-new-table',
-  templateUrl: './new-table.component.html',
-  styleUrls: ['./new-table.component.scss'],
+  selector: 'app-edit-table',
+  templateUrl: './edit-table.component.html',
+  styleUrls: ['./edit-table.component.scss'],
   animations: [
     trigger('fieldsAnimation', [
       transition('* => *', [
@@ -30,7 +29,7 @@ const Toast = Swal.mixin({
     ])
   ]
 })
-export class NewTableComponent implements OnInit, AfterViewInit {
+export class EditTableComponent implements OnInit, AfterViewInit {
   @Input() database: DatabaseObject;
   @Output() save = new EventEmitter<DatabaseTableForSave>();
   @Output() cancel = new EventEmitter();
@@ -70,7 +69,8 @@ export class NewTableComponent implements OnInit, AfterViewInit {
         name: 'pk_TBL_id',
         isPrimaryKey: true,
         notNull: true,
-        type: 'SERIAL', default: false, unique: true, isForeignKey: false },
+        type: 'SERIAL', default: false, unique: true, isForeignKey: false
+      },
       {
         name: 'created_by',
         isPrimaryKey: false,
@@ -124,7 +124,7 @@ export class NewTableComponent implements OnInit, AfterViewInit {
 
     this.tableNameControl.valueChanges.subscribe((value: string) => {
       if (value && value.length > 3) {
-        this.tableSuffixControl.patchValue(NewTableComponent.getSuffix(value));
+        this.tableSuffixControl.patchValue(EditTableComponent.getSuffix(value));
       }
     });
     this.fieldFormGroup = new FormGroup({

@@ -3,7 +3,8 @@
         "userToUse": "root",
         "dependencies": [],
         "fileList": [
-            "..//postgres/release/0.1.0.0/schema/03-tables/<db>t_version_ver.sql"
+            "..//postgres/release/current/schema/03-tables/<db>t_version_ver.sql",
+            "..//postgres/release/current/schema/03-tables/<db>t_entity_type_ety.sql"
         ],
         "changeLog": [
             "Added the version table"

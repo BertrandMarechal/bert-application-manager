@@ -18,7 +18,7 @@
     </as-split-area>
     <as-split-area size="70" *ngIf="databaseTable || newTable">
       <app-table [table]="databaseTable" *ngIf="databaseTable && !newTable"></app-table>
-      <app-new-table [database]="(databases$|async).database" *ngIf="newTable" (cancel)="newTable = false" (save)="onSave($event)"></app-new-table>
+      <app-edit-table [database]="(databases$|async).database" *ngIf="newTable" (cancel)="newTable = false" (save)="onSave($event)"></app-edit-table>
     </as-split-area>
   </as-split>
 </app-details-view>

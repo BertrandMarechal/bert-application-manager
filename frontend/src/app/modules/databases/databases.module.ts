@@ -11,7 +11,7 @@ import { UtilsModule } from '../shared/utils/utils.module';
 import { DatabasesMaterialModule } from './material/databases.material.module';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AngularSplitModule } from 'angular-split';
-import { NewTableComponent } from './database/new-table/new-table.component';
+import { EditTableComponent } from './database/new-table/edit-table.component';
 import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @NgModule({
@@ -21,7 +21,7 @@ import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
     TableComponent,
     FieldComponent,
     FunctionComponent,
-    NewTableComponent
+    EditTableComponent
   ],
   imports: [
     CommonModule,

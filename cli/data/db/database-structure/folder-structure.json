@@ -40,11 +40,11 @@
                     ]
                 },
                 {
-                    "folderName": "0.1.0.0",
+                    "folderName": "current",
                     "children": [
                         {
                             "fileName": "version.json",
-                            "fileSource": "0.1.0.0.json"
+                            "fileSource": "current.json"
                         },
                         {
                             "folderName": "schema",
@@ -55,6 +55,10 @@
                                         {
                                             "fileName": "<db>t_version_ver.sql",
                                             "fileSource": "version_table.sql"
+                                        },
+                                        {
+                                            "fileName": "<db>t_entity_type_ety.sql",
+                                            "fileSource": "entity_type_table.sql"
                                         }
                                     ]
                                 }
