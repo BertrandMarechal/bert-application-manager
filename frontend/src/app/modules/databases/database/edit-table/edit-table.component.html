@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbN
 </span> (
 
 <div *ngIf="tableNameControl.valid && tableSuffixControl.valid && !_editTableName" @fieldsAnimation>
-  <span class="field" *ngFor="let field of _fields"><app-field [field]="field"></app-field><br>
+  <span class="field" *ngFor="let field of _fields"><app-field [field]="field"></app-field>
   </span>
-  &nbsp;&nbsp;<button class="field" mat-stroked-button [swal]="swalAddField">Add</button><br>
+  <br>&nbsp;&nbsp;<button class="field" mat-stroked-button [swal]="swalAddField">Add</button><br>
 </div>
 );
 <br>

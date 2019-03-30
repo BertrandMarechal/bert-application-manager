@@ -109,6 +109,25 @@ export class ServiceAddTemplateFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_REFRESH = '[Databases Page] refresh';
+export const SERVICE_REFRESH_COMPLETE = '[Databases Service] refresh complete';
+export const SERVICE_REFRESH_FAILED = '[Databases Service] refresh failed';
+
+export class PageRefresh implements Action {
+    readonly type = PAGE_REFRESH;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceRefreshComplete implements Action {
+    readonly type = SERVICE_REFRESH_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceRefreshFailed implements Action {
+    readonly type = SERVICE_REFRESH_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -132,4 +151,8 @@ export type DatabasesActions =
     | PageAddTemplate
     | ServiceAddTemplateComplete
     | ServiceAddTemplateFailed
+
+    | PageRefresh
+    | ServiceRefreshComplete
+    | ServiceRefreshFailed
     ;

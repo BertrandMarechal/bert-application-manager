@@ -27,6 +27,7 @@ BEGIN
     FROM <db_name>t_lookup_type_lty lty
     INNER JOIN <db_name>t_lookup_lkp lkp ON fk_lty_lkp_type_id = pk_lty_id
     WHERE lty_name = ANY(i_lookup_type_name)
+    ORDER BY lkp_rank, lkp_name
     GROUP BY lty_name;
 END;
 $dbvis$ LANGUAGE plpgsql

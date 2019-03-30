@@ -21,9 +21,16 @@ export class DatabasesEffects {
         actionsToListenTo: [
             DatabasesActions.EFFECT_GET_DATABASE,
             DatabasesActions.ROUTER_GET_DATABASE,
-            DatabasesActions.PAGE_GET_DATABASE
+            DatabasesActions.PAGE_GET_DATABASE,
         ],
         serviceMethod: this.databasesService.getDatabase.bind(this.databasesService)
+    });
+    @Effect() refreshDatabase: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [DatabasesActions.PAGE_REFRESH],
+        store: this.store.pipe(select('databases')),
+        payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
+        serviceMethod: this.databasesService.refreshDatabase.bind(this.databasesService),
     });
 
     @Effect() createDatabaseTable: Observable<Action> = NgrxUtilsService.actionToServiceToAction({

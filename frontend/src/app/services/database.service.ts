@@ -12,6 +12,10 @@ export class DatabaseService {
     return await this.localhostService.get(`databases/${name}`);
   }
 
+  async refreshDatabase(name: string): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${name}/refresh`);
+  }
+
   async createDatabaseTable(params: {name: string, details: DatabaseTableForSave}): Promise<DatabaseObject> {
     return await this.localhostService.post(`databases/${params.name}/create-table`, params.details);
   }

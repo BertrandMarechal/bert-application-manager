@@ -186,6 +186,9 @@ export class EditTableComponent implements OnInit, AfterViewInit {
       this.tableSuffixControl.valid) {
       this._editTableName = false;
     }
+    if (this.tableSuffixControl.valid) {
+      this._fields[0].name = `pk_${this.tableSuffixControl.value}_id`;
+    }
     this._firstBlur = false;
   }
 
