@@ -16,17 +16,15 @@ export class SyntaxUtils {
 
     static simplifyDbFileForAnalysis(fileString: string): string {
         let toReturn = fileString;
-        while (toReturn.match(/ {2}/)) {
-            // while loop here to manage the odd number of spaces
-            toReturn = toReturn.replace(/ {2}/g, ' ');
-        }
         toReturn = toReturn
-            .replace(/\r/g, '')
-            .replace(/\n/g, '')
-            .replace(/\\r/g, '')
-            .replace(/\\n/g, '')
-            .replace(/\\"/g, '')
-            .replace(/\t/g, ' ');
+            .replace(/\r/g, ' ')
+            .replace(/\n/g, ' ')
+            .replace(/\\r/g, ' ')
+            .replace(/\\n/g, ' ')
+            .replace(/\t/g, ' ')
+            .replace(/ {2}/g, ' ')
+            .replace(/ {2}/g, ' ') // we do this one twice to manage the odd number of spaces
+            .replace(/\\"/g, '');
         return toReturn;
     }
 }

@@ -2,6 +2,8 @@ import express, { Express, Request, Response } from 'express';
 import * as http from 'http';
 import * as bodyParser from 'body-parser';
 import { OpenBrowserUtils } from './utils/open-browser.utils';
+import graphqlHTTP from 'express-graphql';
+import { buildSchema } from 'graphql';
 import { SocketUtils } from './utils/socket.utils';
 import { ApplicationHelper } from './classes/application/application-helper';
 import IO from "socket.io";
@@ -32,7 +34,7 @@ export class Server {
             next();
         });
 
-        
+
         this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
         this.app.use(bodyParser.json({ limit: '50mb' })); // to support JSON-encoded bodies
 
@@ -59,10 +61,13 @@ export class Server {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         this.app.get('/databases/:name/refresh', async (req: Request, res: Response) => {
-            res.send(await RepositoryUtils.readRepository({
-                startPath: (await  ApplicationHelper.getDatabase(req.params.name))._properties.path,
+            await RepositoryUtils.readRepository({
+                startPath: (await ApplicationHelper.getDatabase(req.params.name))._properties.path,
                 type: 'postgres'
-            }, this.socketUtils));
+            }, this.socketUtils);
+            console.log(req.params.name);
+
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         this.app.post('/databases/:name/create-table', async (req: Request, res: Response) => {
             try {
@@ -73,8 +78,7 @@ export class Server {
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {
                 console.log(error);
-
-                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+                this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
             }
         });
         this.app.post('/databases/:name/add-template', async (req: Request, res: Response) => {
@@ -87,7 +91,7 @@ export class Server {
             } catch (error) {
                 console.log(error);
 
-                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+                this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
             }
         });
         this.app.get('/databases/:name/create-functions', async (req: Request, res: Response) => {
@@ -100,7 +104,7 @@ export class Server {
             } catch (error) {
                 console.log(error);
 
-                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+                this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
             }
         });
         this.app.get('/databases/:name/init', async (req: Request, res: Response) => {
@@ -112,14 +116,26 @@ export class Server {
             } catch (error) {
                 console.log(error);
 
-                this.socketUtils.error({origin: 'Server', message: JSON.stringify(error)})
+                this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
             }
         });
-        
-        // this.app.use('/graphql', graphqlHTTP({
-        //     schema: MyGraphQLSchema,
-        //     graphiql: true
-        // }));
+
+        /*
+        const schema = buildSchema(`
+            type Query {
+                hello: String
+            }
+        `);
+        // The root provides a resolver function for each API endpoint
+        const root = {
+          hello: () => 'Hello world!',
+        };
+        this.app.use('/graphql', graphqlHTTP({
+            schema: schema,
+            rootValue: root,
+            graphiql: true
+        }));
+        */
 
         this.io.on('connection', (client: IO.Socket) => {
             console.log('Client connected');

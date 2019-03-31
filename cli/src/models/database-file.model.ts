@@ -282,7 +282,7 @@ export class DatabaseFunction extends DatabaseSubObject {
         }
         const returnTableMatch = /returns table ?\(([^()]+)\)/i.exec(functionFile);
         const returnSetOfMatch = /returns setof ([a-z0-9_])/i.exec(functionFile);
-        const returnSingleMatch = /returns ([a-z0-9_()])/i.exec(functionFile);
+        const returnSingleMatch = /returns ([a-z0-9_()]+)/i.exec(functionFile);
         if (returnTableMatch) {
             this.returnType = 'table';
             this.returnTable = returnTableMatch[1].trim()
@@ -297,8 +297,6 @@ export class DatabaseFunction extends DatabaseSubObject {
                     paramToReturn.type = paramSplit.join(' ').toLowerCase();
                     return paramToReturn;
                 });
-            console.log(returnTableMatch[1]);
-            
         } else if (returnSetOfMatch) {
             this.returnType = `setof ${returnSetOfMatch[1].toLowerCase()}`;
         } else if (returnSingleMatch) {
@@ -306,8 +304,6 @@ export class DatabaseFunction extends DatabaseSubObject {
         } else {
             this.returnType = 'void';
         }
-        console.log(this);
-        
     }
 }
 

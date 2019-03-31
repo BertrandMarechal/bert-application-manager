@@ -76,6 +76,8 @@ export class DatabaseComponent implements OnInit {
     this.databaseTable = table;
   }
   onClickFunction(f: DatabaseSubObject) {
+    console.log(f);
+    
     this.databaseFunction = f;
   }
 

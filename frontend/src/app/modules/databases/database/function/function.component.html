@@ -6,21 +6,28 @@ CREATE <span *ngIf="function.hasOrReplace">OR REPLACE </span> FUNCTION {{functio
     <span>&nbsp;{{argument.name}}</span>
     <span>&nbsp;{{argument.type}}</span>
     <span *ngIf="argument.defaultValue">&nbsp;DEFAULT {{argument.defaultValue}}</span>
-    <span *ngIf="i === function.arguments.length">,</span>
+    <span *ngIf="i !== function.arguments.length - 1">,</span>
 </span>)<br>
 <span *ngIf="function.mode">{{function.mode}}<br></span>
 <span *ngIf="function.returnType !== 'void'">
     RETURNS
     <span *ngIf="function.returnType !== 'table'; else returnTableElse">
-        <span *ngIf="function.returnType === 'setof'">SETOF </span>{{function.mode}}
+        <span *ngIf="function.returnType === 'setof'">SETOF </span>{{function.returnType}}
     </span>
     <ng-template #returnTableElse>
         &nbsp;TABLE (<span *ngFor="let returnTableField of function.returnTable; let i = index">
-                <br>
-                <span>&nbsp;"{{returnTableField.name}}"</span>
-                <span>&nbsp;{{returnTableField.type}}</span>
-                <span *ngIf="i === function.returnTable.length">,</span>
-            </span>)
+            <br>
+            <span>&nbsp;"{{returnTableField.name}}"</span>
+            <span>&nbsp;{{returnTableField.type}}</span>
+            <span *ngIf="i !== function.returnTable.length - 1">,</span>
+        </span>)
     </ng-template>
     <br>
+</span>
+<br>
+<h4>Versions</h4>
+<span>
+    <span *ngFor="let version of function.versions">
+        <span >{{version.version}}</span><br>
+    </span>
 </span>
