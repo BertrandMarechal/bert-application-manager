@@ -67,8 +67,8 @@ export interface DatabaseTableForSave {
 }
 
 export class DatabaseSubObject {
-    latestVersion: string;
     name: string;
+    latestVersion: string;
     latestFile: string;
     camelCasedName?: string;
     versions: {
@@ -212,13 +212,14 @@ export class DatabaseFunction extends DatabaseSubObject {
         defaultValue: string
     }[];
     returnType: string;
-    returnTable: {name: string, type: string}[];
+    returnTable?: {name: string, type: string}[];
+    hasOrReplace: boolean;
     constructor(params?: any) {
         super(params);
+        this.hasOrReplace = false;
         this.dbPrefix = '';
         this.mode = '';
         this.returnType = '';
-        this.returnTable = [];
         this.arguments = [];
     }
 
@@ -275,6 +276,10 @@ export class DatabaseFunction extends DatabaseSubObject {
                     return paramToReturn;
                 });
         }
+
+        if (/create or replace function (?:\"?public\"?\.)?\"?[a-z0-9_]+\"? \(([^()]+)\)/i.test(functionFile)) {
+            this.hasOrReplace = true;
+        }
         const returnTableMatch = /returns table ?\(([^()]+)\)/i.exec(functionFile);
         const returnSetOfMatch = /returns setof ([a-z0-9_])/i.exec(functionFile);
         const returnSingleMatch = /returns ([a-z0-9_()])/i.exec(functionFile);
@@ -292,6 +297,8 @@ export class DatabaseFunction extends DatabaseSubObject {
                     paramToReturn.type = paramSplit.join(' ').toLowerCase();
                     return paramToReturn;
                 });
+            console.log(returnTableMatch[1]);
+            
         } else if (returnSetOfMatch) {
             this.returnType = `setof ${returnSetOfMatch[1].toLowerCase()}`;
         } else if (returnSingleMatch) {

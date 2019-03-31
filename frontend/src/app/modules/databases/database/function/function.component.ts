@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { DatabaseSubObject } from '@app/models/database-file.model';
+import { DatabaseFunction } from '@app/models/database-file.model';
 
 @Component({
   selector: 'app-function',
@@ -7,7 +7,7 @@ import { DatabaseSubObject } from '@app/models/database-file.model';
   styleUrls: ['./function.component.scss']
 })
 export class FunctionComponent implements OnInit {
-  @Input() function: DatabaseSubObject;
+  @Input() function: DatabaseFunction;
 
   constructor() { }
 

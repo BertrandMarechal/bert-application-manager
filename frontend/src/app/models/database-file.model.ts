@@ -53,9 +53,10 @@ export interface DatabaseTableForSave {
 }
 
 export class DatabaseSubObject {
+    name: string;
     latestVersion: string;
     latestFile: string;
-    name: string;
+    camelCasedName: string;
     versions: {
         version: string;
         file: string;
@@ -84,13 +85,26 @@ export class DatabaseTableField {
     unique: boolean;
 }
 
+
+export class DatabaseFunction extends DatabaseSubObject {
+    dbPrefix: string;
+    mode: string;
+    arguments: {
+        mode: string,
+        name: string,
+        type: string,
+        defaultValue: string
+    }[];
+    returnType: string;
+    returnTable?: {name: string, type: string}[];
+    hasOrReplace: boolean;
+}
 export class DatabaseTable extends DatabaseSubObject {
     fields: {
         [name: string]: DatabaseTableField;
     };
     tableSuffix: string;
     dbPrefix: string;
-    camelCasedName: string;
     tags: { [name: string]: Tag };
     primaryKey?: DatabaseTableField;
 }
