@@ -132,6 +132,7 @@ export class DatabaseObject {
         dbName: string;
         hasCurrent: boolean;
         path: string;
+        lastVersion: string;
     };
     _parameters: {
         [name: string]: string[];

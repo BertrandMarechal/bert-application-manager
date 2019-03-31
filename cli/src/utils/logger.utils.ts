@@ -1,7 +1,9 @@
 import colors from 'colors';
 import * as readline from "readline";
+import inquirere from 'inquirer';
 
 import {UiUtils, LoggingParams, LoggerColors} from './ui.utils';
+import inquirer = require('inquirer');
 
 let _originMaxLength = 0;
 let _spaces = '';
@@ -129,7 +131,7 @@ export class LoggerUtils extends UiUtils {
     success(params: LoggingParams) {
         LoggerUtils.log({...params,type: 'success'});
     }
-    question(params: {text: string, origin: string}): Promise<string> {
+    async question(params: {text: string, origin: string}): Promise<string> {
         const origin = `[${params.origin}${_spaces}`.slice(0, _originMaxLength + 1) + ']';
         const text = new Date().toISOString().substr(0, 19) +
             ' - ' +
@@ -146,5 +148,15 @@ export class LoggerUtils extends UiUtils {
                 rl.close();
             });
         });
+    }
+    async choices(params: {choices: string[], title: string, message: string}): Promise<{[name: string]: string}> {
+        return await inquirer.prompt([
+            {
+                type: 'list',
+                name: params.title,
+                message: params.message,
+                choices: params.choices,
+            }
+        ]);
     }
 }

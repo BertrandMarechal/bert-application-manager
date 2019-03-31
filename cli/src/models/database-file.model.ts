@@ -422,6 +422,7 @@ export class DatabaseObject {
         dbName: string;
         hasCurrent: boolean;
         path: string;
+        lastVersion: string;
     };
     _parameters: {
         [name: string]: string[];
@@ -452,6 +453,7 @@ export class DatabaseObject {
             dbName: '',
             hasCurrent: false,
             path: '',
+            lastVersion: ''
         };
         this._parameters = params._parameters || {};
     }

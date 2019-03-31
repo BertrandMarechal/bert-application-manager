@@ -56,6 +56,13 @@ const main = async () => {
                             version: dbOptions.version
                         }, loggerUtils);
                         break;
+                    case 'create-version':
+                    case 'cv':
+                        await DatabaseFileHelper.createVersion({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions.version
+                        }, loggerUtils);
+                        break;
                     case 'init':
                     case 'n':
                         await DatabaseRepositoryReader.initDatabase({

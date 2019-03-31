@@ -1,4 +1,4 @@
-import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave } from "../../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave, DatabaseVersion } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
@@ -504,13 +504,27 @@ export class DatabaseFileHelper {
                 }]);
         }
         // we try and build the table based on the provided details
-        let tableString = `CREATE OR REPLACE TABLE public."${params.tableDetails.name}" (\n`;
+        let tableString = ``;
+        if (params.tableDetails.tags && params.tableDetails.tags.length) {
+            tableString += `/* ${params.tableDetails.tags.map(tag => {
+                return `#${tag.name}${tag.value ? `=${tag.value}` : ''}`;
+            }).join(' ')} */\n`;
+        }
+        tableString += `CREATE OR REPLACE TABLE public."${params.tableDetails.name}" (\n`;
         tableString += params.tableDetails.fields.map(field => {
             let fieldString = `${indentation}${field.name} ${field.type}`;
             fieldString += `${field.isPrimaryKey ? ' PRIMARY KEY' : ''}`;
             fieldString += `${field.unique ? ' UNIQUE' : ''}`;
             fieldString += `${field.notNull ? ' NOT' : ''} NULL`;
             fieldString += `${field.notNull && field.default ? ` DEFAULT ${field.default}` : ''}`;
+            if (field.tags && Object.keys(field.tags).length) {
+                fieldString += `/* ${Object.keys(field.tags).map(tagName => {
+                    if (field.tags && field.tags[tagName]) {
+                        return `#${field.tags[tagName].name}${field.tags[tagName].value ? `=${field.tags[tagName].value}` : ''}`;
+                    }
+                    return '';
+                }).filter(Boolean).join(' ')} */`;
+            }
             return fieldString;
         }).join(',\n');
         tableString += '\n);';
@@ -590,5 +604,70 @@ export class DatabaseFileHelper {
             throw 'Could not find a proper suffix for this table. try providing one in the name';
         }
         return tableName + '_' + suffix;
+    }
+
+    static async createVersion(params: {
+        applicationName: string;
+        version: string;
+    }, uiUtils: UiUtils): Promise<boolean> {
+        uiUtils.info({origin: this._origin, message: `Getting ready to create version.`});
+        
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
+        
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
+            throw 'This application does not exist';
+        }
+
+        if (!databaseObject._properties.hasCurrent) {
+            throw `In order to create a version, you will need to change / create something on the database, and doing so, create a 'current' version`;
+        }
+
+        // check that we have a version provided
+        const versionSplit = databaseObject._properties.lastVersion.split('.');
+        const versions = [
+            [+versionSplit[0] + 1, 0, 0, 0].join('.') + ' - Major release',
+            [versionSplit[0], +versionSplit[1] + 1, 0, 0].join('.') + ' - Feature release',
+            [versionSplit[0], versionSplit[1], +versionSplit[2] + 1, 0].join('.') + ' - Bug fixing',
+            [versionSplit[0], versionSplit[1], versionSplit[2], +versionSplit[3] + 1].join('.') + ' - Development version',
+        ]
+
+        const chosenVersion = await uiUtils.choices({
+            message: 'Please choose the version you want to create',
+            title: 'version',
+            choices: versions
+        });
+        const version = (chosenVersion.version.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/i) as RegExpMatchArray)[0];
+
+        // copy from current to the newly created version folder
+        await FileUtils.renameFolder(
+            path.resolve(databaseObject._properties.path, 'postgres', 'release', 'current'),
+            path.resolve(databaseObject._properties.path, 'postgres', 'release', version)
+        );
+
+        // copy the schema to the schema folder
+        const fileList = await FileUtils.getFileList({
+            filter:/\.sql/,
+            startPath: path.resolve(databaseObject._properties.path, 'postgres', 'release', version, 'schema')
+        });
+
+        // update the paths in the version.json file
+        const versionJsonFile: DatabaseVersion[] = await FileUtils.readJsonFile(path.resolve(databaseObject._properties.path, 'postgres', 'release', version, 'version.json'));
+        for (let i = 0; i < versionJsonFile.length; i++) {
+            versionJsonFile[i].fileList = versionJsonFile[i].fileList
+                .map(fileName => fileName.replace('postgres/release/current', `postgres/release/${version}`));
+        }
+        await FileUtils.writeFileSync(
+            path.resolve(databaseObject._properties.path, 'postgres', 'release', version, 'version.json'),
+            JSON.stringify(versionJsonFile, null, 2));
+
+        for (let i = 0; i < fileList.length; i++) {
+            const fileName = fileList[i];
+            const newFileName = fileName.replace(`postgres/release/${version}/schema`, 'postgres/schema');
+            FileUtils.copyFileSync(fileName, newFileName);
+        }
+
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+        return true;
     }
 }

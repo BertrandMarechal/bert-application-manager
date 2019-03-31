@@ -30,4 +30,5 @@ export class SocketUtils implements UiUtils {
             (this.client as IO.Socket).emit('question', params);
         });
     }
+    async choices(params: {choices: string[], title: string, message: string}): Promise<{[name: string]: string}> {return {};}
 }

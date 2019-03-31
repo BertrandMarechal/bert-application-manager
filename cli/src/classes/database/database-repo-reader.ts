@@ -262,6 +262,11 @@ export class DatabaseRepositoryReader {
                 databaseObject._properties.dbName = dbMatched[0].replace('<env>_', '');
             }
         }
+        // latest version
+        const latestVersionNWithoutCurrent = databaseFiles.filter(x => x.versionName !== 'current');
+        if (latestVersionNWithoutCurrent.length) {
+            databaseObject._properties.lastVersion = latestVersionNWithoutCurrent[latestVersionNWithoutCurrent.length  - 1].versionName;
+        }
 
 
         if (!databaseObject._properties.dbName &&

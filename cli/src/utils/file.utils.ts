@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { LoggerUtils } from './logger.utils';
-import {exec} from 'child_process';
+import { exec } from 'child_process';
 
 export interface FileAndContent {
     path: string;
@@ -49,7 +49,7 @@ export class FileUtils {
                         ...params,
                         startPath: params.startPath + '/' + x,
                         foldersToIgnore: foldersToIgnore
-                     });
+                    });
                 })).then((fileLists: string[][]) => {
                     let fileList: string[] = fileLists.reduce((current: string[], item: string[]) => current.concat(item), []);
                     const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
@@ -66,9 +66,9 @@ export class FileUtils {
 
     static replaceSlashes(path: string) {
         return path
-        .replace(/\/\//g, '/')
-        .replace(/\\\\/g, '/')
-        .replace(/\\/g, '/');
+            .replace(/\/\//g, '/')
+            .replace(/\\\\/g, '/')
+            .replace(/\\/g, '/');
     }
 
     static getFolderList(params: {
@@ -130,7 +130,7 @@ export class FileUtils {
                     reject(error);
                 } else {
                     try {
-                        resolve(JSON.parse(data.toString('ascii')));   
+                        resolve(JSON.parse(data.toString('ascii')));
                     } catch (error) {
                         console.log(fileName);
                         reject(error);
@@ -152,23 +152,23 @@ export class FileUtils {
 
     static createFolderStructureIfNeeded(path: string, depth: number = 0): void {
         const splitPath = path
-            .replace(/\\/g,'/')
-            .replace(/\/\//g,'/')
+            .replace(/\\/g, '/')
+            .replace(/\/\//g, '/')
             .split('/');
         if (depth === splitPath.length - 1) {
             return;
         } else {
-            FileUtils.createFolderIfNotExistsSync(splitPath.splice(0,depth + 1).join('/'));
+            FileUtils.createFolderIfNotExistsSync(splitPath.splice(0, depth + 1).join('/'));
             FileUtils.createFolderStructureIfNeeded(path, depth + 1);
         }
     }
 
-    static renameFolder(from: string, to: string): Promise<any> {
-        return new Promise((resolve, reject) => {
+    static async renameFolder(from: string, to: string): Promise<any> {
+        return await new Promise((resolve, reject) => {
             fs.rename(from, to, (error) => {
                 if (error) {
                     console.log(error);
-                    
+
                     reject(error);
                 } else {
                     resolve();
@@ -184,7 +184,7 @@ export class FileUtils {
 
     static deleteFileSync(fileName: string) {
         console.log('Deleting ' + fileName);
-        
+
         fs.unlinkSync(fileName);
     }
 
@@ -195,7 +195,7 @@ export class FileUtils {
      */
     static deleteFolderRecursiveSync(path: string, sub: boolean = false) {
         if (!sub) {
-            LoggerUtils.info({origin: 'FileUtils', message: `Deleting ${path}`});
+            LoggerUtils.info({ origin: 'FileUtils', message: `Deleting ${path}` });
         }
         if (fs.existsSync(path)) {
             fs.readdirSync(path).forEach((file) => {
@@ -215,15 +215,15 @@ export class FileUtils {
             try {
                 const cp = exec(`"${fileName}"`, (error, stdout, stderr) => {
                     if (error) {
-                      reject(`exec error: ${error}`);
-                      return;
+                        reject(`exec error: ${error}`);
+                        return;
                     }
                     cp.kill();
                     resolve();
-                  });
-              } catch (error) {
-                  reject(error);
-              }
+                });
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 }
