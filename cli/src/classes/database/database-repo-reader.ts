@@ -1,7 +1,7 @@
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile } from "../../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
@@ -218,7 +218,7 @@ export class DatabaseRepositoryReader {
                             databaseObject[file.type] = {};
                         }
                         if (!databaseObject[file.type][file.objectName]) {
-                            databaseObject[file.type][file.objectName] = {
+                            databaseObject[file.type][file.objectName] = new DatabaseSubObject({
                                 name: file.objectName,
                                 latestFile: file.fileName,
                                 latestVersion: databaseFile.versionName,
@@ -226,7 +226,7 @@ export class DatabaseRepositoryReader {
                                     file: file.fileName,
                                     version: databaseFile.versionName
                                 }]
-                            };
+                            });
                         } else {
                             databaseObject[file.type][file.objectName].name = file.objectName;
                             databaseObject[file.type][file.objectName].latestFile = file.fileName;
@@ -245,6 +245,12 @@ export class DatabaseRepositoryReader {
             Object.keys(databaseObject.table).forEach(async key => {
                 databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
                 await databaseObject.table[key].analyzeFile(uiUtils);
+            });
+        }
+        if (Object.keys(databaseObject.function).length > 0) {
+            Object.keys(databaseObject.function).forEach(async key => {
+                databaseObject.function[key] = new DatabaseFunction(databaseObject.function[key]);
+                await databaseObject.function[key].analyzeFile(uiUtils);
             });
         }
 

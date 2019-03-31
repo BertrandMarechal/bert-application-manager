@@ -70,18 +70,20 @@ export class DatabaseSubObject {
     latestVersion: string;
     name: string;
     latestFile: string;
+    camelCasedName?: string;
     versions: {
         version: string;
         file: string;
     }[];
 
     constructor(params?: any) {
-        this.name = '';
         params = params || {};
+        this.name = params.name || '';
         this.latestVersion = params.latestVersion;
         this.latestFile = params.latestFile || '';
         this.versions = params.versions || [];
     }
+    async analyzeFile(uiUtils: UiUtils) {}
 }
 
 export class DatabaseTableField {
@@ -200,6 +202,108 @@ export class DatabaseTableField {
     }
 }
 
+export class DatabaseFunction extends DatabaseSubObject {
+    dbPrefix: string;
+    mode: string;
+    arguments: {
+        mode: string,
+        name: string,
+        type: string,
+        defaultValue: string
+    }[];
+    returnType: string;
+    returnTable: {name: string, type: string}[];
+    constructor(params?: any) {
+        super(params);
+        this.dbPrefix = '';
+        this.mode = '';
+        this.returnType = '';
+        this.returnTable = [];
+        this.arguments = [];
+    }
+
+    async analyzeFile(uiUtils: UiUtils) {
+        let functionFile = '';
+        try {
+            functionFile = await FileUtils.readFile(this.latestFile);
+        } catch (error) {
+            uiUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
+            return;
+        }
+        functionFile = SyntaxUtils.simplifyDbFileForAnalysis(functionFile);
+        const functionMatch = /create(?: or replace)? function (\"?public\"?\.)?\"?([a-z0-9_]+)\"? \(/i.exec(functionFile);
+        if (functionMatch) {
+            this.name = functionMatch[2];
+            if (this.name.match(/[a-z0-9]{2,3}f_[a-z0-9_]+/i)) {
+                const [dbPrefix, tableName] =
+                    /([a-z0-9]{2,3})f_([a-z0-9_]+)/i.exec(this.name) || ['', ''];
+                this.dbPrefix = dbPrefix;
+                this.camelCasedName = SyntaxUtils.snakeCaseToCamelCase(tableName);
+            }
+        }
+
+        const modeMatch = /immutable|stable|volatile|(?:not )?leakproof/i.exec(functionFile);
+        if (modeMatch) {
+            this.mode = modeMatch[0].toLowerCase();
+        }
+        
+        const paramsMatch = /create(?: or replace)? function (?:\"?public\"?\.)?\"?[a-z0-9_]+\"? \(([^()]+)\)/i.exec(functionFile);
+        if (paramsMatch) {
+            this.arguments = paramsMatch[1].trim()
+                .split(',')
+                .map(param => {
+                    const paramSplit = param.toLowerCase().trim().split(' ');
+                    const paramToReturn = {
+                        mode: '',
+                        name: '',
+                        type: '',
+                        defaultValue: ''
+                    };
+                    if (/in|out|inout|variadic/i.test(paramSplit[0])) {
+                        paramToReturn.mode = paramSplit[0].toLowerCase();
+                        paramSplit.splice(0,1);
+                    }
+                    paramToReturn.name = paramSplit[0];
+                    paramSplit.splice(0,1);
+                    const defaultIndex = paramSplit.indexOf('default');
+                    
+                    if (defaultIndex > -1) {
+                        paramToReturn.defaultValue =  paramSplit.splice(defaultIndex + 1, paramSplit.length - 1).join(' ');
+                        paramSplit.splice(defaultIndex, 1)
+                    }
+                    paramToReturn.type = paramSplit.join(' ');
+                    return paramToReturn;
+                });
+        }
+        const returnTableMatch = /returns table ?\(([^()]+)\)/i.exec(functionFile);
+        const returnSetOfMatch = /returns setof ([a-z0-9_])/i.exec(functionFile);
+        const returnSingleMatch = /returns ([a-z0-9_()])/i.exec(functionFile);
+        if (returnTableMatch) {
+            this.returnType = 'table';
+            this.returnTable = returnTableMatch[1].trim()
+                .split(',')
+                .map(param => {
+                    const paramSplit = param.trim().split(' ');
+                    const paramToReturn = {
+                        name: paramSplit[0].replace(/"/g, ''),
+                        type: ''
+                    };
+                    paramSplit.splice(0,1);
+                    paramToReturn.type = paramSplit.join(' ').toLowerCase();
+                    return paramToReturn;
+                });
+        } else if (returnSetOfMatch) {
+            this.returnType = `setof ${returnSetOfMatch[1].toLowerCase()}`;
+        } else if (returnSingleMatch) {
+            this.returnType = returnSingleMatch[1].toLowerCase();
+        } else {
+            this.returnType = 'void';
+        }
+        console.log(this);
+        
+    }
+}
+
 export class DatabaseTable extends DatabaseSubObject {
     fields: {
         [name: string]: DatabaseTableField;
@@ -215,7 +319,6 @@ export class DatabaseTable extends DatabaseSubObject {
         this.tableSuffix = '';
         this.dbPrefix = '';
         this.camelCasedName = '';
-        this.name = '';
         this.tags = {};
     }
 
@@ -227,17 +330,9 @@ export class DatabaseTable extends DatabaseSubObject {
             uiUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
             return;
         }
-        while (tableFile.match(/  /)) {
-            tableFile = tableFile.replace(/  /g, ' ');
-        }
-        tableFile = tableFile
-            .replace(/\r/g, '')
-            .replace(/\n/g, '')
-            .replace(/\\r/g, '')
-            .replace(/\\n/g, '')
-            .replace(/\\"/g, '')
-            .replace(/\t/g, ' ');
-        const tableNameMatch = /[table|exists] (public\.)?\"?([a-z0-9_]+)\"? \(/i.exec(tableFile);
+        tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
+
+        const tableNameMatch = /[table|exists] (\"?public\"?\.)?\"?([a-z0-9_]+)\"? \(/i.exec(tableFile);
         if (tableNameMatch) {
             this.name = tableNameMatch[2];
             if (this.name.match(/[a-z0-9]{2,3}t_[a-z0-9_]+_[a-z0-9]{3}/i)) {

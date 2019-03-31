@@ -13,4 +13,20 @@ export class SyntaxUtils {
             .replace(/^[a-z]/g, (l) => l.toUpperCase())
             .replace(/[A-Z]/g, (l) => ` ${l.toUpperCase()}`);
     }
+
+    static simplifyDbFileForAnalysis(fileString: string): string {
+        let toReturn = fileString;
+        while (toReturn.match(/ {2}/)) {
+            // while loop here to manage the odd number of spaces
+            toReturn = toReturn.replace(/ {2}/g, ' ');
+        }
+        toReturn = toReturn
+            .replace(/\r/g, '')
+            .replace(/\n/g, '')
+            .replace(/\\r/g, '')
+            .replace(/\\n/g, '')
+            .replace(/\\"/g, '')
+            .replace(/\t/g, ' ');
+        return toReturn;
+    }
 }
