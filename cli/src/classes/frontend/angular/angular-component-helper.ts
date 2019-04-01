@@ -189,8 +189,8 @@ export class AngularComponentHelper {
                     return `${indentation}<input type="hidden" formControlName="id">`;
                 } else {
                     return `${indentation}<mat-form-field>\n` +
-                        `${indentation.repeat(2)}<input matInput placeholder="${SyntaxUtils.camelCaseToTitleCase(params.camelCasedName)}" formControlName="${params.camelCasedName}">` +
-                        `${indentation}</mat-form-field>`;
+                        `${indentation.repeat(2)}<input matInput placeholder="${SyntaxUtils.camelCaseToTitleCase(field.camelCasedName)}" formControlName="${field.camelCasedName}">\n` +
+                        `${indentation}</mat-form-field>\n`;
                 }
             }).join('\n<br>\n');
         return [{

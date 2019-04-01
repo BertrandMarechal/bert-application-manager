@@ -105,6 +105,17 @@ export class LocalhostService {
       });
       this.socketManagement.emit('response', returnValue.value);
     });
+    this.socketManagement.on('choices', async (params: {choices: string[], title: string, message: string}) => {
+      const returnValue = await Swal.fire({
+        text: params.message,
+        type: 'question',
+        title: params.title,
+        input: 'select',
+        inputOptions: params.choices.reduce((agg, curr) => ({...agg, [curr]: curr}), {}),
+        showCancelButton: true
+      });
+      this.socketManagement.emit('choice', {[params.title]: returnValue.value});
+    });
   }
 
   private _waitForConnection(): Promise<any> {

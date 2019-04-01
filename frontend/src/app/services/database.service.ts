@@ -31,4 +31,7 @@ export class DatabaseService {
   async addTemplate(params: {name: string, template: string}): Promise<DatabaseObject> {
     return await this.localhostService.post(`databases/${params.name}/add-template`, {template: params.template});
   }
+  async createVersion(name: string): Promise<DatabaseObject> {
+    return await this.localhostService.post(`databases/${name}/create-version`);
+  }
 }

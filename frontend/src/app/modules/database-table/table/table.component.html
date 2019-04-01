@@ -1,4 +1,7 @@
 <h3>{{(databaseTable$|async).databaseTable?.name}} - {{(databaseTable$|async).databaseTable?.latestVersion}}</h3>
+<!-- <button mat-icon-button routerLink="edit">
+    <mat-icon>edit</mat-icon>
+</button><br> -->
 CREATE TABLE IF NOT EXISTS {{(databaseTable$|async).databaseTable?.name}} (
 <app-field
     *ngFor="let field of (databaseTable$|async).databaseTable?.fields|objectKeys"
@@ -10,5 +13,5 @@ CREATE TABLE IF NOT EXISTS {{(databaseTable$|async).databaseTable?.name}} (
 <br>
 <h4>Versions</h4>
 <div>
-    <span *ngFor="let version of (databaseTable$|async).databaseTable?.versions">{{version.version}}</span>
+    <span *ngFor="let version of (databaseTable$|async).databaseTable?.versions">{{version.version}}<br></span>
 </div>

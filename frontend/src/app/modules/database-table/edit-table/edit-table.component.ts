@@ -3,6 +3,11 @@ import { DatabaseObject, DatabaseTableField, DatabaseTable, DatabaseTableForSave
 import { FormControl, Validators, FormGroup } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { trigger, transition, query, style, stagger, animate, keyframes } from '@angular/animations';
+import { Observable } from 'rxjs';
+import * as fromDatabases from '@app/store/reducers/databases.reducers';
+import * as DatabasesActions from '@app/store/actions/databases.actions';
+import { Store, select } from '@ngrx/store';
+import { Router, ActivatedRoute } from '@angular/router';
 
 const Toast = Swal.mixin({
   toast: true,
@@ -30,9 +35,9 @@ const Toast = Swal.mixin({
   ]
 })
 export class EditTableComponent implements OnInit, AfterViewInit {
-  @Input() database: DatabaseObject;
-  @Output() save = new EventEmitter<DatabaseTableForSave>();
-  @Output() cancel = new EventEmitter();
+  databases$: Observable<fromDatabases.State>;
+
+  database: DatabaseObject;
   @ViewChild('tableName') tableName: ElementRef;
   tableNameControl: FormControl;
   tableSuffixControl: FormControl;
@@ -59,9 +64,17 @@ export class EditTableComponent implements OnInit, AfterViewInit {
     return suffix;
   }
 
-  constructor() { }
+  constructor(
+    private store: Store<fromDatabases.State>,
+    private router: Router,
+    private activatedRoute: ActivatedRoute,
+    ) { }
 
   ngOnInit() {
+    this.databases$ = this.store.pipe(select('databases'));
+    this.databases$.subscribe((state: fromDatabases.State) => {
+      this.database = state.database;
+    });
     this._tempField = new DatabaseTableField();
     this._editTableName = true;
     this._fields = [
@@ -256,7 +269,7 @@ export class EditTableComponent implements OnInit, AfterViewInit {
   }
 
   onSave() {
-    this.save.emit({
+    this.store.dispatch(new DatabasesActions.PageCreateDatabaseTable({
       name: this._computedTableName,
       fields: this._fields.map((field) => {
         return {
@@ -264,9 +277,9 @@ export class EditTableComponent implements OnInit, AfterViewInit {
           default: field.default ? field.defaultValue : null
         };
       })
-    });
+    }));
   }
   onCancel() {
-    this.cancel.emit();
+    this.router.navigate(['..'], {relativeTo: this.activatedRoute});
   }
 }

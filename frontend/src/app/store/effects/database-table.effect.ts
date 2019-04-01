@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
-import { Effect, Actions } from '@ngrx/effects';
-import { Store, Action, select } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { NgrxUtilsService } from 'app/services/ngrx-utils';
-import * as DatabasesActions from '../actions/databases.actions';
-import * as DatabaseTableActions from '../actions/database-table.actions';
-import * as fromDatabases from '../reducers/databases.reducers';
-import { RouterUtilsService, RouteNavigationParams } from 'app/services/router-utils.service';
-import { map } from 'rxjs/operators';
-import { DatabaseService } from 'app/services/database.service';
 import { DatabaseTableService } from '@app/services/database-table.service';
+import { Actions, Effect } from '@ngrx/effects';
+import { Action, select, Store } from '@ngrx/store';
+import { NgrxUtilsService } from 'app/services/ngrx-utils';
+import { RouteNavigationParams, RouterUtilsService } from 'app/services/router-utils.service';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import * as DatabaseTableActions from '../actions/database-table.actions';
+import * as DatabasesActions from '../actions/databases.actions';
+import * as fromDatabases from '../reducers/databases.reducers';
 
 @Injectable()
 export class DatabaseTableEffects {
@@ -49,6 +48,9 @@ export class DatabaseTableEffects {
             DatabaseTableActions.ROUTER_GET_DATABASE_TABLE,
             DatabaseTableActions.PAGE_GET_DATABASE_TABLE,
         ],
+        condition: (action: DatabaseTableActions.PageGetDatabaseTable |
+            DatabaseTableActions.EffectGetDatabaseTable |
+            DatabaseTableActions.RouterGetDatabaseTable) => action.payload.tableName !== 'new',
         serviceMethod: this.databaseTableService.getDatabaseTable.bind(this.databaseTableService)
     });
 

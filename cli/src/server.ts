@@ -85,8 +85,6 @@ export class Server {
         this.app.get('/databases/:name/:objectType', async (req: Request, res: Response) => {
             const db = await ApplicationHelper.getDatabase(req.params.name);
             let obj: {[name: string]: DatabaseSubObject} = {};
-            console.log(req.params.objectType);
-            
             switch (req.params.objectType) {
                 case 'tables':
                     obj = db.table;
@@ -109,8 +107,19 @@ export class Server {
         this.app.post('/databases/:name/create-table', async (req: Request, res: Response) => {
             try {
                 await DatabaseFileHelper.createTable({
-                    applicationName: req.params.name + '-database',
+                    applicationName: req.params.name,
                     tableDetails: req.body
+                }, this.socketUtils);
+                res.send(await ApplicationHelper.getDatabase(req.params.name));
+            } catch (error) {
+                console.log(error);
+                this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
+            }
+        });
+        this.app.post('/databases/:name/create-version', async (req: Request, res: Response) => {
+            try {
+                await DatabaseFileHelper.createVersion({
+                    applicationName: req.params.name
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {
@@ -121,7 +130,7 @@ export class Server {
         this.app.post('/databases/:name/add-template', async (req: Request, res: Response) => {
             try {
                 await DatabaseFileHelper.addTemplate({
-                    applicationName: req.params.name + '-database',
+                    applicationName: req.params.name,
                     template: req.body.template
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
@@ -134,7 +143,7 @@ export class Server {
         this.app.get('/databases/:name/create-functions', async (req: Request, res: Response) => {
             try {
                 await DatabaseFileHelper.createFunctions({
-                    applicationName: req.params.name + '-database',
+                    applicationName: req.params.name,
                     filter: req.query.filter
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
@@ -147,7 +156,7 @@ export class Server {
         this.app.get('/databases/:name/init', async (req: Request, res: Response) => {
             try {
                 await DatabaseRepositoryReader.initDatabase({
-                    applicationName: req.params.name + '-database'
+                    applicationName: req.params.name
                 }, this.socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {
@@ -157,7 +166,6 @@ export class Server {
             }
         });
         this.app.post('/cli/something-changed', async (req: Request, res: Response) => {
-            console.log('cli/something-changed');
             await this.socketUtils.emit('something-changed', req.body);
             res.send('ok');
         });

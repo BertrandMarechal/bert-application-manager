@@ -128,6 +128,25 @@ export class ServiceRefreshFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_CREATE_VERSION = '[Databases Page] create version';
+export const SERVICE_CREATE_VERSION_COMPLETE = '[Databases Service] create version complete';
+export const SERVICE_CREATE_VERSION_FAILED = '[Databases Service] create version failed';
+
+export class PageCreateVersion implements Action {
+    readonly type = PAGE_CREATE_VERSION;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceCreateVersionComplete implements Action {
+    readonly type = SERVICE_CREATE_VERSION_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceCreateVersionFailed implements Action {
+    readonly type = SERVICE_CREATE_VERSION_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -155,4 +174,8 @@ export type DatabasesActions =
     | PageRefresh
     | ServiceRefreshComplete
     | ServiceRefreshFailed
+
+    | PageCreateVersion
+    | ServiceCreateVersionComplete
+    | ServiceCreateVersionFailed
     ;

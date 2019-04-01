@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database._properties.dbName}}t_</span>
+CREATE TABLE IF NOT EXISTS <span style="color: coral">{{database?._properties?.dbName}}t_</span>
 <span>
   <mat-form-field *ngIf="_editTableName">
     <input matInput #tableName type="text" [formControl]="tableNameControl" (keyup)="onTableNameKeyup($event)"

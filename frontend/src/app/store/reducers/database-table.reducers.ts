@@ -10,6 +10,7 @@ export interface State {
     gettingDatabaseTables: boolean;
     databaseTables: { [name: string]: DatabaseTable };
     gettingDatabaseTable: boolean;
+    newTable: boolean;
     databaseTable: DatabaseTable;
     databaseName: string;
 }
@@ -18,6 +19,7 @@ const databaseTableInitialState: State = {
     gettingDatabaseTables: false,
     databaseTables: {},
     gettingDatabaseTable: false,
+    newTable: false,
     databaseTable: null,
     databaseName: null,
 };
@@ -52,7 +54,7 @@ export function databaseTableReducers(
             return {
                 ...state,
                 gettingDatabaseTable: true,
-                databaseName: action.payload,
+                newTable: action.payload.tableName === 'new'
             };
         case DatabaseTableActions.SERVICE_GET_DATABASE_TABLE_COMPLETE:
             return {

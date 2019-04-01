@@ -47,6 +47,7 @@ export function databasesReducers(
         case DatabasesActions.SERVICE_INITIALIZE_DATABASE_COMPLETE:
         case DatabasesActions.SERVICE_ADD_TEMPLATE_COMPLETE:
         case DatabasesActions.SERVICE_REFRESH_COMPLETE:
+        case DatabasesActions.SERVICE_CREATE_VERSION_COMPLETE:
             return {
                 ...state,
                 database: action.payload

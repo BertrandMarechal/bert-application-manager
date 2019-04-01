@@ -608,21 +608,18 @@ export class DatabaseFileHelper {
 
     static async createVersion(params: {
         applicationName: string;
-        version: string;
+        version?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
         uiUtils.info({origin: this._origin, message: `Getting ready to create version.`});
         
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'This application does not exist';
         }
-
         if (!databaseObject._properties.hasCurrent) {
             throw `In order to create a version, you will need to change / create something on the database, and doing so, create a 'current' version`;
         }
-
         // check that we have a version provided
         const versionSplit = databaseObject._properties.lastVersion.split('.');
         const versions = [

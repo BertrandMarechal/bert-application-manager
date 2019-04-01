@@ -22,7 +22,7 @@
       <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" [length]="((databaseTable$|async).databaseTables|objectKeys).length" [pageSize]="10"></mat-paginator>
     </div>
   </as-split-area>
-  <as-split-area size="70" *ngIf="!!(databaseTable$|async).databaseTable">
+  <as-split-area size="70" *ngIf="!!(databaseTable$|async).databaseTable || (databaseTable$|async).newTable">
     <router-outlet></router-outlet>
   </as-split-area>
 </as-split>
