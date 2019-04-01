@@ -7,6 +7,12 @@ export class SocketUtils implements UiUtils {
         this.client = client;
     }
 
+    emit(message: string, params: any) {
+        if (this.client) {
+            this.client.emit(message, params);
+        }
+    }
+
     log(params: LoggingParams) {
         (this.client as IO.Socket).emit('log', params);
     }

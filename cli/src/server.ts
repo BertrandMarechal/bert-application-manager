@@ -2,14 +2,16 @@ import express, { Express, Request, Response } from 'express';
 import * as http from 'http';
 import * as bodyParser from 'body-parser';
 import { OpenBrowserUtils } from './utils/open-browser.utils';
-import graphqlHTTP from 'express-graphql';
-import { buildSchema } from 'graphql';
+// import graphqlHTTP from 'express-graphql';
+// import { buildSchema, execute, subscribe } from 'graphql';
+// import { SubscriptionServer } from 'subscriptions-transport-ws';
 import { SocketUtils } from './utils/socket.utils';
 import { ApplicationHelper } from './classes/application/application-helper';
 import IO from "socket.io";
 import { DatabaseFileHelper } from './classes/database/database-file-helper';
 import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
 import { RepositoryUtils } from './utils/repository.utils';
+import { DatabaseSubObject } from './models/database-file.model';
 // const graphqlHTTP = require('express-graphql');
 // import {buildSchema} from 'graphql';
 
@@ -60,13 +62,48 @@ export class Server {
         this.app.get('/databases/:name', async (req: Request, res: Response) => {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
+        this.app.get('/databases/:name/:objectType/:tableName/:version', async (req: Request, res: Response) => {
+            const db = await ApplicationHelper.getDatabase(req.params.name);
+            let obj: DatabaseSubObject = new DatabaseSubObject();
+            switch (req.params.objectType) {
+                case 'tables':
+                    obj = db.table[req.params.tableName];
+                    break;
+                case 'functionsta':
+                    obj = db.function[req.params.tableName];
+                    break;
+                default:
+                    break;
+            }
+            if (req.params.version) {
+                if (obj && obj.latestVersion !== req.params.version) {
+                    // todo get the object in the required version
+                }
+            }
+            res.send(obj);
+        });
+        this.app.get('/databases/:name/:objectType', async (req: Request, res: Response) => {
+            const db = await ApplicationHelper.getDatabase(req.params.name);
+            let obj: {[name: string]: DatabaseSubObject} = {};
+            console.log(req.params.objectType);
+            
+            switch (req.params.objectType) {
+                case 'tables':
+                    obj = db.table;
+                    break;
+                case 'functionsta':
+                    obj = db.function;
+                    break;
+                default:
+                    break;
+            }
+            res.send(obj);
+        });
         this.app.get('/databases/:name/refresh', async (req: Request, res: Response) => {
             await RepositoryUtils.readRepository({
                 startPath: (await ApplicationHelper.getDatabase(req.params.name))._properties.path,
                 type: 'postgres'
             }, this.socketUtils);
-            console.log(req.params.name);
-
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         this.app.post('/databases/:name/create-table', async (req: Request, res: Response) => {
@@ -119,23 +156,27 @@ export class Server {
                 this.socketUtils.error({ origin: 'Server', message: JSON.stringify(error) })
             }
         });
-
-        /*
-        const schema = buildSchema(`
-            type Query {
-                hello: String
-            }
-        `);
-        // The root provides a resolver function for each API endpoint
-        const root = {
-          hello: () => 'Hello world!',
-        };
-        this.app.use('/graphql', graphqlHTTP({
-            schema: schema,
-            rootValue: root,
-            graphiql: true
-        }));
-        */
+        this.app.post('/cli/something-changed', async (req: Request, res: Response) => {
+            console.log('cli/something-changed');
+            await this.socketUtils.emit('something-changed', req.body);
+            res.send('ok');
+        });
+        
+        // const schema = buildSchema(`
+        // type Query {
+        //     hello: String
+        // }
+        // `);
+        // // The root provides a resolver function for each API endpoint
+        // const root = {
+        //     hello: () => 'Hello world!',
+        // };
+        // this.app.use('/graphql', graphqlHTTP({
+        //     schema: schema,
+        //     rootValue: root,
+        //     graphiql: true
+        // }));
+        // new SubscriptionServer({ schema, execute, subscribe }, { this.server, path: WS_GQL_PATH });
 
         this.io.on('connection', (client: IO.Socket) => {
             console.log('Client connected');

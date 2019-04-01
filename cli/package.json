@@ -25,9 +25,11 @@
     "express": "^4.16.4",
     "express-graphql": "^0.7.1",
     "graphql": "^14.2.1",
+    "graphql-tools": "^4.0.4",
     "inquirer": "^6.2.2",
     "pg-promise": "^5.9.7",
     "socket.io": "^2.2.0",
+    "subscriptions-transport-ws": "^0.9.16",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

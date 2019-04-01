@@ -1,21 +1,19 @@
-import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {NavigationActionTiming, StoreRouterConnectingModule} from '@ngrx/router-store';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { EffectsModule } from '@ngrx/effects';
+import { NavigationActionTiming, StoreRouterConnectingModule } from '@ngrx/router-store';
+import { StoreModule } from '@ngrx/store';
+import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
+import { AngularSplitModule } from 'angular-split';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './header/header.component';
 import { AppMaterialModule } from './material/app.material.module';
-import { StoreModule } from '@ngrx/store';
-import { EffectsModule } from '@ngrx/effects';
+import { ApplicationsEffects } from './store/effects/applications.effect';
 import { reducers } from './store/reducers/app.reducers';
 import { applicationsReducers } from './store/reducers/applications.reducers';
-import { ApplicationsEffects } from './store/effects/applications.effect';
-import { HttpClientModule } from '@angular/common/http';
-import { AngularSplitModule } from 'angular-split';
-import { DatabasesEffects } from './store/effects/databases.effect';
-import { databasesReducers } from './store/reducers/databases.reducers';
-import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @NgModule({
   declarations: [
@@ -36,10 +34,8 @@ import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
     StoreModule.forRoot(reducers),
     EffectsModule.forRoot([]),
     StoreModule.forFeature('applications', applicationsReducers),
-    StoreModule.forFeature('databases', databasesReducers),
     EffectsModule.forFeature([
       ApplicationsEffects,
-      DatabasesEffects,
     ])
   ],
   providers: [],

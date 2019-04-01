@@ -11,14 +11,20 @@ export class ApplicationHelper {
     }
 
     static async getApplication(name: string): Promise<Application> {
-        const databaseObject = await DatabaseHelper.getApplicationDatabaseObject(name + '-database');
+        if (!/-database$/.test(name)) {
+            name = name + '-database';
+        }
+        const databaseObject = await DatabaseHelper.getApplicationDatabaseObject(name);
         return {
-            name: name,
+            name: name.replace(/-database$/, ''),
             database: databaseObject
         };
     }
     static async getDatabase(name: string): Promise<DatabaseObject> {
-        return await DatabaseHelper.getApplicationDatabaseObject(name + '-database');
+        if (!/-database$/.test(name)) {
+            name = name + '-database';
+        }
+        return await DatabaseHelper.getApplicationDatabaseObject(name);
         
     }
 }

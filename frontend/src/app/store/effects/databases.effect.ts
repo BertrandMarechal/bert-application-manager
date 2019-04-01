@@ -12,12 +12,18 @@ import { DatabaseService } from 'app/services/database.service';
 @Injectable()
 export class DatabasesEffects {
     @Effect() navigateToDatabase: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: ['/databases/:name'],
+        urls: [
+            '/databases/:name'
+        ],
         actionsObs: this.actions$
-    }).pipe(map((result: RouteNavigationParams) => ({type: DatabasesActions.ROUTER_GET_DATABASE, payload: result.params.name})));
+    }).pipe(map((result: RouteNavigationParams) => ({
+        type: DatabasesActions.ROUTER_GET_DATABASE,
+        payload: result.params.name
+    })));
 
     @Effect() getDatabase: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
         actionsObs: this.actions$,
+        store: this.store.pipe(select('databases')),
         actionsToListenTo: [
             DatabasesActions.EFFECT_GET_DATABASE,
             DatabasesActions.ROUTER_GET_DATABASE,

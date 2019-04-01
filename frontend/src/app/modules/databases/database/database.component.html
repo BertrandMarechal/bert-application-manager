@@ -1,28 +1,21 @@
 <app-details-view [name]="(databases$|async).database?._properties?.dbName" [actions]="actions"
   (actionClicked)="onActionClicked($event)">
-  <mat-tab-group>
-    <mat-tab label="Tables">
-      <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-128px);">
-        <as-split-area size="30">
-          <mat-form-field>
-            <input type="text" matInput [(ngModel)]="filter" autocomplete="off">
-          </mat-form-field>
-          <mat-nav-list>
-            <mat-list-item
-              *ngFor="let table of (databases$|async).database?.table|objectKeys|objectListFilter:filter:'name'"
-              (click)="onClickTable(table)">
-              <a matLine>{{ table.name }}</a>
-            </mat-list-item>
-          </mat-nav-list>
-          <p>{{((databases$|async).database?.table|objectKeys).length}} tables</p>
-        </as-split-area>
-        <as-split-area size="70" *ngIf="databaseTable || editTable">
-          <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
-          <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
-            (save)="onSave($event)"></app-edit-table>
-        </as-split-area>
-      </as-split>
-    </mat-tab>
+  <nav mat-tab-nav-bar>
+    <a mat-tab-link
+       routerLink="tables"
+       routerLinkActive #rla1="routerLinkActive"
+       [active]="rla1.isActive">
+      Tables
+    </a>
+    <!-- <a mat-tab-link
+       routerLink="Functions"
+       routerLinkActive #rla2="routerLinkActive"
+       [active]="rla2.isActive">
+      Functions
+    </a> -->
+  </nav>
+  <router-outlet></router-outlet>
+  <!-- <mat-tab-group>
     <mat-tab label="Functions">
       <as-split [direction]="direction" [useTransition]="true" style="height: calc(100vh-64px);">
         <as-split-area size="30">
@@ -40,13 +33,10 @@
         </as-split-area>
         <as-split-area size="70" *ngIf="databaseFunction || editFunction">
           <app-function [function]="databaseFunction" *ngIf="databaseFunction && !editFunction"></app-function>
-          <!-- <app-table [table]="databaseTable" *ngIf="databaseTable && !editTable"></app-table>
-        <app-edit-table [database]="(databases$|async).database" *ngIf="editTable" (cancel)="editTable = false"
-          (save)="onSave($event)"></app-edit-table> -->
         </as-split-area>
       </as-split>
     </mat-tab>
-  </mat-tab-group>
+  </mat-tab-group> -->
 </app-details-view>
 
 

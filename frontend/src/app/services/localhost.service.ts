@@ -4,6 +4,10 @@ import * as io from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { Store } from '@ngrx/store';
 import Swal from 'sweetalert2';
+import * as fromDatabases from '@app/store/reducers/databases.reducers';
+import * as fromApplications from '@app/store/reducers/applications.reducers';
+import * as ApplicationsActions from '@app/store/actions/applications.actions';
+import * as DatabasesActions from '@app/store/actions/databases.actions';
 
 export type LoggerType = 'info' | 'warning' | 'error' | 'success';
 export type LoggerColors = 'red' | 'grey' | 'green' | 'blue' | 'cyan' | 'white' | 'yellow' | 'grey';
@@ -29,18 +33,39 @@ export class LocalhostService {
   socketManagement: any;
   socketLambda: any;
   serverConnected: boolean;
-  constructor(private httpClient: HttpClient) {
+  constructor(
+    private httpClient: HttpClient,
+    private store: Store<fromDatabases.FeatureState>
+  ) {
     this.socketManagement = io.connect('http://localhost:' + environment.nodeServerPort);
     this.socketManagement.on('connect', () => {
       this.serverConnected = true;
-      this.plugUiUtils();
+      this._plugUiUtils();
+      this._plugSocketToActions();
     });
     this.socketManagement.on('disconnect', () => {
       this.serverConnected = false;
+      this.removeAllListeners([
+        'something-changed',
+        'log',
+        'info',
+        'success',
+        'warning',
+        'error',
+        'question',
+      ]);
     });
   }
 
-  private plugUiUtils() {
+  private _plugSocketToActions() {
+    this.socketManagement.on('something-changed', (params: {applicationName: string}) => {
+      if (/-database/i.test(params.applicationName)) {
+        this.store.dispatch(new DatabasesActions.EffectGetDatabase(params.applicationName));
+      }
+    });
+  }
+
+  private _plugUiUtils() {
     this.socketManagement.on('log', (params: LoggingParams) => {
       // Toast.fire({
       //   type: params.type,
@@ -108,8 +133,8 @@ export class LocalhostService {
       credentials: 'same-origin',
     };
     return <T>await this.httpClient
-        .get(`http://localhost:${environment.nodeServerPort}/${url}`, httpOptions)
-        .toPromise();
+      .get(`http://localhost:${environment.nodeServerPort}/${url}`, httpOptions)
+      .toPromise();
   }
   async post<T>(url: string, body?: any): Promise<T> {
     const httpOptions = {

@@ -17,7 +17,7 @@ export class ServerUtils {
                 console.log('Server not connected');
             }
         }
-        return Promise.resolve(false);
+        return false;
     }
 
     static async stopServer() {
@@ -56,6 +56,20 @@ export class ServerUtils {
             }
         } else {
             console.log('Server already connected');
+        }
+    }
+    static async somethingChanged(applicationName: string) {
+        console.log(applicationName);
+        
+        try {
+            const response: AxiosResponse = await axios.get('http://localhost:690/ping');
+            if (response.data === 'pong') {
+                await axios.post('http://localhost:690/cli/something-changed', {applicationName});
+            }
+        }
+        catch(e) {
+            console.log(e);
+            
         }
     }
 }

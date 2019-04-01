@@ -1,9 +1,0 @@
-<h3>{{table.name}} - {{table.latestVersion}}</h3>
-CREATE TABLE IF NOT EXISTS {{table.name}} (
-<app-field
-    *ngFor="let field of table.fields|objectKeys"
-    [field]="field"
-    [table]="table"
-    [canEdit]="false"></app-field>
-    <br>
-);

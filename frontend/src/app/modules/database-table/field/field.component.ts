@@ -48,7 +48,6 @@ export class FieldComponent implements OnInit {
   }
 
   nameValidator(control: FormControl): {[error: string]: boolean} {
-    console.log(control);
     return null;
   }
 }

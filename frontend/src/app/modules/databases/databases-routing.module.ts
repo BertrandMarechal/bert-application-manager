@@ -9,6 +9,17 @@ const routes: Routes = [{
   children: [{
     path: ':name',
     component: DatabaseComponent,
+    children: [
+      {
+        path: 'tables',
+        loadChildren: '../database-table/database-table.module#DatabaseTableModule'
+      },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'tables'
+      }
+    ]
   }]
 }];
 

@@ -1,27 +1,25 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DatabasesComponent } from './databases.component';
-import { DatabaseComponent } from './database/database.component';
-import { TableComponent } from './database/table/table.component';
-import { FieldComponent } from './database/field/field.component';
-import { FunctionComponent } from './database/function/function.component';
-import { DatabasesRoutingModule } from './databases-routing.module';
+import { NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DatabasesEffects } from '@app/store/effects/databases.effect';
+import { databasesReducers } from '@app/store/reducers/databases.reducers';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreModule } from '@ngrx/store';
+import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
+import { AngularSplitModule } from 'angular-split';
 import { DetailsViewModule } from '../shared/details-view/details-view.module';
 import { UtilsModule } from '../shared/utils/utils.module';
+import { DatabaseComponent } from './database/database.component';
+import { FunctionComponent } from './database/function/function.component';
+import { DatabasesRoutingModule } from './databases-routing.module';
+import { DatabasesComponent } from './databases.component';
 import { DatabasesMaterialModule } from './material/databases.material.module';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { AngularSplitModule } from 'angular-split';
-import { EditTableComponent } from './database/edit-table/edit-table.component';
-import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 
 @NgModule({
   declarations: [
     DatabasesComponent,
     DatabaseComponent,
-    TableComponent,
-    FieldComponent,
     FunctionComponent,
-    EditTableComponent
   ],
   imports: [
     CommonModule,
@@ -29,10 +27,13 @@ import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
     DatabasesRoutingModule,
     DatabasesMaterialModule,
     DetailsViewModule,
-    UtilsModule,
-    ReactiveFormsModule,
     FormsModule,
-    AngularSplitModule,
+    ReactiveFormsModule,
+    UtilsModule,
+    StoreModule.forFeature('databases', databasesReducers),
+    EffectsModule.forFeature([
+      DatabasesEffects,
+    ])
   ]
 })
 

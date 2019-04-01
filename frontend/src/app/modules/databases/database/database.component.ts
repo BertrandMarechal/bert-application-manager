@@ -23,7 +23,6 @@ export class DatabaseComponent implements OnInit {
   ) { }
 
   filter: string;
-  databaseTable: DatabaseTable;
   databaseFunction: DatabaseSubObject;
   editTable: boolean;
   editFunction: boolean;
@@ -71,13 +70,7 @@ export class DatabaseComponent implements OnInit {
       }
     });
   }
-
-  onClickTable(table: DatabaseTable) {
-    this.databaseTable = table;
-  }
   onClickFunction(f: DatabaseSubObject) {
-    console.log(f);
-    
     this.databaseFunction = f;
   }
 

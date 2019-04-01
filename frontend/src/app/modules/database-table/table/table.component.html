@@ -1,0 +1,14 @@
+<h3>{{(databaseTable$|async).databaseTable?.name}} - {{(databaseTable$|async).databaseTable?.latestVersion}}</h3>
+CREATE TABLE IF NOT EXISTS {{(databaseTable$|async).databaseTable?.name}} (
+<app-field
+    *ngFor="let field of (databaseTable$|async).databaseTable?.fields|objectKeys"
+    [field]="field"
+    [table]="(databaseTable$|async).databaseTable"
+    [canEdit]="false"></app-field>
+    <br>
+);
+<br>
+<h4>Versions</h4>
+<div>
+    <span *ngFor="let version of (databaseTable$|async).databaseTable?.versions">{{version.version}}</span>
+</div>

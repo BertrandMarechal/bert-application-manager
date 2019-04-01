@@ -5,6 +5,7 @@ import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, Datab
 import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
+import { ServerUtils } from "../../utils/server.utils";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -15,7 +16,7 @@ interface DatabaseStructureNode {
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
-    static async readRepo(startPath: string, repoName: string, uiUtils: UiUtils, silent?: boolean) {
+    static async readRepo(startPath: string, applicationName: string, uiUtils: UiUtils, silent?: boolean) {
         // we have to get the list of files and read them
         const versionFiles = await FileUtils.getFileList({
             startPath: path.resolve(startPath, DatabaseHelper.releasesPath),
@@ -23,12 +24,12 @@ export class DatabaseRepositoryReader {
         });
 
         // read the current db files file and add on
-        await DatabaseHelper.updateApplicationDatabaseFiles(repoName, await DatabaseRepositoryReader._readFiles(versionFiles));
+        await DatabaseHelper.updateApplicationDatabaseFiles(applicationName, await DatabaseRepositoryReader._readFiles(versionFiles));
 
         // read the current db objects file and add on
-        await DatabaseHelper.updateApplicationDatabaseObject(repoName,
+        await DatabaseHelper.updateApplicationDatabaseObject(applicationName,
             await DatabaseRepositoryReader._extractObjectInformation(
-                await DatabaseHelper.getApplicationDatabaseFiles(repoName),
+                await DatabaseHelper.getApplicationDatabaseFiles(applicationName),
                 startPath,
                 uiUtils
             )
@@ -40,7 +41,7 @@ export class DatabaseRepositoryReader {
             startPath: path.resolve(startPath, 'postgres')
         })).map(FileUtils.replaceSlashes);
         
-        const databaseFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(repoName);
+        const databaseFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(applicationName);
         const files = databaseFiles.reduce((agg: string[], versionFile) => {
             return agg.concat(versionFile.versions.reduce((agg2: string[], version) => {
                 return agg2.concat(version.files.map(y => y.fileName))
@@ -59,6 +60,7 @@ export class DatabaseRepositoryReader {
         }
 
         uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
+        ServerUtils.somethingChanged(applicationName);
     }
 
     static async initDatabase(params: {
