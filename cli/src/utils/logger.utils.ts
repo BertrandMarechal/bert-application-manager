@@ -4,11 +4,14 @@ import inquirere from 'inquirer';
 
 import {UiUtils, LoggingParams, LoggerColors} from './ui.utils';
 import inquirer = require('inquirer');
+import { Bar, Presets } from "cli-progress";
 
 let _originMaxLength = 0;
 let _spaces = '';
 
 export class LoggerUtils extends UiUtils {
+    bar?: Bar;
+
     static logTitle() {
         console.log(colors.red('### - Application Manager - ###'));
     }
@@ -158,5 +161,22 @@ export class LoggerUtils extends UiUtils {
                 choices: params.choices,
             }
         ]);
+    }
+    startProgress(params: {length: number; start: number; title: string}) {
+        this.bar = new Bar({
+            format: `${params.title}  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
+            clearOnComplete: true
+        }, Presets.shades_grey);
+        this.bar.start(params.length, params.start);
+    }
+    progress(params: number) {
+        if (this.bar) {
+            this.bar.update(params);
+        }
+    }
+    stoprProgress() {
+        if (this.bar) {
+            this.bar.stop();
+        }
     }
 }

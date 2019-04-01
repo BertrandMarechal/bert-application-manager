@@ -3,7 +3,6 @@ import * as YAML from 'yamljs';
 import { ServerlessFile } from "../../models/serverless-file.model";
 import path from 'path';
 import colors from 'colors';
-import { Bar, Presets } from 'cli-progress';
 import { UiUtils } from "../../utils/ui.utils";
 
 export class ServerlessRepositoryReader {
@@ -20,7 +19,7 @@ export class ServerlessRepositoryReader {
             startPath: startPath,
             filter: /variables.yml/
         });
-        const serverlessFiles = await ServerlessRepositoryReader._readFiles(files, variableFiles);
+        const serverlessFiles = await ServerlessRepositoryReader._readFiles(files, variableFiles, uiUtils);
 
         // read the current db file and add on
         FileUtils.createFolderStructureIfNeeded(ServerlessRepositoryReader._tempFolderPath);
@@ -37,16 +36,12 @@ export class ServerlessRepositoryReader {
         return YAML.parse(data.replace(/\t/g, '  ').replace(/\r\n\r\n/g, '\r\n').replace(/\r\n\r\n/g, '\r\n').replace(/\n$/, "").trim());
     }
 
-    private static async _readFiles(files: string[], variableFiles: string[]): Promise<ServerlessFile[]> {
+    private static async _readFiles(files: string[], variableFiles: string[], uiUtils: UiUtils): Promise<ServerlessFile[]> {
         const serverlessFiles: ServerlessFile[] = [];
 
-        let bar = new Bar({
-            format: `serverless.yml [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
-            clearOnComplete: true
-        }, Presets.shades_grey);
-        bar.start(files.length, 1);
+        uiUtils.startProgress({ length: files.length, start: 0, title: 'serverless.yml'});
         for (let i = 0; i < files.length; i++) {
-            bar.update(i + 1);
+            uiUtils.progress(i + 1);
             const fileString = FileUtils.readFileSync(files[i]);
 
             const serverlessFile: ServerlessFile = new ServerlessFile(ServerlessRepositoryReader._ymlToJson(fileString));
@@ -88,7 +83,7 @@ export class ServerlessRepositoryReader {
             });
             serverlessFiles.push(serverlessFile);
         }
-        bar.stop();
+        uiUtils.stoprProgress();
         return serverlessFiles;
     }
 

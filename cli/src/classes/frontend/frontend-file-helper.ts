@@ -1,6 +1,5 @@
 import path from 'path';
 import { DatabaseHelper } from '../database/database-helper';
-import { Bar, Presets } from "cli-progress";
 import { DatabaseObject, DatabaseTableField } from '../../models/database-file.model';
 import { FileUtils, FileAndContent } from '../../utils/file.utils';
 import { SyntaxUtils } from '../../utils/syntax.utils';
@@ -23,7 +22,6 @@ export class FrontendFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'frontend', uiUtils);
 
         const applicationDatabaseName = params.applicationName.replace(/\-frontend$/, '-database');
-        console.log(applicationDatabaseName);
 
         // read the db File, to get the list of functions
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(applicationDatabaseName);
@@ -42,11 +40,8 @@ export class FrontendFileHelper {
         let filesOverwritten = 0;
 
         const tables = Object.keys(databaseObject.table);
-        const bar = new Bar({
-            format: `Functions  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
-            clearOnComplete: true
-        }, Presets.shades_grey);
-        bar.start(tables.length * 4, 0);
+
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
 
         const filesToCreate: FileAndContent[] = [];
         const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
@@ -132,7 +127,7 @@ export class FrontendFileHelper {
                         }
                     }
 
-                    bar.update(4 * t + i + 1);
+                    uiUtils.progress(4 * t + i + 1);
                     const upperCaseActionName = `${action.toUpperCase()}_${upperCaseObjectName}`;
                     const capitalizedActionName = `${SyntaxUtils.capitalize(action)}${SyntaxUtils.capitalize(SyntaxUtils.snakeCaseToCamelCase(nameWithoutPrefixAndSuffix))}`;
 
@@ -252,16 +247,16 @@ export class FrontendFileHelper {
             filesToCreate.push(moduleFile);
             filesToCreate.push(routingFile);
         }
-        bar.stop();
+        uiUtils.stoprProgress();
 
-        bar.start(filesToCreate.length, 0);
+        uiUtils.startProgress({length: filesToCreate.length, start: 0, title: 'Write files'});
         for (let i = 0; i < filesToCreate.length; i++) {
-            bar.update(i);
+            uiUtils.progress(i);
             const fileToCreate = filesToCreate[i];
             FileUtils.createFolderStructureIfNeeded(fileToCreate.path);
             FileUtils.writeFileSync(fileToCreate.path, fileToCreate.fileContent);
         }
-        bar.stop();
+        uiUtils.stoprProgress();
         if (filesToCreate.length) {
             uiUtils.success({ origin: this._origin, message: `Created ${filesToCreate.length} files` });
         } else {

@@ -17,4 +17,7 @@ export class UiUtils {
     success(params: LoggingParams) {}
     async question(params: {text: string, origin: string}): Promise<string> {return '';}
     async choices(params: {choices: string[], title: string, message: string}): Promise<{[name: string]: string}> {return {};}
+    startProgress(params: {length: number; start: number; title: string}) {}
+    progress(params: number) {}
+    stoprProgress() {}
 }

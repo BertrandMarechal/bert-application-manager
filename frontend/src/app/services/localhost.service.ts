@@ -33,6 +33,7 @@ export class LocalhostService {
   socketManagement: any;
   socketLambda: any;
   serverConnected: boolean;
+  totalProgressLength: number;
   constructor(
     private httpClient: HttpClient,
     private store: Store<fromDatabases.FeatureState>
@@ -53,6 +54,10 @@ export class LocalhostService {
         'warning',
         'error',
         'question',
+        'choices',
+        'startProgress',
+        'progress',
+        'stopProgress',
       ]);
     });
   }
@@ -67,12 +72,14 @@ export class LocalhostService {
 
   private _plugUiUtils() {
     this.socketManagement.on('log', (params: LoggingParams) => {
+      console.log(params);
       // Toast.fire({
       //   type: params.type,
       //   html: `${params.origin} - ${params.message}`
       // });
     });
     this.socketManagement.on('info', (params: LoggingParams) => {
+      console.table(params);
       // Toast.fire({
       //   type: 'info',
       //   html: `${params.origin} - ${params.message}`
@@ -115,6 +122,21 @@ export class LocalhostService {
         showCancelButton: true
       });
       this.socketManagement.emit('choice', {[params.title]: returnValue.value});
+    });
+    this.socketManagement.on('startProgress', (params: {length: number; start: number; title: string}) => {
+      this.totalProgressLength = params.length;
+      Swal.fire({
+        title: params.title,
+        html: `${params.start} / ${this.totalProgressLength}`
+      });
+    });
+    this.socketManagement.on('progress', (params: number) => {
+      Swal.update({
+        html: `${params}  ${this.totalProgressLength}`
+      });
+    });
+    this.socketManagement.on('stopProgress', (params: number) => {
+      Swal.close();
     });
   }
 

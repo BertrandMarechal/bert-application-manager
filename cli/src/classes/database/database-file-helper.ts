@@ -2,7 +2,6 @@ import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableF
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { Bar, Presets } from "cli-progress";
 import {DatabaseHelper} from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { RepositoryUtils } from "../../utils/repository.utils";
@@ -136,16 +135,10 @@ export class DatabaseFileHelper {
         let filesOverwritten = 0;
         
         const tables = Object.keys(databaseObject.table);
-        const bar = new Bar({
-            format: `Functions  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
-            clearOnComplete: true
-        }, Presets.shades_grey);
 
         uiUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
 
-        // bar.start(tables.length * 4, 0);
-
-        
+        uiUtils.startProgress({length: tables.length * 4, start: 0, title: 'Functions'});
         const functionsToAdd: string[] = [];
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
@@ -338,12 +331,12 @@ export class DatabaseFileHelper {
                                 ['../','postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
                             );
                         }
-                        bar.update(4 * t + i);
+                        uiUtils.progress(4 * t + i);
                     }
                 }
             }
         }
-        // bar.stop();
+        uiUtils.stoprProgress();
         let feedback = 'No files created.';
 
         if (filesCreated) {

@@ -82,21 +82,6 @@ export class Server {
             }
             res.send(obj);
         });
-        this.app.get('/databases/:name/:objectType', async (req: Request, res: Response) => {
-            const db = await ApplicationHelper.getDatabase(req.params.name);
-            let obj: {[name: string]: DatabaseSubObject} = {};
-            switch (req.params.objectType) {
-                case 'tables':
-                    obj = db.table;
-                    break;
-                case 'functionsta':
-                    obj = db.function;
-                    break;
-                default:
-                    break;
-            }
-            res.send(obj);
-        });
         this.app.get('/databases/:name/refresh', async (req: Request, res: Response) => {
             await RepositoryUtils.readRepository({
                 startPath: (await ApplicationHelper.getDatabase(req.params.name))._properties.path,
@@ -141,6 +126,7 @@ export class Server {
             }
         });
         this.app.get('/databases/:name/create-functions', async (req: Request, res: Response) => {
+           
             try {
                 await DatabaseFileHelper.createFunctions({
                     applicationName: req.params.name,
@@ -168,6 +154,21 @@ export class Server {
         this.app.post('/cli/something-changed', async (req: Request, res: Response) => {
             await this.socketUtils.emit('something-changed', req.body);
             res.send('ok');
+        });
+        this.app.get('/databases/:name/:objectType', async (req: Request, res: Response) => {
+            const db = await ApplicationHelper.getDatabase(req.params.name);
+            let obj: {[name: string]: DatabaseSubObject} = {};
+            switch (req.params.objectType) {
+                case 'tables':
+                    obj = db.table;
+                    break;
+                case 'functionsta':
+                    obj = db.function;
+                    break;
+                default:
+                    break;
+            }
+            res.send(obj);
         });
         
         // const schema = buildSchema(`

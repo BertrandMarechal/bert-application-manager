@@ -44,4 +44,14 @@ export class SocketUtils implements UiUtils {
             (this.client as IO.Socket).emit('choices', params);
         });
     }
+
+    startProgress(params: {length: number; start: number; title: string}) {
+        (this.client as IO.Socket).emit('startProgress', params);
+    }
+    progress(params: number) {
+        (this.client as IO.Socket).emit('progress', params);
+    }
+    stoprProgress() {
+        (this.client as IO.Socket).emit('stopProgress');
+    }
 }

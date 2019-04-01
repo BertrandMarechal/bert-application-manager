@@ -1,6 +1,5 @@
 import { DatabaseVersionFile, DatabaseObject } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
-import { Bar, Presets } from 'cli-progress';
 import { PostgresUtils } from "../../utils/postgres.utils";
 import { DatabaseHelper } from "./database-helper";
 import { RepositoryUtils } from "../../utils/repository.utils";
@@ -114,11 +113,7 @@ export class DatabaseInstaller {
                     } else {                        
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/${params.environment}_${databaseObject._properties.dbName}`, uiUtils);
                     }
-                    let bar = new Bar({
-                        format: `${params.applicationName} - ${version.versionName}  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
-                        clearOnComplete: true
-                    }, Presets.shades_grey);
-                    bar.start(subVersion.files.length, 0);
+                    uiUtils.startProgress({length: subVersion.files.length, start: 0, title: `${params.applicationName} - ${version.versionName}`});
                     for (let k = 0; k < subVersion.files.length && carryOn; k++) {
                         const file = subVersion.files[k];
                         let fileString = await FileUtils.readFile(file.fileName);
@@ -132,7 +127,7 @@ export class DatabaseInstaller {
                         try {
                             await postgresUtils.execute(fileString);
                         } catch (error) {
-                            bar.stop();
+                            uiUtils.stoprProgress();
                             console.log(error);
                             uiUtils.error({origin: this._origin, message: fileString});
                             uiUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
@@ -152,7 +147,7 @@ export class DatabaseInstaller {
                                     break;
                                 case '':
                                     k = k - 1;
-                                    bar.start(k + 1, 0);
+                                    uiUtils.startProgress({length: subVersion.files.length, start: k + 1, title: `${params.applicationName} - ${version.versionName}`});
                                     break;
                                 case 's':
                                 default:
@@ -160,9 +155,9 @@ export class DatabaseInstaller {
                                     break;
                             }
                         }
-                        bar.update(k + 1);
+                        uiUtils.progress(k + 1);
                     }
-                    bar.stop();
+                    uiUtils.stoprProgress();
                 }
             }
         } catch (error) {

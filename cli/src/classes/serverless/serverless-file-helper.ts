@@ -1,5 +1,4 @@
 import {DatabaseHelper} from '../database/database-helper';
-import { Bar, Presets } from "cli-progress";
 import { DatabaseObject } from '../../models/database-file.model';
 import { FileUtils } from '../../utils/file.utils';
 import path from 'path';
@@ -40,12 +39,8 @@ export class ServerlessFileHelper {
         let filesOverwritten = 0;
         
         const tables = Object.keys(databaseObject.table);
-        const bar = new Bar({
-            format: `Functions  [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}`,
-            clearOnComplete: true
-        }, Presets.shades_grey);
 
-        bar.start(tables.length * 4, 0);
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
 
         const functionsToAdd: {
             functionName: string;
@@ -138,12 +133,12 @@ export class ServerlessFileHelper {
                                 operation: slsParams.function_description
                             });
                         }
-                        bar.update(4 * t + i);
+                        uiUtils.progress(4 * t + i);
                     }
                 }
             }
         }
-        bar.stop();
+        uiUtils.stoprProgress();
         let feedback = 'No files created.';
 
         if (filesCreated) {
