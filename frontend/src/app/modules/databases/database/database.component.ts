@@ -56,6 +56,10 @@ export class DatabaseComponent implements OnInit {
           value: 'refresh'
         });
         this.actions.push({
+          name: 'Check Parameters',
+          value: 'check-parameters'
+        });
+        this.actions.push({
           name: 'Add table',
           value: 'add-table'
         });
@@ -91,6 +95,8 @@ export class DatabaseComponent implements OnInit {
       this.store.dispatch(new DatabasesActions.PageRefresh());
     } else if (action.value === 'create-version') {
       this.store.dispatch(new DatabasesActions.PageCreateVersion());
+    } else if (action.value === 'check-parameters') {
+      this.store.dispatch(new DatabasesActions.PageCheckParameters(this.databaseName));
     } else if (action.value === 'add-template') {
       this.templateFormControl.reset();
       this.swalTemplate.show();

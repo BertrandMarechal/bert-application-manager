@@ -6,6 +6,7 @@ import { Express, Request, Response } from 'express';
 import { SocketUtils } from '../utils/socket.utils';
 import { RepositoryUtils } from '../utils/repository.utils';
 import { DatabaseInstaller } from '../classes/database/database-installer';
+import { UiUtils } from '../utils/ui.utils';
 
 export class DatabaseServer {
     static declareRoutes(app: Express, socketUtils: SocketUtils) {
@@ -19,6 +20,14 @@ export class DatabaseServer {
             }, socketUtils);
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
+        app.get('/databases/:name/check-parameters/:environment', async (req: Request, res: Response) => {
+            await DatabaseRepositoryReader.checkParams({
+                filter: req.params.name,
+                environment: req.params.environment
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
+        
         app.get('/databases/:name/install/:version/:env', async (req: Request, res: Response) => {
             console.log('databases/:name/install/:version/:env');
             try {

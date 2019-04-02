@@ -166,6 +166,25 @@ export class ServiceInstallDatabaseFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_CHECK_PARAMETERS = '[Databases Page] check parameters';
+export const SERVICE_CHECK_PARAMETERS_COMPLETE = '[Databases Service] check parameters complete';
+export const SERVICE_CHECK_PARAMETERS_FAILED = '[Databases Service] check parameters failed';
+
+export class PageCheckParameters implements Action {
+    readonly type = PAGE_CHECK_PARAMETERS;
+    constructor(public payload: string) {
+    }
+}
+export class ServiceCheckParametersComplete implements Action {
+    readonly type = SERVICE_CHECK_PARAMETERS_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceCheckParametersFailed implements Action {
+    readonly type = SERVICE_CHECK_PARAMETERS_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase

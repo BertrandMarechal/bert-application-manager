@@ -103,6 +103,18 @@ export class DatabasesEffects {
         payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
         serviceMethod: this.databasesService.createVersion.bind(this.databasesService)
     });
+    @Effect() checkParameters: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_CHECK_PARAMETERS
+        ],
+        store: this.store.pipe(select('app')),
+        payloadTransform: (action: DatabasesActions.PageCheckParameters, state: fromApp.State) => ({
+            name: action.payload,
+            environment: state.environment
+        }),
+        serviceMethod: this.databasesService.checkParameters.bind(this.databasesService)
+    });
     constructor(
         private actions$: Actions,
         private databasesService: DatabaseService,

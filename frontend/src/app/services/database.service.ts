@@ -38,4 +38,7 @@ export class DatabaseService {
   async createVersion(name: string): Promise<DatabaseObject> {
     return await this.localhostService.post(`databases/${name}/create-version`);
   }
+  async checkParameters(params: {name: string, environment: string}): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${params.name}/check-parameters/${params.environment}`);
+  }
 }

@@ -81,26 +81,26 @@ export class LocalhostService {
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'success', params }));
       Toast.fire({
         type: 'success',
-        html: `${params.origin} - ${params.message}`
+        html: `${params.origin} - ${params.message.replace(/\u001b\[[0-9]{1,2}m/g, '')}`
       });
     });
     this.socketManagement.on('warning', (params: LoggingParams) => {
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'warning', params }));
       Toast.fire({
         type: 'warning',
-        html: `${params.origin} - ${params.message}`
+        html: `${params.origin} - ${params.message.replace(/\u001b\[[0-9]{1,2}m/g, '')}`
       });
     });
     this.socketManagement.on('error', (params: LoggingParams) => {
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'error', params }));
       Toast.fire({
         type: 'error',
-        html: `${params.origin} - ${params.message}`
+        html: `${params.origin} - ${params.message.replace(/\u001b\[[0-9]{1,2}m/g, '')}`
       });
     });
     this.socketManagement.on('question', async (params: { text: string, origin: string }) => {
       const returnValue = await Swal.fire({
-        text: params.text,
+        text: params.text.replace(/\u001b\[[0-9]{1,2}m/g, ''),
         type: 'question',
         input: 'text',
         showCancelButton: true

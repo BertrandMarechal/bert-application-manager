@@ -3,6 +3,7 @@ import * as fromApp from '@app/store/reducers/app.reducers';
 import * as AppActions from '@app/store/actions/app.actions';
 import { Observable } from 'rxjs';
 import { Store, select } from '@ngrx/store';
+import { MatSelectChange } from '@angular/material';
 
 @Component({
   selector: 'app-header',
@@ -27,8 +28,8 @@ export class HeaderComponent implements OnInit {
     this.app$ = this.store.pipe(select('app'));
   }
 
-  onChangeEnvironment(value: string) {
-    console.log(value);
-    this.store.dispatch(new AppActions.PageSetEnvironment(value));
+  onChangeEnvironment(event: MatSelectChange) {
+    console.log(event);
+    this.store.dispatch(new AppActions.PageSetEnvironment(event.value));
   }
 }
