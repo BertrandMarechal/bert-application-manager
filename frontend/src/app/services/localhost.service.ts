@@ -8,6 +8,7 @@ import * as fromDatabases from '@app/store/reducers/databases.reducers';
 import * as fromApplications from '@app/store/reducers/applications.reducers';
 import * as ApplicationsActions from '@app/store/actions/applications.actions';
 import * as DatabasesActions from '@app/store/actions/databases.actions';
+import * as ConsoleActions from '@app/store/actions/console.actions';
 
 export type LoggerType = 'info' | 'warning' | 'error' | 'success';
 export type LoggerColors = 'red' | 'grey' | 'green' | 'blue' | 'cyan' | 'white' | 'yellow' | 'grey';
@@ -33,7 +34,6 @@ export class LocalhostService {
   socketManagement: any;
   socketLambda: any;
   serverConnected: boolean;
-  totalProgressLength: number;
   constructor(
     private httpClient: HttpClient,
     private store: Store<fromDatabases.FeatureState>
@@ -63,7 +63,7 @@ export class LocalhostService {
   }
 
   private _plugSocketToActions() {
-    this.socketManagement.on('something-changed', (params: {applicationName: string}) => {
+    this.socketManagement.on('something-changed', (params: { applicationName: string }) => {
       if (/-database/i.test(params.applicationName)) {
         this.store.dispatch(new DatabasesActions.EffectGetDatabase(params.applicationName));
       }
@@ -72,32 +72,27 @@ export class LocalhostService {
 
   private _plugUiUtils() {
     this.socketManagement.on('log', (params: LoggingParams) => {
-      console.log(params);
-      // Toast.fire({
-      //   type: params.type,
-      //   html: `${params.origin} - ${params.message}`
-      // });
+      this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('info', (params: LoggingParams) => {
-      console.table(params);
-      // Toast.fire({
-      //   type: 'info',
-      //   html: `${params.origin} - ${params.message}`
-      // });
+      this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('success', (params: LoggingParams) => {
+      this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'success', params }));
       Toast.fire({
         type: 'success',
         html: `${params.origin} - ${params.message}`
       });
     });
     this.socketManagement.on('warning', (params: LoggingParams) => {
+      this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'warning', params }));
       Toast.fire({
         type: 'warning',
         html: `${params.origin} - ${params.message}`
       });
     });
     this.socketManagement.on('error', (params: LoggingParams) => {
+      this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'error', params }));
       Toast.fire({
         type: 'error',
         html: `${params.origin} - ${params.message}`
@@ -112,31 +107,29 @@ export class LocalhostService {
       });
       this.socketManagement.emit('response', returnValue.value);
     });
-    this.socketManagement.on('choices', async (params: {choices: string[], title: string, message: string}) => {
+    this.socketManagement.on('choices', async (params: { choices: string[], title: string, message: string }) => {
       const returnValue = await Swal.fire({
         text: params.message,
         type: 'question',
         title: params.title,
         input: 'select',
-        inputOptions: params.choices.reduce((agg, curr) => ({...agg, [curr]: curr}), {}),
+        inputOptions: params.choices.reduce((agg, curr) => ({ ...agg, [curr]: curr }), {}),
         showCancelButton: true
       });
-      this.socketManagement.emit('choice', {[params.title]: returnValue.value});
+      this.socketManagement.emit('choice', { [params.title]: returnValue.value });
     });
-    this.socketManagement.on('startProgress', (params: {length: number; start: number; title: string}) => {
-      this.totalProgressLength = params.length;
-      Swal.fire({
-        title: params.title,
-        html: `${params.start} / ${this.totalProgressLength}`
-      });
+    this.socketManagement.on('startProgress', (params: { length: number; start: number; title: string }) => {
+      this.store.dispatch(new ConsoleActions.ServiceStartProgress({
+        current: params.start,
+        length: params.length,
+        title: params.title
+      }));
     });
     this.socketManagement.on('progress', (params: number) => {
-      Swal.update({
-        html: `${params}  ${this.totalProgressLength}`
-      });
+      this.store.dispatch(new ConsoleActions.ServiceProgress(params));
     });
-    this.socketManagement.on('stopProgress', (params: number) => {
-      Swal.close();
+    this.socketManagement.on('stopProgress', () => {
+      this.store.dispatch(new ConsoleActions.ServiceStopProgress());
     });
   }
 

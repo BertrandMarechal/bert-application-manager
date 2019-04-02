@@ -5,11 +5,4 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './database-table.component.html',
   styleUrls: ['./database-table.component.scss']
 })
-export class DatabaseTableComponent implements OnInit {
-
-  constructor() { }
-
-  ngOnInit() {
-  }
-
-}
+export class DatabaseTableComponent { }

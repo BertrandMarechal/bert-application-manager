@@ -28,7 +28,7 @@ export class DatabaseInstaller {
             throw 'Invalid application name. Please run the "am repo read" command in the desired folder beforehand.';
         }
 
-        await DatabaseRepositoryReader.readRepo(params.applicationName, databaseObject._properties.path, uiUtils);
+        // await DatabaseRepositoryReader.readRepo(params.applicationName, databaseObject._properties.path, uiUtils);
         
         // get the application parameters
         const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);

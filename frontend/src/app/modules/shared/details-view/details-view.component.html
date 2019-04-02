@@ -5,6 +5,7 @@
         {{name}}
       </div>
       <div class=buttons-container>
+        <ng-content select="[header]"></ng-content>
         <button mat-stroked-button [matMenuTriggerFor]="appMenu" *ngIf="actions" style="border: 1px #a2a2a2 solid;">
           Actions
           <mat-icon>arrow_drop_down</mat-icon>

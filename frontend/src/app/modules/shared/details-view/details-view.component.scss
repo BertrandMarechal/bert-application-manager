@@ -8,7 +8,7 @@
 .buttons-container {
     display: grid;
     // grid-template-columns: repeat(auto-fit, 20px);
-    grid-template-columns: auto;
+    grid-template-columns: auto auto;
     grid-column-gap: 10px;
     justify-content: right;
 }

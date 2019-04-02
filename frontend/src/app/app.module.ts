@@ -12,8 +12,9 @@ import { AppComponent } from './app.component';
 import { HeaderComponent } from './header/header.component';
 import { AppMaterialModule } from './material/app.material.module';
 import { ApplicationsEffects } from './store/effects/applications.effect';
-import { reducers } from './store/reducers/app.reducers';
+import { reducers, appReducers } from './store/reducers/app.reducers';
 import { applicationsReducers } from './store/reducers/applications.reducers';
+import { consoleReducers } from './store/reducers/console.reducers';
 
 @NgModule({
   declarations: [
@@ -33,7 +34,9 @@ import { applicationsReducers } from './store/reducers/applications.reducers';
     }),
     StoreModule.forRoot(reducers),
     EffectsModule.forRoot([]),
+    StoreModule.forFeature('app', appReducers),
     StoreModule.forFeature('applications', applicationsReducers),
+    StoreModule.forFeature('console', consoleReducers),
     EffectsModule.forFeature([
       ApplicationsEffects,
     ])

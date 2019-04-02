@@ -7,6 +7,9 @@ import {
     MatBadgeModule,
     MatTooltipModule,
     MatListModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatProgressBarModule,
 } from '@angular/material';
 
 @NgModule({
@@ -18,6 +21,9 @@ import {
     MatBadgeModule,
     MatTooltipModule,
     MatListModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatProgressBarModule,
   ],
   exports: [
     MatToolbarModule,
@@ -27,6 +33,9 @@ import {
     MatBadgeModule,
     MatTooltipModule,
     MatListModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatProgressBarModule,
   ],
   declarations: []
 })

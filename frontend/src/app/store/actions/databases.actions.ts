@@ -147,6 +147,25 @@ export class ServiceCreateVersionFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_INSTALL_DATABASE = '[Databases Page] install database';
+export const SERVICE_INSTALL_DATABASE_COMPLETE = '[Databases Service] install database complete';
+export const SERVICE_INSTALL_DATABASE_FAILED = '[Databases Service] install database failed';
+
+export class PageInstallDatabase implements Action {
+    readonly type = PAGE_INSTALL_DATABASE;
+    constructor(public payload?: { name: string, version: string }) {
+    }
+}
+export class ServiceInstallDatabaseComplete implements Action {
+    readonly type = SERVICE_INSTALL_DATABASE_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceInstallDatabaseFailed implements Action {
+    readonly type = SERVICE_INSTALL_DATABASE_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -178,4 +197,8 @@ export type DatabasesActions =
     | PageCreateVersion
     | ServiceCreateVersionComplete
     | ServiceCreateVersionFailed
+
+    | PageInstallDatabase
+    | ServiceInstallDatabaseComplete
+    | ServiceInstallDatabaseFailed
     ;

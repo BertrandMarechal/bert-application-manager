@@ -23,25 +23,25 @@ export class DatabaseRepositoryReader {
             filter: /version.json$/
         });
 
-        // read the current db files file and add on
-        await DatabaseHelper.updateApplicationDatabaseFiles(applicationName, await DatabaseRepositoryReader._readFiles(versionFiles));
-
-        // read the current db objects file and add on
-        await DatabaseHelper.updateApplicationDatabaseObject(applicationName,
-            await DatabaseRepositoryReader._extractObjectInformation(
-                await DatabaseHelper.getApplicationDatabaseFiles(applicationName),
-                startPath,
-                uiUtils
-            )
-        );
-
         // read all the SQL files, to see if they are all in the installation scripts
         const fileList = (await FileUtils.getFileList({
-            filter: /\.sql/,
-            startPath: path.resolve(startPath, 'postgres')
-        })).map(FileUtils.replaceSlashes);
-        
-        const databaseFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(applicationName);
+            filter: /\.sql$/,
+            startPath: path.resolve(startPath, DatabaseHelper.releasesPath)
+        }));
+        // read the current db files file and add on
+        const databaseFiles: DatabaseVersionFile[] = await DatabaseRepositoryReader._readFiles(
+            versionFiles
+        )
+        await DatabaseHelper.updateApplicationDatabaseFiles(applicationName, databaseFiles);
+
+        // read the current db objects file and add on
+        const databaseObject: DatabaseObject = await DatabaseRepositoryReader._extractObjectInformation(
+            await DatabaseHelper.getApplicationDatabaseFiles(applicationName),
+            startPath,
+            uiUtils
+        );
+        await DatabaseHelper.updateApplicationDatabaseObject(applicationName,databaseObject);
+
         const files = databaseFiles.reduce((agg: string[], versionFile) => {
             return agg.concat(versionFile.versions.reduce((agg2: string[], version) => {
                 return agg2.concat(version.files.map(y => y.fileName))
@@ -60,7 +60,7 @@ export class DatabaseRepositoryReader {
         }
 
         uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
-        ServerUtils.somethingChanged(applicationName);
+        await ServerUtils.somethingChanged(applicationName);
     }
 
     static async initDatabase(params: {
@@ -82,7 +82,6 @@ export class DatabaseRepositoryReader {
             }
         }
         let dbName = databaseObject._properties.dbName;
-        console.log(dbName);
         
         if (!dbName) {
             while(!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
@@ -156,7 +155,7 @@ export class DatabaseRepositoryReader {
         }));
 
         // read the files, see if they have dependencies
-        const replacedPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version).replace(/\\\\/g, '/').replace(/\\/g, '/');
+        const replacedPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version);
         const newDBObject: DatabaseObject = await DatabaseRepositoryReader._extractObjectInformation([{
             versionName: params.version,
             fileName: params.version,
@@ -181,6 +180,7 @@ export class DatabaseRepositoryReader {
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const fileData = await FileUtils.readJsonFile(file);
+            const filePath = file.replace('version.json', '');
             filesRead.push(new DatabaseVersionFile(file, fileData));
         }
         return filesRead;
@@ -209,9 +209,14 @@ export class DatabaseRepositoryReader {
             return vA - vB;
         });
         const databaseObject: DatabaseObject = new DatabaseObject();
+
+
         databaseFiles.forEach(databaseFile => {
             if (databaseFile.versionName === 'current') {
                 databaseObject._properties.hasCurrent = true;
+            }
+            if (databaseObject._versions.indexOf(databaseFile.versionName) === -1) {
+                databaseObject._versions.push(databaseFile.versionName);
             }
             databaseFile.versions.forEach(version => {
                 version.files.forEach(file => {

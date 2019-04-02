@@ -26,9 +26,9 @@ export class RepositoryUtils {
         }
     }
 
-    static async getRepoName(uiUtils: UiUtils): Promise<string> {
+    static async getRepoName(uiUtils: UiUtils, startPath?: string): Promise<string> {
         let repoName = '';        
-        const startPath = path.resolve(process.cwd());
+        startPath = startPath || path.resolve(process.cwd());
         if (FileUtils.checkIfFolderExists(path.resolve(startPath, '.git'))) {
             const gitFileData = await FileUtils.readFile(path.resolve(startPath, '.git', 'config'));
             const repoUrlRegexResult = gitFileData.match(/\/.*?\.git$/gim);
@@ -46,7 +46,8 @@ export class RepositoryUtils {
         type: RepositoryType,
         subRepo?: boolean
     }, uiUtils: UiUtils) {
-        const repoName: string = await RepositoryUtils.getRepoName(uiUtils);
+        params.startPath = FileUtils.replaceSlashes(params.startPath || '');
+        const repoName: string = await RepositoryUtils.getRepoName(uiUtils, params.startPath);
         const startPath = params.startPath || path.resolve(process.cwd());
         if (!repoName) {
             if (!params.subRepo) {
@@ -54,12 +55,11 @@ export class RepositoryUtils {
                 const gitFileList = await FileUtils.getFileList({
                     startPath: startPath,
                     maxLevels: 3,
-                    filter: /\\\.git\\config$/
+                    filter: /\/\.git\/config$/
                 });
                 if (gitFileList.length > 0) {
                     for (let i = 0; i < gitFileList.length; i++) {
                         const subFolder = gitFileList[i].replace(/\/.git\/config$/, '');
-                        
                         try {
                             await RepositoryUtils.readRepository({
                                 startPath: subFolder,

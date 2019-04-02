@@ -28,6 +28,10 @@ export class DatabaseService {
     return await this.localhostService.get(`databases/${name}/init`);
   }
 
+  async installDatabase(params: {name: string, version: string, environment: string}): Promise<DatabaseObject> {
+    return await this.localhostService.get(`databases/${params.name}/install/${params.version}/${params.environment}`);
+  }
+
   async addTemplate(params: {name: string, template: string}): Promise<DatabaseObject> {
     return await this.localhostService.post(`databases/${params.name}/add-template`, {template: params.template});
   }

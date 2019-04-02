@@ -3,5 +3,10 @@
     <button mat-icon-button [routerLink]="[ '/applications']">
       <mat-icon>apps</mat-icon>
     </button>
+    <mat-form-field>
+      <mat-select [value]="(app$|async).environment" (change)="onChange($event)">
+        <mat-option *ngFor="let environment of environments" [value]="environment">{{environment}}</mat-option>
+      </mat-select>
+    </mat-form-field>
   </mat-toolbar-row>
 </mat-toolbar>

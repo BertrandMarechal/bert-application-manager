@@ -1,8 +1,8 @@
-import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave, DatabaseVersion } from "../../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave, DatabaseVersion, DatabaseSubObject } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import {DatabaseHelper} from './database-helper';
+import { DatabaseHelper } from './database-helper';
 import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
@@ -30,14 +30,14 @@ export class DatabaseFileHelper {
             if (lastVersion.versionName !== 'current') {
                 let ok = false;
                 while (!ok) {
-                    const response = await uiUtils.question({origin: this._origin, text: `The last version is not current (last version = ${versionToChange}). If you wish to amend this version, please use "y". If you want to create a new version (current folder), please use "c".`});
+                    const response = await uiUtils.question({ origin: this._origin, text: `The last version is not current (last version = ${versionToChange}). If you wish to amend this version, please use "y". If you want to create a new version (current folder), please use "c".` });
                     if (response === 'c') {
                         versionToChange = 'current';
                         ok = true;
                     } else if (response === 'y') {
                         ok = true;
                     } else {
-                        uiUtils.warning({origin: this._origin, message: 'Incorrect response'});
+                        uiUtils.warning({ origin: this._origin, message: 'Incorrect response' });
                     }
                 }
             }
@@ -50,10 +50,10 @@ export class DatabaseFileHelper {
         version?: string;
         template?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
-        
+        uiUtils.info({ origin: this._origin, message: `Getting ready to create functions.` });
+
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        
+
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'This application does not exist';
@@ -64,12 +64,12 @@ export class DatabaseFileHelper {
 
         const templateFiles: string[] = [];
 
-        switch(params.template) {
+        switch (params.template) {
             case 'lookup':
                 if (databaseObject.table[databaseObject._properties.dbName + 't_lookup_lkp'] || databaseObject.table[databaseObject._properties.dbName + 't_lookup_type_lty']) {
                     throw 'This application already has lookup tables';
                 }
-                
+
                 let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
 
 
@@ -78,7 +78,7 @@ export class DatabaseFileHelper {
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
 
                 templateFiles.push(
-                    ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
                 );
 
                 fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `lookup.sql`));
@@ -86,7 +86,7 @@ export class DatabaseFileHelper {
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
 
                 templateFiles.push(
-                    ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
                 );
 
                 folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups');
@@ -96,11 +96,11 @@ export class DatabaseFileHelper {
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
 
                 templateFiles.push(
-                    ['../','postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups', fileName].join('/')
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups', fileName].join('/')
                 );
-            break;
+                break;
             default:
-            throw 'Unknown template';
+                throw 'Unknown template';
         }
         if (templateFiles.length) {
             await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
@@ -112,10 +112,10 @@ export class DatabaseFileHelper {
         version?: string;
         filter?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({origin: this._origin, message: `Getting ready to create functions.`});
-        
+        uiUtils.info({ origin: this._origin, message: `Getting ready to create functions.` });
+
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        
+
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'This application does not exist';
@@ -133,17 +133,17 @@ export class DatabaseFileHelper {
         let filesCreated = 0;
         let filesIgnored = 0;
         let filesOverwritten = 0;
-        
+
         const tables = Object.keys(databaseObject.table);
 
-        uiUtils.info({origin: this._origin, message: `Going to add the functions to version ${versionToChange}`});
+        uiUtils.info({ origin: this._origin, message: `Going to add the functions to version ${versionToChange}` });
 
-        uiUtils.startProgress({length: tables.length * 4, start: 0, title: 'Functions'});
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions' });
         const functionsToAdd: string[] = [];
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             if (!databaseObject.table[tableName].tags.ignore) {
-                const dbParams: {[name: string]: string} = {
+                const dbParams: { [name: string]: string } = {
                     'entity_name': 'entity',
                     'db_prefix': 'db',
                     'roles': 'null',
@@ -159,7 +159,7 @@ export class DatabaseFileHelper {
                     'list_json_object': '',
                     'list_sorting': '',
                 }
-                const dbParamsFields = Object.keys(dbParams);                
+                const dbParamsFields = Object.keys(dbParams);
                 const nameWithoutPrefixAndSuffix = tableName
                     .replace(new RegExp(`\_${databaseObject.table[tableName].tableSuffix}$`), '')
                     .replace(new RegExp(`^${databaseObject._properties.dbName}t\_`), '');
@@ -167,24 +167,24 @@ export class DatabaseFileHelper {
                 dbParams.db_prefix = databaseObject._properties.dbName;
                 dbParams.table_name = tableName;
                 dbParams.primary_key_name = `pk_${databaseObject.table[tableName].tableSuffix}_id`;
-    
+
                 const fields = Object.keys(databaseObject.table[tableName].fields);
 
                 // we now get the list of sub entities relative to this table, with the get-with-parent tag
-                const tablesToRetrieveAlong: {fieldName: string, table: DatabaseTable}[] = Object.keys(databaseObject.table).map(t => {
+                const tablesToRetrieveAlong: { fieldName: string, table: DatabaseTable }[] = Object.keys(databaseObject.table).map(t => {
                     const fieldsToGet = Object.keys(databaseObject.table[t].fields)
                         .filter(f => databaseObject.table[t].fields[f].isForeignKey)
                         .filter(f => databaseObject.table[t].fields[f].foreignKey &&
-                            (databaseObject.table[t].fields[f].foreignKey || {table: ''}).table === tableName);
+                            (databaseObject.table[t].fields[f].foreignKey || { table: '' }).table === tableName);
                     if (fieldsToGet.filter(f => databaseObject.table[t].fields[f].tags['get-with-parent']).length) {
-                        return fieldsToGet.map(field => ({fieldName: field, table: databaseObject.table[t]}));
+                        return fieldsToGet.map(field => ({ fieldName: field, table: databaseObject.table[t] }));
                     }
-                    return [{fieldName: '', table: new DatabaseTable()}];
+                    return [{ fieldName: '', table: new DatabaseTable() }];
                 })
                     .reduce((agg, curr) => agg.concat(curr), [])
                     .filter(x => !!x.fieldName);
-    
-                const 
+
+                const
                     camelCasedFields: string[] = [],
                     tableFields: string[] = [],
                     tableFieldsUpdate: string[] = [],
@@ -194,12 +194,12 @@ export class DatabaseFileHelper {
                     listJsonObject: string[] = [],
                     listSortingAsc: string[] = [],
                     listSortingDesc: string[] = [];
-    
+
                 for (let i = 0; i < fields.length; i++) {
                     const field = databaseObject.table[tableName].fields[fields[i]];
                     camelCasedFields.push(`${indentationSpaces.repeat(2)}"${field.camelCasedName}" ${field.type}`);
                     tableFields.push(indentationSpaces.repeat(2) + field.name);
-                    
+
                     if (tablesToRetrieveAlong.length) {
                         for (let j = 0; j < tablesToRetrieveAlong.length; j++) {
                             const subTable = tablesToRetrieveAlong[j];
@@ -248,7 +248,7 @@ export class DatabaseFileHelper {
                 dbParams.table_fields_update = tableFieldsUpdate.join(',\n');
                 dbParams.table_fields_insert = tableFieldsInsert.join(',\n');
                 dbParams.params_fields_insert = paramsFieldsInsert.join(',\n');
-                dbParams.list_filters = listFilters.length > 0 ? 
+                dbParams.list_filters = listFilters.length > 0 ?
                     `${indentationSpaces.repeat(3)}WHERE(\n${listFilters.join(' OR \n')}\n${indentationSpaces.repeat(3)})`
                     : '';
                 dbParams.list_json_object = listJsonObject.join(',\n');
@@ -257,24 +257,24 @@ export class DatabaseFileHelper {
                     dbParams.list_sorting += `${indentationSpaces.repeat(6)}(CASE\n`;
                     dbParams.list_sorting += listSortingAsc.join('\n');
                     dbParams.list_sorting += `\n${indentationSpaces.repeat(6)}END) ASC,\n`;
-    
+
                     dbParams.list_sorting += `${indentationSpaces.repeat(6)}(CASE\n`;
                     dbParams.list_sorting += listSortingDesc.join('\n');
                     dbParams.list_sorting += `\n${indentationSpaces.repeat(6)}END) DESC\n`;
                 } else {
                     dbParams.list_sorting = '';
                 }
-                
+
                 // todo deal with joins later
                 dbParams.joins = '';
-    
+
                 const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix);
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
                     if (!databaseObject.table[tableName].tags[`no-${action}`]) {
                         let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, `${action}.sql`));
-        
+
                         for (let j = 0; j < dbParamsFields.length; j++) {
                             const param = dbParamsFields[j];
                             let valueToReplaceWith = dbParams[param];
@@ -301,14 +301,14 @@ export class DatabaseFileHelper {
                                     }
                                     break;
                                 default:
-                                    
+
                                     break;
                             }
                             fileString = fileString.replace(new RegExp(`<${param}>`, 'gi'), valueToReplaceWith);
                         }
 
                         let writeFile = true;
-    
+
                         if (FileUtils.checkIfFolderExists(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`))) {
                             // we have an existing file. We get the content, and check if it is different. If yer, we override
                             const currentFileCOntent = await FileUtils.readFile(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`));
@@ -326,9 +326,9 @@ export class DatabaseFileHelper {
                             const fileName = `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`;
                             FileUtils.writeFileSync(path.resolve(folderPath, `${dbParams.db_prefix}f_${action}_${nameWithoutPrefixAndSuffix}.sql`), fileString);
                             filesCreated++;
-                            
+
                             functionsToAdd.push(
-                                ['../','postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
+                                ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', nameWithoutPrefixAndSuffix, fileName].join('/')
                             );
                         }
                         uiUtils.progress(4 * t + i);
@@ -350,9 +350,9 @@ export class DatabaseFileHelper {
         }
 
         if (filesCreated) {
-            uiUtils.success({origin: this._origin, message: feedback});
+            uiUtils.success({ origin: this._origin, message: feedback });
         } else {
-            uiUtils.warning({origin: this._origin, message: feedback});
+            uiUtils.warning({ origin: this._origin, message: feedback });
         }
 
         if (filesCreated || filesOverwritten) {
@@ -363,27 +363,32 @@ export class DatabaseFileHelper {
     }
 
     private static async updateVersionFile(filePath: string, version: string, filePaths: string[], applicationName: string, uiUtils: UiUtils) {
-        
-            // if something has been changed, we update the file
-            const newVersionJsonPath = path.resolve(filePath, 'postgres', 'release', version, 'version.json');
-            const versionJsonPath = path.resolve(process.argv[1], '../../data/db/database-structure/files/version.json');
-            let versionJsonFile = await FileUtils.readJsonFile(versionJsonPath);
-            
-            if (FileUtils.checkIfFolderExists(newVersionJsonPath)) {
-                versionJsonFile = await FileUtils.readJsonFile(newVersionJsonPath);
-            }
-            
-            // todo list versions to add
-            // todo update version.json
-            versionJsonFile[versionJsonFile.length - 1].fileList = [
-                ...versionJsonFile[versionJsonFile.length - 1].fileList,
-                ...filePaths
-            ];
-            
-            FileUtils.createFolderStructureIfNeeded(newVersionJsonPath);
-            FileUtils.writeFileSync(newVersionJsonPath, JSON.stringify(versionJsonFile, null, 2));
-            
-            await DatabaseRepositoryReader.readRepo(filePath, applicationName, uiUtils);
+
+        // if something has been changed, we update the file
+        const newVersionJsonPath = path.resolve(filePath, 'postgres', 'release', version, 'version.json');
+        const versionJsonPath = path.resolve(process.argv[1], '../../data/db/database-structure/files/version.json');
+        let versionJsonFile: DatabaseVersion[] = await FileUtils.readJsonFile(versionJsonPath);
+
+        if (FileUtils.checkIfFolderExists(newVersionJsonPath)) {
+            versionJsonFile = await FileUtils.readJsonFile(newVersionJsonPath);
+        } else {
+            versionJsonFile = [new DatabaseVersion({
+                userToUse: 'root',
+                fileList: []
+            }, newVersionJsonPath)];
+        }
+
+        // todo list versions to add
+        // todo update version.json
+        versionJsonFile[versionJsonFile.length - 1].fileList = [
+            ...versionJsonFile[versionJsonFile.length - 1].fileList,
+            ...filePaths
+        ];
+
+        FileUtils.createFolderStructureIfNeeded(newVersionJsonPath);
+        FileUtils.writeFileSync(newVersionJsonPath, JSON.stringify(versionJsonFile, null, 2));
+
+        await DatabaseRepositoryReader.readRepo(filePath, applicationName, uiUtils);
     }
 
     static async createTable(params: {
@@ -391,24 +396,24 @@ export class DatabaseFileHelper {
         version?: string;
         tableDetails?: DatabaseTableForSave
     }, uiUtils: UiUtils) {
-        uiUtils.info({origin: this._origin, message: `Getting ready to create table.`});
+        uiUtils.info({ origin: this._origin, message: `Getting ready to create table.` });
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        
+
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'This application does not exist';
         }
-        
+
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
-        
+
         if (!params.tableDetails || (params.tableDetails && !params.tableDetails.name)) {
             // we have User Interraction to build the table
             let tableName = '';
             while (!tableName) {
-                let newTableName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a table name'});
+                let newTableName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a table name' });
                 if (!DatabaseFileHelper._checkNewNameHasUnderscoresAndAlphanumerics(newTableName)) {
-                    uiUtils.warning({origin: DatabaseFileHelper._origin, message: 'Please use snake cased alphanumeric characters'});
+                    uiUtils.warning({ origin: DatabaseFileHelper._origin, message: 'Please use snake cased alphanumeric characters' });
                     tableName = '';
                 } else {
                     tableName = await DatabaseFileHelper._checkNewTableName(databaseObject, newTableName, uiUtils);
@@ -427,14 +432,14 @@ export class DatabaseFileHelper {
                 }],
                 tags: [],
             };
-            uiUtils.info({origin: DatabaseFileHelper._origin, message: `Table name: ${params.tableDetails.name}`});
+            uiUtils.info({ origin: DatabaseFileHelper._origin, message: `Table name: ${params.tableDetails.name}` });
 
             // ask about fields
             let finished = false;
-            let newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a field name'});
+            let newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a field name' });
             while (!finished) {
                 while (!DatabaseFileHelper._checkNewNameHasUnderscoresAndAlphanumerics(newFieldName)) {
-                    newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a field name (basic types offered here, you can also type your own type)'});
+                    newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a field name (basic types offered here, you can also type your own type)' });
                 }
                 const types = [
                     'text',
@@ -444,13 +449,17 @@ export class DatabaseFileHelper {
                     'float',
                     'boolean'
                 ];
-                let selectedType = await uiUtils.question({origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
-                    return `\t ${i + 1} - ${x}`;
-                }).join('\n')}`});
-                while (!selectedType) {
-                    await uiUtils.question({origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
+                let selectedType = await uiUtils.question({
+                    origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
                         return `\t ${i + 1} - ${x}`;
-                    }).join('\n')}`});
+                    }).join('\n')}`
+                });
+                while (!selectedType) {
+                    await uiUtils.question({
+                        origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
+                            return `\t ${i + 1} - ${x}`;
+                        }).join('\n')}`
+                    });
                 }
                 if (+selectedType && types[+selectedType - 1]) {
                     selectedType = types[+selectedType - 1];
@@ -460,41 +469,41 @@ export class DatabaseFileHelper {
                     type: selectedType
                 });
                 const paramIndex = params.tableDetails.fields.length - 1;
-                params.tableDetails.fields[paramIndex].notNull = (await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Should it be not null ? (y for yes)'})).toLowerCase()  === 'y';
+                params.tableDetails.fields[paramIndex].notNull = (await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Should it be not null ? (y for yes)' })).toLowerCase() === 'y';
                 if (params.tableDetails.fields[paramIndex].notNull) {
-                    params.tableDetails.fields[paramIndex].default = ( await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide a default value (press enter for none)'}));
+                    params.tableDetails.fields[paramIndex].default = (await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a default value (press enter for none)' }));
                     if (!params.tableDetails.fields[paramIndex].default) {
                         params.tableDetails.fields[paramIndex].default = undefined;
                     }
                 }
-                params.tableDetails.fields[paramIndex].unique = (await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Should it be unique ? (y for yes)'})).toLowerCase()  === 'y';
+                params.tableDetails.fields[paramIndex].unique = (await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Should it be unique ? (y for yes)' })).toLowerCase() === 'y';
 
                 // next
-                newFieldName = await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'Please provide the next field name'});
+                newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide the next field name' });
                 finished = !newFieldName;
             }
             params.tableDetails.fields = params.tableDetails.fields.concat([{
-                    name: 'created_by',
-                    type: 'CHAR(4)',
-                    notNull: true
-                },
-                {
-                    name: 'created_at',
-                    type: 'TIMESTAMPTZ',
-                    notNull: true,
-                    default: 'CURRENT_TIMESTAMP'
-                },
-                {
-                    name: 'modified_by',
-                    type: 'CHAR(4)',
-                    notNull: true
-                },
-                {
-                    name: 'modified_at',
-                    type: 'TIMESTAMPTZ',
-                    notNull: true,
-                    default: 'CURRENT_TIMESTAMP'
-                }]);
+                name: 'created_by',
+                type: 'CHAR(4)',
+                notNull: true
+            },
+            {
+                name: 'created_at',
+                type: 'TIMESTAMPTZ',
+                notNull: true,
+                default: 'CURRENT_TIMESTAMP'
+            },
+            {
+                name: 'modified_by',
+                type: 'CHAR(4)',
+                notNull: true
+            },
+            {
+                name: 'modified_at',
+                type: 'TIMESTAMPTZ',
+                notNull: true,
+                default: 'CURRENT_TIMESTAMP'
+            }]);
         }
         // we try and build the table based on the provided details
         let tableString = ``;
@@ -522,14 +531,14 @@ export class DatabaseFileHelper {
         }).join(',\n');
         tableString += '\n);';
         console.log(tableString);
-        
-        
+
+
         const fileName = `${params.tableDetails.name}.sql`;
         const folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
         FileUtils.writeFileSync(path.resolve(folderPath, fileName), tableString);
-        
+
         await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, [
-            ['../','postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
+            ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
         ], params.applicationName, uiUtils);
     }
     private static _checkNewNameHasUnderscoresAndAlphanumerics(tableName: string): boolean {
@@ -539,7 +548,7 @@ export class DatabaseFileHelper {
         if (tableName.indexOf(databaseObject._properties.dbName) !== 0) {
             tableName = databaseObject._properties.dbName + 't_' + tableName;
         }
-        
+
         // loop on all the other tables, and check if one stats the same
         const existingTables = Object.keys(databaseObject.table)
             .filter(t => {
@@ -552,7 +561,7 @@ export class DatabaseFileHelper {
         const probablyHasSuffix = !!tableName.match(/_[a-z][a-z0-9]{1,2}$/i);
         let hasSuffix = false;
         if (probablyHasSuffix) {
-            hasSuffix = (await uiUtils.question({origin: DatabaseFileHelper._origin, text: 'It seems that you provided a suffix for this table, pleas confirm (y/n)'})) === 'y';
+            hasSuffix = (await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'It seems that you provided a suffix for this table, pleas confirm (y/n)' })) === 'y';
         }
         if (hasSuffix) {
             return tableName;
@@ -561,14 +570,13 @@ export class DatabaseFileHelper {
             return t.split('_')[t.split('_').length - 1];
         });
         const tableNameSplit = tableName.split('_');
-        console.log(tableNameSplit);
-        
-        let suffix = tableNameSplit[1].substr(0,1);
+
+        let suffix = tableNameSplit[1].substr(0, 1);
         // we first try one suffix, as we would like it, then we loop
         if (tableNameSplit.length >= 4) {
-            suffix += tableNameSplit[2].substr(0,1) + tableNameSplit[3].substr(0,1);
+            suffix += tableNameSplit[2].substr(0, 1) + tableNameSplit[3].substr(0, 1);
         } else if (tableNameSplit.length === 3) {
-            suffix += tableNameSplit[1].substr(1,1) + tableNameSplit[2].substr(0,1);
+            suffix += tableNameSplit[1].substr(1, 1) + tableNameSplit[2].substr(0, 1);
         } else {
             suffix = tableNameSplit[1].substr(0, 3);
         }
@@ -576,7 +584,7 @@ export class DatabaseFileHelper {
         const tableNameWIthoutDBName = tableName.substr(4);
         while (takenSuffixes.indexOf(suffix) > -1 && tries < tableName.length - (3 + tableNameSplit.length)) {
             // we get crazy
-            suffix = 
+            suffix =
                 tableNameWIthoutDBName.substr(Math.floor(tableNameWIthoutDBName.length * Math.random()), 1) +
                 tableNameWIthoutDBName.substr(Math.floor(tableNameWIthoutDBName.length * Math.random()), 1) +
                 tableNameWIthoutDBName.substr(Math.floor(tableNameWIthoutDBName.length * Math.random()), 1);
@@ -603,8 +611,8 @@ export class DatabaseFileHelper {
         applicationName: string;
         version?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({origin: this._origin, message: `Getting ready to create version.`});
-        
+        uiUtils.info({ origin: this._origin, message: `Getting ready to create version.` });
+
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
@@ -637,7 +645,7 @@ export class DatabaseFileHelper {
 
         // copy the schema to the schema folder
         const fileList = await FileUtils.getFileList({
-            filter:/\.sql/,
+            filter: /\.sql/,
             startPath: path.resolve(databaseObject._properties.path, 'postgres', 'release', version, 'schema')
         });
 
@@ -659,5 +667,70 @@ export class DatabaseFileHelper {
 
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
         return true;
+    }
+
+    static async editObject(params: {
+        applicationName: string;
+        objectName: string;
+        objectType: string;
+    }, uiUtils: UiUtils) {
+        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
+
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
+            throw 'This application does not exist';
+        }
+        if (!databaseObject[params.objectType]) {
+            throw 'Invalid object type.';
+        }
+        const databaseSubObject: DatabaseSubObject = databaseObject[params.objectType][params.objectName];
+        if (!databaseSubObject) {
+            throw 'This object does not exist';
+        }
+
+        if (databaseSubObject.latestVersion === 'current') {
+            // object is at the current version LREADY
+            return;
+        }
+        const filesToInstall: string[] = []
+        const fileName = databaseSubObject.latestFile;
+        const newFileName = fileName.replace(`/${databaseSubObject.latestVersion}/`, '/current/');
+
+        await FileUtils.createFolderStructureIfNeeded(newFileName);
+        await FileUtils.copyFileSync(
+            fileName,
+            newFileName
+        );
+
+        // todo add the other types
+        if (params.objectType === 'function') {
+            filesToInstall.push(
+                newFileName.replace(new RegExp(`.*?(postgres\/release\/current\/schema/.*?)`, 'i'), '..//$1')
+            );
+        } else if (params.objectType === 'table') {
+            // create the alter table file if not exist
+            const alterTableFileName = newFileName.replace(new RegExp(`.*?postgres\/release\/current\/schema/.*?/([a-z0-9_]+.sql)`, 'i'),
+                '..//postgres/release/current/scripts/alter_$1');
+            if (!FileUtils.checkIfFolderExists(
+                alterTableFileName.replace(/\.\.\/\//, databaseObject._properties.path + '/')
+            )) {
+                FileUtils.writeFileSync(alterTableFileName.replace(/\.\.\/\//, databaseObject._properties.path + '/'), '');
+            }
+            filesToInstall.push(alterTableFileName);
+        }
+
+        if (filesToInstall.length) {
+            await DatabaseFileHelper.updateVersionFile(
+                databaseObject._properties.path,
+                'current',
+                filesToInstall,
+                params.applicationName,
+                uiUtils);
+        }
+
+        uiUtils.success({ origin: this._origin, message: 'New file version created' });
+
+        DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
 }

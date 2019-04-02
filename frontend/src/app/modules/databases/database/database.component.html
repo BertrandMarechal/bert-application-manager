@@ -1,4 +1,4 @@
-<app-details-view [name]="(databases$|async).database?._properties?.dbName" [actions]="actions"
+<app-details-view [name]="(databases$|async).databaseName" [actions]="actions"
   (actionClicked)="onActionClicked($event)">
   <nav mat-tab-nav-bar>
     <a mat-tab-link
@@ -14,6 +14,14 @@
       Functions
     </a> -->
   </nav>
+  <div header>
+    <button mat-stroked-button [matMenuTriggerFor]="menuInstall">Install</button>
+    <mat-menu #menuInstall="matMenu">
+      <button mat-menu-item *ngFor="let version of (databases$|async).database?._versions"  (click)="onInstall(version)">{{version}}</button>
+      <button mat-menu-item (click)="onInstall('all')">All</button>
+    </mat-menu>
+  </div>
+
   <router-outlet></router-outlet>
   <!-- <mat-tab-group>
     <mat-tab label="Functions">

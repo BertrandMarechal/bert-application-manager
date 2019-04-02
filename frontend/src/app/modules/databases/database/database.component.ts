@@ -25,6 +25,7 @@ export class DatabaseComponent implements OnInit {
   ) { }
 
   filter: string;
+  databaseName: string;
   databaseFunction: DatabaseSubObject;
   editTable: boolean;
   editFunction: boolean;
@@ -37,6 +38,7 @@ export class DatabaseComponent implements OnInit {
     this.templateFormControl = new FormControl();
     this.databases$ = this.store.pipe(select('databases'));
     this.databases$.subscribe((state: fromDatabases.State) => {
+      this.databaseName = state.databaseName;
 
       this.actions = [];
       if (!state.database || !state.database._properties.dbName) {
@@ -97,5 +99,9 @@ export class DatabaseComponent implements OnInit {
 
   onChoseTemplate() {
     this.store.dispatch(new DatabasesActions.PageAddTemplate(this.templateFormControl.value));
+  }
+
+  onInstall(version: string) {
+    this.store.dispatch(new DatabasesActions.PageInstallDatabase({version: version, name: this.databaseName}));
   }
 }

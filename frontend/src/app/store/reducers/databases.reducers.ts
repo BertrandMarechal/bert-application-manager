@@ -8,12 +8,14 @@ export interface FeatureState extends AppState {
 
 export interface State {
     gettingDatabase: boolean;
+    installingDatabase: boolean;
     database: DatabaseObject;
     databaseName: string;
 }
 
 const databasesInitialState: State = {
     gettingDatabase: false,
+    installingDatabase: false,
     database: null,
     databaseName: null,
 };
@@ -51,6 +53,17 @@ export function databasesReducers(
             return {
                 ...state,
                 database: action.payload
+            };
+        case DatabasesActions.PAGE_INSTALL_DATABASE:
+            return {
+                ...state,
+                installingDatabase: true
+            };
+        case DatabasesActions.SERVICE_INSTALL_DATABASE_COMPLETE:
+        case DatabasesActions.SERVICE_INSTALL_DATABASE_FAILED:
+            return {
+                ...state,
+                installingDatabase: false
             };
         default:
             break;

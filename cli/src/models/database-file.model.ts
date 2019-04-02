@@ -24,6 +24,7 @@ export type DatabaseFileType =
     | 'data-exchange'
     | 'users-roles-permissions'
     | 'full-text-catalogues'
+    | 'script'
     | 'unknown';
 
 const TableConstraintsFirstWord = [
@@ -399,6 +400,8 @@ export class DatabaseTable extends DatabaseSubObject {
     }
 }
 export class DatabaseObject {
+    [name: string]: any;
+
     table: { [name: string]: DatabaseTable; };
     setup: { [name: string]: DatabaseSubObject; };
     function: { [name: string]: DatabaseSubObject; };
@@ -418,6 +421,7 @@ export class DatabaseObject {
     'data-exchange': { [name: string]: DatabaseSubObject; };
     'users-roles-permissions': { [name: string]: DatabaseSubObject; };
     'full-text-catalogues': { [name: string]: DatabaseSubObject; };
+    'script': { [name: string]: DatabaseSubObject; };
     _properties: {
         dbName: string;
         hasCurrent: boolean;
@@ -427,9 +431,11 @@ export class DatabaseObject {
     _parameters: {
         [name: string]: string[];
     }
+    _versions: string[];
 
     constructor(params?: any) {
         params = params || {};
+        this._versions = [];
         this.setup = params.setup || {};
         this.table = params.table || {};
         this.function = params.function || {};
@@ -449,6 +455,7 @@ export class DatabaseObject {
         this['data-exchange'] = params['data-exchange'] || {};
         this['users-roles-permissions'] = params['users-roles-permissions'] || {};
         this['full-text-catalogues'] = params['full-text-catalogues'] || {};
+        this['script'] = params['script'] || {};
         this._properties = params._properties || {
             dbName: '',
             hasCurrent: false,
@@ -505,9 +512,11 @@ export class DatabaseFile {
             this.type = 'users-roles-permissions';
         } else if (fileName.includes('11-full-text-catalogues')) {
             this.type = 'full-text-catalogues';
+        } else if (fileName.includes('scripts')) {
+            this.type = 'script';
         }
 
-        const fileNameSplit = fileName.split('\\');
+        const fileNameSplit = fileName.split('/');
         this.objectName = fileNameSplit[fileNameSplit.length - 1].split('.')[0];
     }
 }
@@ -525,10 +534,11 @@ export class DatabaseVersion {
         this.userToUse = params.userToUse;
         this.databaseToUse = params.databaseToUse;
         this.dependencies = params.dependencies || [];
-        this.fileList = params.fileList.map((x: string) => x.replace(/\//g, '\\'));
-        const fileNameMinusVersion = fileName.split('\\postgres\\release')[0];
+        
+        this.fileList = params.fileList || [];
+        const fileNameMinusVersion = fileName.split('/postgres/release')[0];
         this.files = this.fileList.map(file => {
-            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\\/g, ''));
+            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\//g, ''));
         });
     }
 }
@@ -538,9 +548,9 @@ export class DatabaseVersionFile {
     versions: DatabaseVersion[];
 
     constructor(fileName: string, params?: any) {
-        this.fileName = fileName.replace(/\//g, '\\');
-        const fileNameSplit = this.fileName.split('\\');
+        this.fileName = fileName;
+        const fileNameSplit = this.fileName.split('/');
         this.versionName = fileNameSplit[fileNameSplit.length - 2];
-        this.versions = params.map((x: any) => new DatabaseVersion(x, this.fileName));
+        this.versions = (params || []).map((x: any) => new DatabaseVersion(x, this.fileName));
     }
 }

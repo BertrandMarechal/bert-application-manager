@@ -15,7 +15,8 @@ export class FileUtils {
         maxLevels?: number;
         currentLevel?: number;
         filter: RegExp;
-    }): Promise<string[]> {
+    }): Promise<string[]> {        
+        params.startPath = FileUtils.replaceSlashes(params.startPath);
         params.currentLevel = (params.currentLevel || 0) + 1;
         const foldersToIgnore = params.foldersToIgnore || ['node_modules'];
         if (foldersToIgnore) {
@@ -40,7 +41,7 @@ export class FileUtils {
             });
             let files = fileNames.filter((x: string) => {
                 let fileName = path.join(params.startPath, x);
-                let stat = fs.lstatSync(fileName);
+                let stat = fs.lstatSync(fileName);                
                 return !stat.isDirectory() && params.filter.test(fileName);
             });
             if (directories.length > 0 && (!params.maxLevels || params.maxLevels >= params.currentLevel)) {
@@ -56,9 +57,9 @@ export class FileUtils {
                     return Promise.resolve(newFileList);
                 });
             }
-            else {
+            else {    
                 return new Promise((resolve) => {
-                    resolve(files.map((x: string) => FileUtils.replaceSlashes(params.startPath) + '/' + FileUtils.replaceSlashes(x)));
+                    resolve(files.map((x: string) => params.startPath + '/' + x));
                 });
             }
         }
@@ -104,7 +105,6 @@ export class FileUtils {
         return await new Promise((resolve, reject) => {
             fs.readFile(fileName, (error, data) => {
                 if (error) {
-                    console.log(error);
                     reject(error);
                 } else {
                     resolve(data.toString('ascii'));

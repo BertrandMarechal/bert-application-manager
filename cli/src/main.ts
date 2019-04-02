@@ -28,6 +28,8 @@ const main = async () => {
                     { name: 'action', defaultOption: true },
                     { name: 'environment', alias: 'e', type: String, description: 'environment' },
                     { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
+                    { name: 'object-name', alias: 'o', type: String, description: 'Object Name' },
+                    { name: 'object-type', alias: 'y', type: String, description: 'Object Type' },
                     { name: 'version', alias: 'v', type: String, description: 'Version to install' },
                     { name: 'template', alias: 't', type: String, description: 'Template' },
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
@@ -82,6 +84,14 @@ const main = async () => {
                             applicationName: dbOptions['application-name'],
                             version: dbOptions['version'],
                             filter: dbOptions.filter,
+                        }, loggerUtils);
+                        break;
+                    case 'e':
+                    case 'edit-object':
+                        await DatabaseFileHelper.editObject({
+                            applicationName: dbOptions['application-name'],
+                            objectName: dbOptions['object-name'],
+                            objectType: dbOptions['object-type'],
                         }, loggerUtils);
                         break;
                     case 't':

@@ -137,6 +137,7 @@ export class DatabaseObject {
     _parameters: {
         [name: string]: string[];
     };
+    _versions: string[];
 }
 
 export class DatabaseFile {

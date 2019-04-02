@@ -59,17 +59,13 @@ export class ServerUtils {
         }
     }
     static async somethingChanged(applicationName: string) {
-        console.log(applicationName);
-        
         try {
             const response: AxiosResponse = await axios.get('http://localhost:690/ping');
             if (response.data === 'pong') {
                 await axios.post('http://localhost:690/cli/something-changed', {applicationName});
             }
         }
-        catch(e) {
-            console.log(e);
-            
+        catch(_e) {   
         }
     }
 }

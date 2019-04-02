@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { NgrxUtilsService } from 'app/services/ngrx-utils';
 import * as DatabasesActions from '../actions/databases.actions';
 import * as fromDatabases from '../reducers/databases.reducers';
+import * as fromApp from '../reducers/app.reducers';
 import { RouterUtilsService, RouteNavigationParams } from 'app/services/router-utils.service';
 import { map } from 'rxjs/operators';
 import { DatabaseService } from 'app/services/database.service';
@@ -68,6 +69,20 @@ export class DatabasesEffects {
         store: this.store.pipe(select('databases')),
         payloadTransform: (_action: any, state: fromDatabases.State) => state.databaseName,
         serviceMethod: this.databasesService.initializeDatabase.bind(this.databasesService)
+    });
+
+    @Effect() installDatabase: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_INSTALL_DATABASE
+        ],
+        store: this.store.pipe(select('app')),
+        payloadTransform: (action: DatabasesActions.PageInstallDatabase, state: fromApp.State) => ({
+            name: action.payload.name,
+            version: action.payload.version,
+            environment: state.environment
+        }),
+        serviceMethod: this.databasesService.installDatabase.bind(this.databasesService)
     });
     @Effect() addTemplate: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
         actionsObs: this.actions$,

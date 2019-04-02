@@ -3,7 +3,10 @@ import IO from "socket.io";
 
 export class SocketUtils implements UiUtils {
     client?: IO.Socket;
-    constructor(client?: IO.Socket) {
+    constructor() {
+    }
+
+    attachClient(client: IO.Socket) {
         this.client = client;
     }
 
