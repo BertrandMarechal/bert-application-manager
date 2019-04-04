@@ -1,6 +1,7 @@
 import { Component, Input, ChangeDetectionStrategy, OnInit, Output, EventEmitter } from '@angular/core';
-import { DatabaseTableField, DatabaseTable } from '@app/models/database-file.model';
+import { DatabaseTableField, DatabaseTable, Tag } from '@app/models/database-file.model';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { AvailableTag, getAvailableTags } from '@app/models/database-tag.model';
 
 @Component({
   selector: 'app-field',
@@ -14,10 +15,15 @@ export class FieldComponent implements OnInit {
   @Input() canEdit = true;
   @Output() close = new EventEmitter();
   @Output() delete = new EventEmitter();
+  @Output() addTag = new EventEmitter<AvailableTag>();
+  @Output() removeTag = new EventEmitter<Tag>();
   form: FormGroup;
   _edit: boolean;
+  availableTags: AvailableTag[];
 
   ngOnInit(): void {
+    this.availableTags = [];
+    this.availableTags = getAvailableTags('field', this.field.tags, this.field);
     if (!this.field) {
       this.field = new DatabaseTableField();
       this._edit = true;

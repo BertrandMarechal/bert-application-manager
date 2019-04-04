@@ -1,0 +1,7 @@
+<span class="tag">#<b>{{tag.name}}</b><span *ngIf="tag.value !== true">={{tag.value}}</span>
+    <span>
+        <button class="hide" mat-icon-button (click)="remove.emit()">
+            <mat-icon color="warn">clear</mat-icon>
+        </button>
+    </span>
+    &nbsp;

@@ -85,6 +85,83 @@ export class ServiceCreateDatabaseTableFailed implements Action {
     }
 }
 
+export const PAGE_ADD_TABLE_TAG = '[Database Table Page] add table tag';
+export const SERVICE_ADD_TABLE_TAG_COMPLETE = '[Database Table Service] add table tag complete';
+export const SERVICE_ADD_TABLE_TAG_FAILED = '[Database Table Service] add table tag failed';
+
+export class PageAddTableTag implements Action {
+    readonly type = PAGE_ADD_TABLE_TAG;
+    constructor(public payload: { tagName: string, tagValue: string }) {
+    }
+}
+export class ServiceAddTableTagComplete implements Action {
+    readonly type = SERVICE_ADD_TABLE_TAG_COMPLETE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceAddTableTagFailed implements Action {
+    readonly type = SERVICE_ADD_TABLE_TAG_FAILED;
+    constructor(public payload?: string) {
+    }
+}
+export const PAGE_REMOVE_TABLE_TAG = '[Database Table Page] remove table tag';
+export const SERVICE_REMOVE_TABLE_TAG_COMPLETE = '[Database Table Service] remove table tag complete';
+export const SERVICE_REMOVE_TABLE_TAG_FAILED = '[Database Table Service] remove table tag failed';
+
+export class PageRemoveTableTag implements Action {
+    readonly type = PAGE_REMOVE_TABLE_TAG;
+    constructor(public payload: { tagName: string }) {
+    }
+}
+export class ServiceRemoveTableTagComplete implements Action {
+    readonly type = SERVICE_REMOVE_TABLE_TAG_COMPLETE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceRemoveTableTagFailed implements Action {
+    readonly type = SERVICE_REMOVE_TABLE_TAG_FAILED;
+    constructor(public payload?: string) {
+    }
+}
+export const PAGE_ADD_FIELD_TAG = '[Database Table Page] add field tag';
+export const SERVICE_ADD_FIELD_TAG_COMPLETE = '[Database Table Service] add field tag complete';
+export const SERVICE_ADD_FIELD_TAG_FAILED = '[Database Table Service] add field tag failed';
+
+export class PageAddFieldTag implements Action {
+    readonly type = PAGE_ADD_FIELD_TAG;
+    constructor(public payload: { fieldName: string, tagName: string, tagValue: string }) {
+    }
+}
+export class ServiceAddFieldTagComplete implements Action {
+    readonly type = SERVICE_ADD_FIELD_TAG_COMPLETE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceAddFieldTagFailed implements Action {
+    readonly type = SERVICE_ADD_FIELD_TAG_FAILED;
+    constructor(public payload?: string) {
+    }
+}
+export const PAGE_REMOVE_FIELD_TAG = '[Database Table Page] remove field tag';
+export const SERVICE_REMOVE_FIELD_TAG_COMPLETE = '[Database Table Service] remove field tag complete';
+export const SERVICE_REMOVE_FIELD_TAG_FAILED = '[Database Table Service] remove field tag failed';
+
+export class PageRemoveFieldTag implements Action {
+    readonly type = PAGE_REMOVE_FIELD_TAG;
+    constructor(public payload: { fieldName: string, tagName: string }) {
+    }
+}
+export class ServiceRemoveFieldTagComplete implements Action {
+    readonly type = SERVICE_REMOVE_FIELD_TAG_COMPLETE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceRemoveFieldTagFailed implements Action {
+    readonly type = SERVICE_REMOVE_FIELD_TAG_FAILED;
+    constructor(public payload?: string) {
+    }
+}
+
 export type DatabaseTableActions =
     | PageGetDatabaseTables
     | RouterGetDatabaseTables
@@ -101,4 +178,20 @@ export type DatabaseTableActions =
     | PageCreateDatabaseTable
     | ServiceCreateDatabaseTableComplete
     | ServiceCreateDatabaseTableFailed
+
+    | PageAddTableTag
+    | ServiceAddTableTagComplete
+    | ServiceAddTableTagFailed
+
+    | PageRemoveTableTag
+    | ServiceRemoveTableTagComplete
+    | ServiceRemoveTableTagFailed
+
+    | PageAddFieldTag
+    | ServiceAddFieldTagComplete
+    | ServiceAddFieldTagFailed
+
+    | PageRemoveFieldTag
+    | ServiceRemoveFieldTagComplete
+    | ServiceRemoveFieldTagFailed
     ;

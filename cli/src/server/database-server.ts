@@ -119,6 +119,42 @@ export class DatabaseServer {
             }
             res.send(obj);
         });
+        app.post('/databases/:name/tables/:tableName/add-tag', async (req: Request, res: Response) => {
+            await DatabaseFileHelper.addTagOnTable({
+                applicationName: req.params.name,
+                objectName: req.params.tableName,
+                tagName: req.body.tagName,
+                tagValue: req.body.tagValue,
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
+        app.post('/databases/:name/tables/:tableName/remove-tag', async (req: Request, res: Response) => {
+            await DatabaseFileHelper.removeTagFromTable({
+                applicationName: req.params.name,
+                objectName: req.params.tableName,
+                tagName: req.body.tagName,
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
+        app.post('/databases/:name/tables/:tableName/:field/add-tag', async (req: Request, res: Response) => {
+            await DatabaseFileHelper.addTagOnField({
+                applicationName: req.params.name,
+                objectName: req.params.tableName,
+                fieldName: req.params.field,
+                tagName: req.body.tagName,
+                tagValue: req.body.tagValue,
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
+        app.post('/databases/:name/tables/:tableName/:field/remove-tag', async (req: Request, res: Response) => {
+            await DatabaseFileHelper.removeTagFromField({
+                applicationName: req.params.name,
+                objectName: req.params.tableName,
+                fieldName: req.params.field,
+                tagName: req.body.tagName,
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
+        });
         app.get('/databases/:name/:objectType/:objectName/:version', async (req: Request, res: Response) => {
             const db = await ApplicationHelper.getDatabase(req.params.name);
             let obj: DatabaseSubObject = new DatabaseSubObject();

@@ -58,5 +58,20 @@
   </span>
   <span *ngIf="field.default; else null">
     &nbsp;DEFAULT {{field.defaultValue}}
-  </span>,
+  </span>
+  <span style="color: #007213">
+      <span *ngIf="(field.tags|objectKeys).length">/*&nbsp;</span>
+      <app-database-tag *ngFor="let tag of field.tags|objectKeys"
+          [tag]="tag" (remove)="removeTag.emit({tag: tag, field: field})"></app-database-tag>
+      <button style="width: 20px; height: 20px; line-height: 20px;" mat-icon-button [matMenuTriggerFor]="menuTag" *ngIf="availableTags.length">
+          <mat-icon>tag</mat-icon>
+      </button>
+      <mat-menu #menuTag="matMenu">
+          <button mat-menu-item *ngFor="let tag of availableTags" (click)="addTag.emit({tag: tag, field: field})">
+              #&nbsp;{{tag.name}}
+          </button>
+      </mat-menu>
+      <span *ngIf="(field.tags|objectKeys).length">*/</span>
+  </span>
+  ,
 </span>

@@ -32,7 +32,10 @@ const main = async () => {
                     { name: 'object-type', alias: 'y', type: String, description: 'Object Type' },
                     { name: 'version', alias: 'v', type: String, description: 'Version to install' },
                     { name: 'template', alias: 't', type: String, description: 'Template' },
-                    { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
+                    { name: 'tag', alias: '#', type: String, description: 'Tag' },
+                    { name: 'remove', alias: 'r', type: Boolean, description: 'Remov tag' },
+                    { name: 'value', alias: 'u', type: String, description: 'Value' },
+                    { name: 'filter', alias: 'f', type: String, description: 'field / regex filter to apply to the commands' },
                 ]
                 const dbOptions = commandLineArgs(dbOptionsDefinitions, { argv, stopAtFirstUnknown: true });
                 switch (dbOptions.action) {
@@ -101,6 +104,42 @@ const main = async () => {
                             version: dbOptions['version'],
                             template: dbOptions.template,
                         }, loggerUtils);
+                        break;
+                    case '#':
+                    case 'tag':
+                        if (!dbOptions['filter']) {
+                            if (!dbOptions['remove']) {
+                                await DatabaseFileHelper.addTagOnTable({
+                                    applicationName: dbOptions['application-name'],
+                                    objectName: dbOptions['object-name'],
+                                    tagName: dbOptions['tag'],
+                                    tagValue: dbOptions['value']
+                                }, loggerUtils);
+                            } else {
+                                await DatabaseFileHelper.removeTagFromTable({
+                                    applicationName: dbOptions['application-name'],
+                                    objectName: dbOptions['object-name'],
+                                    tagName: dbOptions['tag']
+                                }, loggerUtils);
+                            }
+                        } else {
+                            if (!dbOptions['remove']) {
+                                await DatabaseFileHelper.addTagOnField({
+                                    applicationName: dbOptions['application-name'],
+                                    objectName: dbOptions['object-name'],
+                                    fieldName: dbOptions['filter'],
+                                    tagName: dbOptions['tag'],
+                                    tagValue: dbOptions['value']
+                                }, loggerUtils);
+                            } else {
+                                await DatabaseFileHelper.removeTagFromField({
+                                    applicationName: dbOptions['application-name'],
+                                    objectName: dbOptions['object-name'],
+                                    fieldName: dbOptions['filter'],
+                                    tagName: dbOptions['tag']
+                                }, loggerUtils);
+                            }
+                        }
                         break;
                     default:
                         break;

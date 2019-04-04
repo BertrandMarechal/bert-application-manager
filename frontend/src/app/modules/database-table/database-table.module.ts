@@ -15,6 +15,7 @@ import { UtilsModule } from '../shared/utils/utils.module';
 import { TableComponent } from './table/table.component';
 import { FieldComponent } from './field/field.component';
 import { EditTableComponent } from './edit-table/edit-table.component';
+import { DatabaseTagComponent } from './database-tag/database-tag.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { EditTableComponent } from './edit-table/edit-table.component';
     TableComponent,
     FieldComponent,
     EditTableComponent,
+    DatabaseTagComponent,
   ],
   imports: [
     CommonModule,

@@ -2,13 +2,28 @@
 <!-- <button mat-icon-button routerLink="edit">
     <mat-icon>edit</mat-icon>
 </button><br> -->
+<span style="color: #007213">
+        <span *ngIf="((databaseTable$|async).databaseTable?.tags|objectKeys).length">/*&nbsp;</span>
+        <app-database-tag *ngFor="let tag of (databaseTable$|async).databaseTable?.tags|objectKeys"
+        [tag]="tag" (remove)="onRemoveTag({tag: tag})"></app-database-tag>
+    <button mat-icon-button [matMenuTriggerFor]="menuTag" *ngIf="availableTags.length">
+        <mat-icon>tag</mat-icon>
+    </button>
+    <mat-menu #menuTag="matMenu">
+        <button mat-menu-item *ngFor="let tag of availableTags" (click)="onSelectTag({tag: tag})">
+            #&nbsp;{{tag.name}}
+        </button>
+    </mat-menu>
+    <span *ngIf="((databaseTable$|async).databaseTable?.tags|objectKeys).length">*/</span>
+</span>
+<br>
 CREATE TABLE IF NOT EXISTS {{(databaseTable$|async).databaseTable?.name}} (
-<app-field
-    *ngFor="let field of (databaseTable$|async).databaseTable?.fields|objectKeys"
-    [field]="field"
+<app-field *ngFor="let field of (databaseTable$|async).databaseTable?.fields|objectKeys" [field]="field"
     [table]="(databaseTable$|async).databaseTable"
-    [canEdit]="false"></app-field>
-    <br>
+    [canEdit]="false"
+    (removeTag)="onRemoveTag($event)"
+    (addTag)="onSelectTag($event)"></app-field>
+<br>
 );
 <br>
 <h4>Versions</h4>
