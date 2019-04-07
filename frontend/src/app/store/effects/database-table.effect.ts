@@ -151,5 +151,6 @@ export class DatabaseTableEffects {
         private databaseTableService: DatabaseTableService,
         private store: Store<fromDatabases.FeatureState>
     ) {
+        console.log('DatabaseTableEffects');
     }
 }

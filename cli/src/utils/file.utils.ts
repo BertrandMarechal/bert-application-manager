@@ -9,7 +9,7 @@ export interface FileAndContent {
 }
 
 export class FileUtils {
-    static getFileList(params: {
+    static async getFileList(params: {
         startPath: string;
         foldersToIgnore?: string[];
         maxLevels?: number;
@@ -26,7 +26,7 @@ export class FileUtils {
         }
 
         if (!fs.existsSync(params.startPath)) {
-            console.log(params.startPath + ' does not exist');
+            console.error(params.startPath + ' does not exist');
             return Promise.resolve([]);
         }
         else {
@@ -35,7 +35,7 @@ export class FileUtils {
                 let fileName = path.join(params.startPath, x);
                 let stat = fs.lstatSync(fileName);
                 if (stat.isDirectory()) {
-                    return foldersToIgnore.filter(y => fileName.indexOf(y) > -1).length === 0
+                    return foldersToIgnore.filter(y => fileName.indexOf(y) === 0).length === 0
                 }
                 return false;
             });
@@ -45,22 +45,19 @@ export class FileUtils {
                 return !stat.isDirectory() && params.filter.test(fileName);
             });
             if (directories.length > 0 && (!params.maxLevels || params.maxLevels >= params.currentLevel)) {
-                return Promise.all(directories.map((x: string) => {
+                const fileLists: string[][] = await Promise.all(directories.map((x: string) => {
                     return FileUtils.getFileList({
                         ...params,
                         startPath: params.startPath + '/' + x,
                         foldersToIgnore: foldersToIgnore
                     });
-                })).then((fileLists: string[][]) => {
-                    let fileList: string[] = fileLists.reduce((current: string[], item: string[]) => current.concat(item), []);
-                    const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
-                    return Promise.resolve(newFileList);
-                });
+                }));
+                let fileList: string[] = fileLists.reduce((current: string[], item: string[]) => current.concat(item), []);
+                const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
+                return newFileList;
             }
             else {    
-                return new Promise((resolve) => {
-                    resolve(files.map((x: string) => params.startPath + '/' + x));
-                });
+                return files.map((x: string) => params.startPath + '/' + x);
             }
         }
     }

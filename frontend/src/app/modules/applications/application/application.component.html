@@ -2,6 +2,6 @@
   [name]="(applications$|async).application?.name">
   <button
     mat-stroked-button
-    [routerLink]="[ '/databases', (applications$|async).application?.name]"
+    [routerLink]="[ '/databases', (applications$|async).application?.name,'tables']"
     *ngIf="(applications$|async).application?.database">Database</button>
 </app-details-view>

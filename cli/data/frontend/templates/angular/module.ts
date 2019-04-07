@@ -4,7 +4,8 @@ import {StoreModule} from '@ngrx/store';
 import {EffectsModule} from '@ngrx/effects';
 import {ReactiveFormsModule} from '@angular/forms';
 import {AngularSplitModule} from 'angular-split';
-import {PaginatedTableModule} from '@app/modules/paginated-table/paginated-table.module';
+import {PaginatedTableModule} from '@app/modules/shared/paginated-table/paginated-table.module';
+import {DetailsViewModule} from '@app/modules/shared/details-view/details-view.module';
 
 import {<capitalized_camel_cased_name>MaterialModule} from './material/<name_with_dashes>-material.module';
 import {<capitalized_camel_cased_name>RoutingModule} from './<name_with_dashes>-routing.module';
@@ -24,6 +25,7 @@ import {<capitalized_camel_cased_name>Effects} from '@app/store/effects/<name_wi
     <capitalized_camel_cased_name>RoutingModule,
     <capitalized_camel_cased_name>MaterialModule,
     ReactiveFormsModule,
+    DetailsViewModule,
     PaginatedTableModule,
     StoreModule.forFeature('<camel_cased_name>Store', <camel_cased_name>Reducers),
     EffectsModule.forFeature([

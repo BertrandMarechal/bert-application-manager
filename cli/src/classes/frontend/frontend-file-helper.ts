@@ -29,6 +29,8 @@ export class FrontendFileHelper {
             throw 'This application does not exist';
         }
 
+        const filesToCreate: FileAndContent[] = [];
+
         const actions = [
             'get',
             'list',
@@ -41,17 +43,35 @@ export class FrontendFileHelper {
 
         const tables = Object.keys(databaseObject.table);
 
-        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
-
-        const filesToCreate: FileAndContent[] = [];
+        
         const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
+        
+        const defaultFilesPath = path.resolve(FrontendFileHelper.frontendTemplatesFolder, '..', 'default-files').replace(/\\/g, '/');
+        
+        const defaultFiles = await FileUtils.getFileList({
+            startPath: defaultFilesPath,
+            filter: /\.ts$|\.html$|\.scss$/,
+            maxLevels: 10
+        });
+        
+        for (let i = 0; i < defaultFiles.length; i++) {
+            const fileContent = await FileUtils.readFile(defaultFiles[i]);
+            filesToCreate.push({
+                fileContent: fileContent,
+                path: path.resolve(frontendPath, 'src', 'app', defaultFiles[i].replace(
+                    defaultFilesPath + '/', ''
+                ))
+            });
+        }
+
         const serviceFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'service.ts'));
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'model.ts'));
         const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
         const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
-
+        
         const ngrxFileHelper = new NgrxFileHelper();
-
+        
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             const nameWithoutPrefixAndSuffix = tableName

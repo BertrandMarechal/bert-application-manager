@@ -34,7 +34,7 @@ import { LoggerColorPipe } from './console/logger-color.pipe';
     BrowserAnimationsModule,
     AngularSplitModule.forRoot(),
     StoreRouterConnectingModule.forRoot({
-      navigationActionTiming: NavigationActionTiming.PostActivation,
+      // navigationActionTiming: NavigationActionTiming.PostActivation,
     }),
     StoreModule.forRoot(reducers),
     EffectsModule.forRoot([]),
