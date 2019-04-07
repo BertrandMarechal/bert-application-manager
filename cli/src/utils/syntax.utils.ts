@@ -17,6 +17,7 @@ export class SyntaxUtils {
     static simplifyDbFileForAnalysis(fileString: string): string {
         let toReturn = fileString;
         toReturn = toReturn
+            .replace(/--.*$/g, '')
             .replace(/\r/g, ' ')
             .replace(/\n/g, ' ')
             .replace(/\\r/g, ' ')

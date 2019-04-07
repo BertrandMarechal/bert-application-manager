@@ -1,0 +1,13 @@
+<p>
+  <span *ngIf="(console$|async).progress">
+    <span>{{(console$|async).progress.title}}</span>&nbsp;
+    <mat-progress-bar mode="determinate"
+      [value]="(console$|async).progress.current / (console$|async).progress.length * 100"></mat-progress-bar>
+  </span>
+  <span *ngFor="let notification of (console$|async).notifications">
+    <span>
+      <b [ngStyle]="{'color': notification.params|loggerColor}">[{{notification.params.origin}}] -</b>
+      <span>{{notification.params.message}}</span>
+    </span><br>
+  </span>
+</p>

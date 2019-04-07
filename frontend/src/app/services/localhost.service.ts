@@ -5,8 +5,6 @@ import { environment } from '../../environments/environment';
 import { Store } from '@ngrx/store';
 import Swal from 'sweetalert2';
 import * as fromDatabases from '@app/store/reducers/databases.reducers';
-import * as fromApplications from '@app/store/reducers/applications.reducers';
-import * as ApplicationsActions from '@app/store/actions/applications.actions';
 import * as DatabasesActions from '@app/store/actions/databases.actions';
 import * as ConsoleActions from '@app/store/actions/console.actions';
 
@@ -72,12 +70,15 @@ export class LocalhostService {
 
   private _plugUiUtils() {
     this.socketManagement.on('log', (params: LoggingParams) => {
+      params.type = 'info';
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('info', (params: LoggingParams) => {
+      params.type = 'info';
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('success', (params: LoggingParams) => {
+      params.type = 'success';
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'success', params }));
       Toast.fire({
         type: 'success',
@@ -85,6 +86,7 @@ export class LocalhostService {
       });
     });
     this.socketManagement.on('warning', (params: LoggingParams) => {
+      params.type = 'warning';
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'warning', params }));
       Toast.fire({
         type: 'warning',
@@ -92,6 +94,7 @@ export class LocalhostService {
       });
     });
     this.socketManagement.on('error', (params: LoggingParams) => {
+      params.type = 'error';
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'error', params }));
       Toast.fire({
         type: 'error',

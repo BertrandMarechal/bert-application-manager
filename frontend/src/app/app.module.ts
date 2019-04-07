@@ -15,11 +15,15 @@ import { ApplicationsEffects } from './store/effects/applications.effect';
 import { reducers, appReducers } from './store/reducers/app.reducers';
 import { applicationsReducers } from './store/reducers/applications.reducers';
 import { consoleReducers } from './store/reducers/console.reducers';
+import { ConsoleComponent } from './console/console.component';
+import { LoggerColorPipe } from './console/logger-color.pipe';
 
 @NgModule({
   declarations: [
     AppComponent,
-    HeaderComponent
+    HeaderComponent,
+    ConsoleComponent,
+    LoggerColorPipe
   ],
   imports: [
     BrowserModule,
