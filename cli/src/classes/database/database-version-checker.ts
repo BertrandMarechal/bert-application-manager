@@ -29,7 +29,10 @@ export class DatabaseVersionChecker {
         uiUtils.info({message: `Checking tables for ${params.version}`, origin: this._origin});
         // we check if we have an alter table in the list of files
         // then check if we have the table script
-        const scriptNames = Object.keys(databaseObject.script).map(key => databaseObject.script[key].latestFile);
+        const scriptNames = Object.keys(databaseObject.script)
+            .map(key => databaseObject.script[key])
+            .filter(script => script.latestVersion === params.version)
+            .map(script => script.latestFile)
         const modifiedTables: string[] = [];
         
         // we read the version's table folder
@@ -39,11 +42,11 @@ export class DatabaseVersionChecker {
         });
         const tableNamesFromtableScripts = tableList
             .map(table => table.split('/')[table.split('/').length - 1].split('.')[0]);
-
+            
         for (let i = 0; i < scriptNames.length; i++) {
             const scriptName = scriptNames[i];
             const file = await FileUtils.readFile(scriptName);
-            const alterTableRegExp = /alter\s+table\s+(?!if\s+exists\s+)(?!only\s+)([a-z0-9_]+)/gmi;
+            const alterTableRegExp = /alter\s+table\s+(?!if\s+exists\s+)?(?!only\s+)?(?!public\.)?\"?([a-z0-9_]+)\"?/gmi;
             let regexpResult = alterTableRegExp.exec(file);
             while (regexpResult && regexpResult[1]) {
                 if (modifiedTables.indexOf(regexpResult[1]) === -1) {
@@ -64,7 +67,9 @@ export class DatabaseVersionChecker {
         if (tableNamesFromtableScripts.length > 0) {
             // if we have the table script, we check if we have the alter table
             const missingAlterScripts = tableNamesFromtableScripts
-                .filter(table => !databaseObject.table[table])
+                .filter(table => databaseObject.table[table] &&
+                    databaseObject.table[table].latestVersion !== params.version
+                )
                 .filter(table => modifiedTables.indexOf(table) === -1);
             if (missingAlterScripts.length > 0) {
                 uiUtils.error({message: `Missing alter table scripts for : ${missingAlterScripts.join(', ')}`, origin: this._origin});
