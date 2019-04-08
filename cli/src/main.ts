@@ -5,6 +5,7 @@ import { FileUtils } from './utils/file.utils';
 import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database/database-installer';
+import { DatabaseVersionChecker } from './classes/database/database-version-checker';
 import { DatabaseFileHelper } from './classes/database/database-file-helper';
 import { ServerlessFileHelper } from './classes/serverless/serverless-file-helper';
 import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
@@ -61,8 +62,8 @@ const main = async () => {
                             version: dbOptions.version
                         }, loggerUtils);
                         break;
-                    case 'create-version':
-                    case 'cv':
+                    case 'new-version':
+                    case 'nv':
                         await DatabaseFileHelper.createVersion({
                             applicationName: dbOptions['application-name'],
                             version: dbOptions.version
@@ -72,6 +73,13 @@ const main = async () => {
                     case 'n':
                         await DatabaseRepositoryReader.initDatabase({
                             applicationName: dbOptions['application-name']
+                        }, loggerUtils);
+                        break;
+                    case 'check-version':
+                    case 'cv':
+                        await DatabaseVersionChecker.checkVersion({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions['version']
                         }, loggerUtils);
                         break;
                     case 'params':
