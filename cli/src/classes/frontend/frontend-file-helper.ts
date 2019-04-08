@@ -30,6 +30,11 @@ export class FrontendFileHelper {
         }
 
         const filesToCreate: FileAndContent[] = [];
+        const modulesToAdd: {
+            modulePath: string;
+            nameWithDashes: string;
+            moduleCapitalizedCamelCasedName: string;
+        }[] = [];
 
         const actions = [
             'get',
@@ -68,6 +73,7 @@ export class FrontendFileHelper {
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'model.ts'));
         const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
         const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
+        const appRoutingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'app.routing.ts'));
         
         const ngrxFileHelper = new NgrxFileHelper();
         
@@ -264,8 +270,51 @@ export class FrontendFileHelper {
                         `${indentation}}\n`)
 
             };
+            modulesToAdd.push({
+                modulePath: moduleFile.path
+                    .replace(frontendPath, '')
+                    .replace(/\\/g, '/')
+                    .replace(/\/\//g, '/')
+                    .replace(/\/src\/app/, ''),
+                nameWithDashes: nameWithDashes,
+                moduleCapitalizedCamelCasedName: capitalizedCamelCasedName
+            })
             filesToCreate.push(moduleFile);
             filesToCreate.push(routingFile);
+        }
+        if (modulesToAdd.length) {
+            const routingFileList = await FileUtils.getFileList({
+                startPath: path.resolve(frontendPath, 'src', 'app'),
+                filter: /app[^a-z].*routing\.module\.ts/
+            });
+            let appRoutingFileContent = '';
+            let routingFilePath = path.resolve(frontendPath, 'src', 'app', 'app-routing.module.ts');
+            if (routingFileList.length === 1) {
+                routingFilePath = routingFileList[0];
+                appRoutingFileContent = await FileUtils.readFile(routingFileList[0]);
+            } else {
+                appRoutingFileContent = appRoutingFileTemplate
+            }
+            for (let i = 0; i < modulesToAdd.length; i++) {
+                const moduleToAdd = modulesToAdd[i];
+                const expectedPath = `.${moduleToAdd.modulePath.replace(/\.ts$/,`#${moduleToAdd.moduleCapitalizedCamelCasedName}Module`)}`
+                const moduleRegexp = new RegExp(expectedPath
+                    .replace(/\./g, '\\.')
+                    .replace(/\\/g, '\\\\'), 'i');
+                if (!moduleRegexp.test(appRoutingFileContent)) {
+                    // the module is not in, we will add it
+                    const firstBlock = /(\[([^=;]+)\])/.exec(appRoutingFileContent);
+                    if (firstBlock && firstBlock[2]) {
+                        appRoutingFileContent = appRoutingFileContent.replace(firstBlock[1],
+                            `[{\n${indentation.repeat(2)}path: '${moduleToAdd.nameWithDashes}',\n` +
+                            `${indentation.repeat(2)}loadChildren: '${expectedPath}',\n${indentation}},\n${firstBlock[2]}]`);
+                    }
+                }
+            }
+            filesToCreate.push({
+                fileContent: appRoutingFileContent,
+                path: routingFilePath
+            });
         }
         uiUtils.stoprProgress();
 
@@ -277,6 +326,7 @@ export class FrontendFileHelper {
             FileUtils.writeFileSync(fileToCreate.path, fileToCreate.fileContent);
         }
         uiUtils.stoprProgress();
+
         if (filesToCreate.length) {
             uiUtils.success({ origin: this._origin, message: `Created ${filesToCreate.length} files` });
         } else {
