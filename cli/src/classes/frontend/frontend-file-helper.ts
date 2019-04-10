@@ -7,13 +7,70 @@ import { NgrxFileHelper } from './angular/ngrx-file-herlper';
 import { RepositoryUtils } from '../../utils/repository.utils';
 import { UiUtils } from '../../utils/ui.utils';
 import { AngularComponentHelper, ComponentTypes } from './angular/angular-component-helper';
+import { spawn } from 'child_process';
 
 const indentation = '  ';
+
+const packagesToInstall = [
+    '@ngrx/effects',
+    '@ngrx/router-store',
+    '@ngrx/store',
+    '@ngrx/store-devtools',
+    '@sweetalert2/ngx-sweetalert2',
+    'angular-split',
+    'core-js',
+    'hammerjs',
+    'ngx-analytics',
+    'ngx-cookie-service',
+    'rxjs',
+    'rxjs-compat',
+    'sweetalert2',
+    '@angular/router',
+    '@angular/animations',
+    '@angular/cdk',
+];
 
 export class FrontendFileHelper {
     private static _origin = 'FrontendFileHelper';
     static frontendTemplatesFolder = path.resolve(process.argv[1], '../../data/frontend/templates');
 
+    private static async _checkInstalledPackages(frontendPath: string, uiUtils: UiUtils) {
+        const packagePointJson: { dependencies: { [dependency: string]: string } } =
+            await FileUtils.readJsonFile(path.resolve(frontendPath, 'package.json'));
+        const missingDependencies: string[] = [];
+        for (let i = 0; i < packagesToInstall.length; i++) {
+            const pkg = packagesToInstall[i];
+            if (!packagePointJson.dependencies[pkg]) {
+                missingDependencies.push(pkg);
+            }
+        }
+        if (missingDependencies.length > 0) {
+            const response = await uiUtils.question({
+                origin: this._origin,
+                text: `The following packages are missing : ${missingDependencies.join(', ')}. Please enter "y" to install them.`
+            });
+            if (response !== 'y') {
+                uiUtils.warning({ origin: this._origin, message: 'The dependencies won\'t be installed, the application is not expected to be working correctly' });
+            } else {
+                // install missing packages
+                const args = [
+                    '/c',
+                    'npm',
+                    'install',
+                    ...missingDependencies
+                ];
+
+                const child = spawn('cmd', args, {
+                    detached: true,
+                    stdio: 'ignore',
+                    cwd: frontendPath
+                });
+                
+                child.unref();
+                uiUtils.info({ origin: this._origin, message: 'installing dependencies in a separate process' });
+            }
+        }
+    }
     static async generateCode(params: {
         applicationName: string;
         filter: string;
@@ -28,6 +85,10 @@ export class FrontendFileHelper {
         if (!databaseObject) {
             throw 'This application does not exist';
         }
+
+        // check package.json
+        const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
+        await FrontendFileHelper._checkInstalledPackages(frontendPath, uiUtils);
 
         const filesToCreate: FileAndContent[] = [];
         const modulesToAdd: {
@@ -48,17 +109,14 @@ export class FrontendFileHelper {
 
         const tables = Object.keys(databaseObject.table);
 
-        
-        const frontendPath = path.resolve(databaseObject._properties.path.replace('database', 'frontend'), 'frontend');
-        
         const defaultFilesPath = path.resolve(FrontendFileHelper.frontendTemplatesFolder, '..', 'default-files').replace(/\\/g, '/');
-        
+
         const defaultFiles = await FileUtils.getFileList({
             startPath: defaultFilesPath,
             filter: /\.ts$|\.html$|\.scss$/,
             maxLevels: 10
         });
-        
+
         for (let i = 0; i < defaultFiles.length; i++) {
             const fileContent = await FileUtils.readFile(defaultFiles[i]);
             filesToCreate.push({
@@ -74,10 +132,10 @@ export class FrontendFileHelper {
         const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
         const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
         const appRoutingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'app.routing.ts'));
-        
+
         const ngrxFileHelper = new NgrxFileHelper();
-        
-        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
+
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions' });
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             const nameWithoutPrefixAndSuffix = tableName
@@ -297,7 +355,7 @@ export class FrontendFileHelper {
             }
             for (let i = 0; i < modulesToAdd.length; i++) {
                 const moduleToAdd = modulesToAdd[i];
-                const expectedPath = `.${moduleToAdd.modulePath.replace(/\.ts$/,`#${moduleToAdd.moduleCapitalizedCamelCasedName}Module`)}`
+                const expectedPath = `.${moduleToAdd.modulePath.replace(/\.ts$/, `#${moduleToAdd.moduleCapitalizedCamelCasedName}Module`)}`
                 const moduleRegexp = new RegExp(expectedPath
                     .replace(/\./g, '\\.')
                     .replace(/\\/g, '\\\\'), 'i');
@@ -318,7 +376,7 @@ export class FrontendFileHelper {
         }
         uiUtils.stoprProgress();
 
-        uiUtils.startProgress({length: filesToCreate.length, start: 0, title: 'Write files'});
+        uiUtils.startProgress({ length: filesToCreate.length, start: 0, title: 'Write files' });
         for (let i = 0; i < filesToCreate.length; i++) {
             uiUtils.progress(i);
             const fileToCreate = filesToCreate[i];

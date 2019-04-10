@@ -273,7 +273,8 @@ export class DatabaseFileHelper {
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
-                    if (!databaseObject.table[tableName].tags[`no-${action}`]) {
+                    const canCreate = (!params.filter || new RegExp(params.filter).test(`${action}_${nameWithoutPrefixAndSuffix}`)) && !databaseObject.table[tableName].tags[`no-${action}`];
+                    if (canCreate) {
                         let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, `${action}.sql`));
 
                         for (let j = 0; j < dbParamsFields.length; j++) {

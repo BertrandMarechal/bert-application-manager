@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import path from 'path';
-import { fork, spawn } from 'child_process';
+import { spawn } from 'child_process';
 
 export class ServerUtils {
     static async checkServer(check?: boolean): Promise<boolean> {
