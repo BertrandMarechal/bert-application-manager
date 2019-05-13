@@ -736,7 +736,7 @@ export class DatabaseFileHelper {
         DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
 
-    
+
     static async addTagOnTable(params: {
         applicationName: string;
         objectName: string;
@@ -754,7 +754,7 @@ export class DatabaseFileHelper {
         if (!databaseSubObject) {
             throw 'This object does not exist';
         }
-        
+
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
             // in that case, we already have tags
@@ -771,11 +771,11 @@ export class DatabaseFileHelper {
         } else {
             fileString = `/* #${params.tagName}${params.tagValue ? '=' + params.tagValue : ''} */\n` + fileString;
         }
-        
+
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
-    
+
     static async removeTagFromTable(params: {
         applicationName: string;
         objectName: string;
@@ -792,7 +792,7 @@ export class DatabaseFileHelper {
         if (!databaseSubObject) {
             throw 'This object does not exist';
         }
-        
+
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
             // in that case, we already have tags
@@ -801,7 +801,7 @@ export class DatabaseFileHelper {
             }
             console.log(fileString);
         }
-        
+
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
@@ -823,7 +823,7 @@ export class DatabaseFileHelper {
         if (!databaseSubObject) {
             throw 'This object does not exist';
         }
-        
+
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         // look for our field's text
         const fieldRegexCaptured = new RegExp(`(${params.fieldName} ${fieldSettingsRegex}`, 'i')
@@ -849,7 +849,7 @@ export class DatabaseFileHelper {
                         tags,
                         tags.replace(new RegExp(`#${params.tagName}[^#]+ ?([\#\*])`), `${tagToPut} $1`)
                     ));
-                }    
+                }
             } else {
                 // no tags
                 fileString = fileString.replace(fieldText, fieldText + ` /* ${tagToPut} */`);
@@ -858,8 +858,8 @@ export class DatabaseFileHelper {
             throw 'Invalid field name';
         }
         console.log(fileString);
-        
-        
+
+
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
@@ -880,12 +880,12 @@ export class DatabaseFileHelper {
         if (!databaseSubObject) {
             throw 'This object does not exist';
         }
-        
+
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         // look for our field's text
         const fieldRegexCaptured = new RegExp(`(${params.fieldName} ${fieldSettingsRegex}`, 'i')
             .exec(fileString);
-        
+
         if (fieldRegexCaptured) {
             // we got our tield
             const fieldText = fieldRegexCaptured[1];
@@ -906,7 +906,7 @@ export class DatabaseFileHelper {
         } else {
             throw 'Invalid field name';
         }
-        
+
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }

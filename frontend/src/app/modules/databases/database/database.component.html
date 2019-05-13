@@ -1,27 +1,31 @@
 <app-details-view [name]="(databases$|async).databaseName" [actions]="actions"
   (actionClicked)="onActionClicked($event)">
   <nav mat-tab-nav-bar>
-    <a mat-tab-link
-       routerLink="tables"
-       routerLinkActive #rla1="routerLinkActive"
-       [active]="rla1.isActive">
+    <a mat-tab-link routerLink="details" routerLinkActive #rla1="routerLinkActive" [active]="rla1.isActive">
+      Details
+    </a>
+    <a mat-tab-link routerLink="tables" routerLinkActive #rla2="routerLinkActive" [active]="rla2.isActive">
       Tables
+    </a>
+    <a mat-tab-link routerLink="lookups" routerLinkActive #rla3="routerLinkActive" [active]="rla3.isActive"
+      *ngIf="(databases$|async).database?.table[(databases$|async).database?._properties?.dbName + 't_lookup_lkp']">
+      Lookups
     </a>
     <!-- <a mat-tab-link
        routerLink="Functions"
-       routerLinkActive #rla2="routerLinkActive"
-       [active]="rla2.isActive">
+       routerLinkActive #rla3="routerLinkActive"
+       [active]="rla3.isActive">
       Functions
     </a> -->
   </nav>
   <div header>
-    <button mat-stroked-button [matMenuTriggerFor]="menuInstall">Install</button>
+    <button mat-stroked-button [matMenuTriggerFor]="menuInstall">Install...</button>
     <mat-menu #menuInstall="matMenu">
-      <button mat-menu-item *ngFor="let version of (databases$|async).database?._versions"  (click)="onInstall(version)">{{version}}</button>
+      <button mat-menu-item *ngFor="let version of (databases$|async).database?._versions"
+        (click)="onInstall(version)">{{version}}</button>
       <button mat-menu-item (click)="onInstall('all')">All</button>
     </mat-menu>
   </div>
-
   <router-outlet></router-outlet>
   <!-- <mat-tab-group>
     <mat-tab label="Functions">

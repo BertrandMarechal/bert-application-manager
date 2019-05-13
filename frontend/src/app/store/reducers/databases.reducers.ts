@@ -34,6 +34,8 @@ export function databasesReducers(
                 databaseName: action.payload,
             };
         case DatabasesActions.SERVICE_GET_DATABASE_COMPLETE:
+            console.log(action.payload);
+
             return {
                 ...state,
                 gettingDatabase: false,

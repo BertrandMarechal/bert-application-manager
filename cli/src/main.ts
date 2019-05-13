@@ -11,6 +11,7 @@ import { ServerlessFileHelper } from './classes/serverless/serverless-file-helpe
 import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
 import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
 import { LoggerUtils } from './utils/logger.utils';
+import { mainHelp, databaseHelp } from './utils/documentation.utils';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -24,7 +25,12 @@ const loggerUtils = new LoggerUtils();
 const main = async () => {
     try {
         switch (options.category) {
+            case 'h':
+            case 'help':
+                console.log(mainHelp);
+                break;
             case 'db':
+            case 'database':
                 const dbOptionsDefinitions = [
                     { name: 'action', defaultOption: true },
                     { name: 'environment', alias: 'e', type: String, description: 'environment' },
@@ -34,12 +40,16 @@ const main = async () => {
                     { name: 'version', alias: 'v', type: String, description: 'Version to install' },
                     { name: 'template', alias: 't', type: String, description: 'Template' },
                     { name: 'tag', alias: '#', type: String, description: 'Tag' },
-                    { name: 'remove', alias: 'r', type: Boolean, description: 'Remov tag' },
+                    { name: 'remove', alias: 'r', type: Boolean, description: 'Remove tag' },
                     { name: 'value', alias: 'u', type: String, description: 'Value' },
                     { name: 'filter', alias: 'f', type: String, description: 'field / regex filter to apply to the commands' },
                 ]
                 const dbOptions = commandLineArgs(dbOptionsDefinitions, { argv, stopAtFirstUnknown: true });
                 switch (dbOptions.action) {
+                    case 'h':
+                    case 'help':
+                        console.log(databaseHelp);
+                        break;
                     case 'version':
                     case 'v':
                         await DatabaseRepositoryReader.updateVersionFile({

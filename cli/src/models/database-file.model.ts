@@ -1,5 +1,3 @@
-import { threadId } from "worker_threads";
-import { inherits } from "util";
 import { FileUtils } from "../utils/file.utils";
 import { SyntaxUtils } from "../utils/syntax.utils";
 import { UiUtils } from "../utils/ui.utils";
@@ -84,7 +82,7 @@ export class DatabaseSubObject {
         this.latestFile = params.latestFile || '';
         this.versions = params.versions || [];
     }
-    async analyzeFile(uiUtils: UiUtils) {}
+    async analyzeFile(uiUtils: UiUtils) { }
 }
 
 export class DatabaseTableField {
@@ -149,7 +147,7 @@ export class DatabaseTableField {
         }
         const def = /default (.*)/i.exec(field.fullText);
         if (def) {
-            
+
             this.default = true;
             this.defaultValue = def[1];
         }
@@ -213,7 +211,7 @@ export class DatabaseFunction extends DatabaseSubObject {
         defaultValue: string
     }[];
     returnType: string;
-    returnTable?: {name: string, type: string}[];
+    returnTable?: { name: string, type: string }[];
     hasOrReplace: boolean;
     constructor(params?: any) {
         super(params);
@@ -229,7 +227,7 @@ export class DatabaseFunction extends DatabaseSubObject {
         try {
             functionFile = await FileUtils.readFile(this.latestFile);
         } catch (error) {
-            uiUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
+            uiUtils.warning({ message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable' });
             return;
         }
         functionFile = SyntaxUtils.simplifyDbFileForAnalysis(functionFile);
@@ -248,7 +246,7 @@ export class DatabaseFunction extends DatabaseSubObject {
         if (modeMatch) {
             this.mode = modeMatch[0].toLowerCase();
         }
-        
+
         const paramsMatch = /create(?: or replace)? function (?:\"?public\"?\.)?\"?[a-z0-9_]+\"? \(([^()]+)\)/i.exec(functionFile);
         if (paramsMatch) {
             this.arguments = paramsMatch[1].trim()
@@ -263,14 +261,14 @@ export class DatabaseFunction extends DatabaseSubObject {
                     };
                     if (/in|out|inout|variadic/i.test(paramSplit[0])) {
                         paramToReturn.mode = paramSplit[0].toLowerCase();
-                        paramSplit.splice(0,1);
+                        paramSplit.splice(0, 1);
                     }
                     paramToReturn.name = paramSplit[0];
-                    paramSplit.splice(0,1);
+                    paramSplit.splice(0, 1);
                     const defaultIndex = paramSplit.indexOf('default');
-                    
+
                     if (defaultIndex > -1) {
-                        paramToReturn.defaultValue =  paramSplit.splice(defaultIndex + 1, paramSplit.length - 1).join(' ');
+                        paramToReturn.defaultValue = paramSplit.splice(defaultIndex + 1, paramSplit.length - 1).join(' ');
                         paramSplit.splice(defaultIndex, 1)
                     }
                     paramToReturn.type = paramSplit.join(' ');
@@ -294,7 +292,7 @@ export class DatabaseFunction extends DatabaseSubObject {
                         name: paramSplit[0].replace(/"/g, ''),
                         type: ''
                     };
-                    paramSplit.splice(0,1);
+                    paramSplit.splice(0, 1);
                     paramToReturn.type = paramSplit.join(' ').toLowerCase();
                     return paramToReturn;
                 });
@@ -331,7 +329,7 @@ export class DatabaseTable extends DatabaseSubObject {
         try {
             tableFile = await FileUtils.readFile(this.latestFile);
         } catch (error) {
-            uiUtils.warning({message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable'});
+            uiUtils.warning({ message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable' });
             return;
         }
         tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
@@ -399,6 +397,71 @@ export class DatabaseTable extends DatabaseSubObject {
         }
     }
 }
+export type DatabaseDataScriptInsertTypes = 'select' | 'values' | null;
+export class DatabaseDataScript extends DatabaseSubObject {
+    tableChanges: {
+        [name: string]: {
+            fields: string[];
+            records: string[];
+            type: DatabaseDataScriptInsertTypes;
+        }[];
+    };
+
+    constructor(params?: any) {
+        super(params);
+        this.tableChanges = {};
+    }
+    async analyzeFile(uiUtils: UiUtils) {
+        let tableFile = '';
+        try {
+            tableFile = await FileUtils.readFile(this.latestFile);
+        } catch (error) {
+            uiUtils.warning({ message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable' });
+            return;
+        }
+        tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
+        // console.log(tableFile);
+
+        const inserts = tableFile.match(/insert\W*into\W*[a-z0-9_]+\W*\(((([a-z0-9_]+)[, ]*)+)\)[^;]+/gmi) || [];
+        for (let i = 0; i < inserts.length; i++) {
+            const insert = inserts[i];
+            const narrowedDownRegex = /insert\W*into\W*([a-z0-9_]+)\W*\(([^)]+)\)\W*(select|values)([^;]+)/gmi.exec(insert) || [];
+            // console.log(narrowedDownRegex);
+            // console.log(narrowedDownRegex.join('\n###'));
+            const tableName = narrowedDownRegex[1];
+            const fields = (narrowedDownRegex[2] || '').split(',');
+            const selectOrValues = (narrowedDownRegex[3] ? narrowedDownRegex[3].toLowerCase() : null) as DatabaseDataScriptInsertTypes;
+            let currentIndex = 0;
+
+            // we check if the tableChanges contain the table
+            if (this.tableChanges[tableName]) {
+                // if so, we have to check the fields, and do some eventual modifications to it
+                currentIndex = this.tableChanges[tableName].length;
+            } else {
+                // the table does not yet exist in this file, we gonna create it
+                this.tableChanges[tableName] = [];
+            }
+            this.tableChanges[tableName][currentIndex] = {
+                fields, records: [], type: selectOrValues
+            };
+            // now, depending on the record type, we check what we can do
+            if (!selectOrValues) {
+                throw `Ununderstood insert type on ${this.latestFile}, expected are SELECT and VALUES`;
+            } else if (selectOrValues === 'values') {
+                this.tableChanges[tableName][currentIndex].records = (narrowedDownRegex[4] || '')
+                    // remove first and last parentheses
+                    .replace(/^\(.*?\)$/, '$1')
+                    // splits the records
+                    .split(/\),\(/g);
+            } else if (selectOrValues === 'select') {
+                this.tableChanges[tableName][currentIndex].records = (narrowedDownRegex[4] ? 'SELECT ' + narrowedDownRegex[4] : '')
+                    // splits the records
+                    .split(/\WUNION\WALL\W|\WUNION\W/gmi)
+                    .map(x => x.replace(/^\W*SELECT\W/i, ''));
+            }
+        }
+    }
+}
 export class DatabaseObject {
     [name: string]: any;
 
@@ -407,7 +470,7 @@ export class DatabaseObject {
     function: { [name: string]: DatabaseSubObject; };
     index: { [name: string]: DatabaseSubObject; };
     type: { [name: string]: DatabaseSubObject; };
-    data: { [name: string]: DatabaseSubObject; };
+    data: { [name: string]: DatabaseDataScript; };
     sequence: { [name: string]: DatabaseSubObject; };
     trigger: { [name: string]: DatabaseSubObject; };
     view: { [name: string]: DatabaseSubObject; };
@@ -534,7 +597,7 @@ export class DatabaseVersion {
         this.userToUse = params.userToUse;
         this.databaseToUse = params.databaseToUse;
         this.dependencies = params.dependencies || [];
-        
+
         this.fileList = params.fileList || [];
         const fileNameMinusVersion = fileName.split('/postgres/release')[0];
         this.files = this.fileList.map(file => {

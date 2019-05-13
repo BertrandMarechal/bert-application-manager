@@ -6,7 +6,6 @@ import { databasesReducers } from '@app/store/reducers/databases.reducers';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
-import { AngularSplitModule } from 'angular-split';
 import { DetailsViewModule } from '../shared/details-view/details-view.module';
 import { UtilsModule } from '../shared/utils/utils.module';
 import { DatabaseComponent } from './database/database.component';

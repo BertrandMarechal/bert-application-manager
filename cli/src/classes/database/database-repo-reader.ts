@@ -1,7 +1,7 @@
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction } from "../../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction, DatabaseDataScript } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
@@ -40,7 +40,7 @@ export class DatabaseRepositoryReader {
             startPath,
             uiUtils
         );
-        await DatabaseHelper.updateApplicationDatabaseObject(applicationName,databaseObject);
+        await DatabaseHelper.updateApplicationDatabaseObject(applicationName, databaseObject);
 
         const files = databaseFiles.reduce((agg: string[], versionFile) => {
             return agg.concat(versionFile.versions.reduce((agg2: string[], version) => {
@@ -50,13 +50,13 @@ export class DatabaseRepositoryReader {
 
         const unmappedFiles = fileList.filter(file => files.indexOf(file) === -1);
         const incorrectlyMappedFiles = files.filter(file => fileList.indexOf(file) === -1);
-        
+
         let feedback = 'Repository read';
         if (unmappedFiles.length) {
             feedback += `, ` + colors.yellow(`${unmappedFiles.length} unmapped files`);
         }
         if (incorrectlyMappedFiles.length) {
-            feedback += `, ` +  colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
+            feedback += `, ` + colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
         }
 
         uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
@@ -67,7 +67,7 @@ export class DatabaseRepositoryReader {
         applicationName: string;
     }, uiUtils: UiUtils) {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-    
+
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         if (!databaseObject) {
             throw 'Invalid application name';
@@ -82,9 +82,9 @@ export class DatabaseRepositoryReader {
             }
         }
         let dbName = databaseObject._properties.dbName;
-        
+
         if (!dbName) {
-            while(!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
+            while (!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
                 dbName = await uiUtils.question({
                     text: 'Please provide a 2 / 3 letter prefix for your database',
                     origin: DatabaseRepositoryReader._origin
@@ -170,7 +170,7 @@ export class DatabaseRepositoryReader {
                 databaseToUse: ''
             }],
         }], databaseObject._properties.path, uiUtils);
-        
+
         const versionFileList: string[] = [];
         // order the objects
     }
@@ -247,19 +247,41 @@ export class DatabaseRepositoryReader {
                 })
             });
         });
+        const filesToAnalyzeLength =
+            Object.keys(databaseObject.table).length +
+            Object.keys(databaseObject.function).length +
+            Object.keys(databaseObject.data).length;
+        if (filesToAnalyzeLength > 0) {
+            uiUtils.startProgress({
+                length: filesToAnalyzeLength,
+                start: 0,
+                title: 'Analyzing files'
+            });
+            let i = 0;
+            if (Object.keys(databaseObject.table).length > 0) {
+                Object.keys(databaseObject.table).forEach(async key => {
+                    uiUtils.progress(++i);
+                    databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
+                    await databaseObject.table[key].analyzeFile(uiUtils);
+                });
+            }
+            if (Object.keys(databaseObject.function).length > 0) {
+                Object.keys(databaseObject.function).forEach(async key => {
+                    uiUtils.progress(++i);
+                    databaseObject.function[key] = new DatabaseFunction(databaseObject.function[key]);
+                    await databaseObject.function[key].analyzeFile(uiUtils);
+                });
+            }
+            if (Object.keys(databaseObject.data).length > 0) {
+                Object.keys(databaseObject.data).forEach(async key => {
+                    uiUtils.progress(++i);
+                    databaseObject.data[key] = new DatabaseDataScript(databaseObject.data[key]);
+                    await databaseObject.data[key].analyzeFile(uiUtils);
+                });
+            }
+            uiUtils.stoprProgress();
+        }
 
-        if (Object.keys(databaseObject.table).length > 0) {
-            Object.keys(databaseObject.table).forEach(async key => {
-                databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
-                await databaseObject.table[key].analyzeFile(uiUtils);
-            });
-        }
-        if (Object.keys(databaseObject.function).length > 0) {
-            Object.keys(databaseObject.function).forEach(async key => {
-                databaseObject.function[key] = new DatabaseFunction(databaseObject.function[key]);
-                await databaseObject.function[key].analyzeFile(uiUtils);
-            });
-        }
 
         // get the db name from the drop script if we have one
         if (databaseObject.setup['01-drop-database']) {
@@ -272,7 +294,7 @@ export class DatabaseRepositoryReader {
         // latest version
         const latestVersionNWithoutCurrent = databaseFiles.filter(x => x.versionName !== 'current');
         if (latestVersionNWithoutCurrent.length) {
-            databaseObject._properties.lastVersion = latestVersionNWithoutCurrent[latestVersionNWithoutCurrent.length  - 1].versionName;
+            databaseObject._properties.lastVersion = latestVersionNWithoutCurrent[latestVersionNWithoutCurrent.length - 1].versionName;
         }
 
 
@@ -295,7 +317,13 @@ export class DatabaseRepositoryReader {
         const variableRegex = new RegExp(/\<(\w+)\>/gim);
         const variablesPerFiles: { [name: string]: string[] } = {};
 
+        uiUtils.startProgress({
+            length: filesToAnalyzeLength,
+            start: 0,
+            title: 'Read the files to check for parameters'
+        });
         for (let i = 0; i < filesToWatch.length; i++) {
+            uiUtils.progress(i + 1);
             const element = filesToWatch[i];
             if (FileUtils.checkIfFolderExists(element)) {
                 const data = await FileUtils.readFile(element);
@@ -315,6 +343,7 @@ export class DatabaseRepositoryReader {
                 }
             }
         }
+        uiUtils.stoprProgress();
         databaseObject._parameters = variablesPerFiles;
         databaseObject._properties.path = path;
 
@@ -336,7 +365,7 @@ export class DatabaseRepositoryReader {
             fileDataDatabaseObject = await FileUtils.readJsonFile(DatabaseHelper.postgresDbDataPath);
         }
         let databasesToCheck = Object.keys(fileDataDatabaseObject);
-        
+
         // filter them if needed
         if (params.filter) {
             databasesToCheck = databasesToCheck.filter(x => x.indexOf(params.filter) > -1);
@@ -392,5 +421,12 @@ export class DatabaseRepositoryReader {
         }
         uiUtils.info({ origin: DatabaseRepositoryReader._origin, message: `Saving data in postgres params db file` });
         FileUtils.writeFileSync(DatabaseHelper.postgresDbParamsPath, JSON.stringify(databaseParametersFromDb, null, 2));
+    }
+
+    static analyzeDataFile(params: {
+        path: String
+    }, uiUtils: UiUtils) {
+        uiUtils.info({ origin: this._origin, message: `Analyzing data file.` });
+
     }
 }

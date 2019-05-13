@@ -1,0 +1,26 @@
+<mat-list>
+  <mat-list-item>
+    <h4 mat-line>Database Name</h4>
+    <p mat-line class="sub-title">{{(databases$|async).database?._properties?.dbName}}</p>
+  </mat-list-item>
+  <mat-list-item>
+    <h4 mat-line>Latest version</h4>
+    <p mat-line class="sub-title">{{(databases$|async).database?._properties?.lastVersion}}</p>
+  </mat-list-item>
+  <mat-list-item>
+    <h4 mat-line>Path</h4>
+    <p mat-line class="sub-title">{{(databases$|async).database?._properties?.path}}</p>
+  </mat-list-item>
+  <mat-list-item>
+    <h4 mat-line>Has current folder ?</h4>
+    <p mat-line class="sub-title">{{(databases$|async).database?._properties?.hasCurrent}}
+      <span *ngIf="!(databases$|async).database?._properties?.hasCurrent">
+        (Initiate the database or edit an object to create a current folder)
+      </span>
+    </p>
+  </mat-list-item>
+  <mat-list-item>
+    <h4 mat-line>Versions</h4>
+    <p mat-line class="sub-title">{{(databases$|async).database?._versions?.join(', ')}}</p>
+  </mat-list-item>
+</mat-list>

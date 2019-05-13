@@ -1,10 +1,10 @@
-import { Actions, ofType } from '@ngrx/effects';
-import { from, interval, Observable } from 'rxjs';
-import { Action, Store } from '@ngrx/store';
-import { catchError, mergeMap, withLatestFrom } from 'rxjs/operators';
-import swal from 'sweetalert2';
+import {Actions, ofType} from '@ngrx/effects';
+import {from, interval, Observable} from 'rxjs';
+import {Action, Store} from '@ngrx/store';
+import {catchError, mergeMap, withLatestFrom} from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
-const toast = (<any>swal).mixin({
+const toast = Swal.mixin({
   toast: true,
   position: 'top-end',
   showConfirmButton: false,
@@ -15,15 +15,14 @@ export class NgrxUtilsService {
   public static actionToServiceToAction(params: {
     actionsObs: Actions,
     actionsToListenTo: string[],
-    serviceMethod: (...arg: any) => any,
+    serviceMethod: Function,
     payloadTransform?: (action: any, state?: any, state2?: any) => any,
     condition?: (action: any, state?: any, state2?: any) => boolean,
     outputTransform?: (data: any, action?: any, state?: any, state2?: any) => any,
     store?: Observable<Store<any>>,
     store2?: Observable<Store<any>>,
     successToastMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
-    successSwalMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
-    postServiceAction?: (data: any, action?: any, state?: any, state2?: any) => void
+    successSwalMessage?: (data: any, action?: any, state?: any, state2?: any) => string
   }): Observable<Action> {
     return params.actionsObs
       .pipe(
@@ -34,7 +33,7 @@ export class NgrxUtilsService {
         mergeMap(([[action, state], state2]: [[{ type: string, payload?: any }, any], any]) => {
           const actionString = action.type.replace(/router|page|effect|force/gi, 'Service');
           if (params.condition) {
-            if (!params.condition(action, state)) {
+            if (!params.condition(action, state, state2)) {
               return [{
                 type: 'Nothing'
               }];
@@ -53,16 +52,13 @@ export class NgrxUtilsService {
 
           return obs.pipe(
             mergeMap((data: any) => {
-              if (params.postServiceAction) {
-                params.postServiceAction(data, action, state, state2);
-              }
               if (params.successSwalMessage) {
-                swal.fire({
+                Swal.fire({
                   type: 'success',
                   text: params.successSwalMessage(data, action, state, state2)
                 });
               } else if (params.successToastMessage) {
-                toast({
+                toast.fire({
                   type: 'success',
                   text: params.successToastMessage(data, action, state, state2)
                 });
@@ -76,7 +72,7 @@ export class NgrxUtilsService {
             }),
             catchError((error: any) => {
               console.error(error);
-              swal.fire({
+              Swal.fire({
                 type: 'error',
                 text: (error.message ? (error.message + ' ' + error.error || '') : error)
               });
@@ -119,7 +115,7 @@ export class NgrxUtilsService {
         }),
         catchError((error: any) => {
           console.error(error);
-          swal.fire({
+          Swal.fire({
             type: 'error',
             text: (error.message ? (error.message + ' ' + error.error || '') : error)
           });

@@ -5,7 +5,7 @@ import {Action, select, Store} from '@ngrx/store';
 import {map} from 'rxjs/operators';
 import {Router} from '@angular/router';
 
-import {RouteNavigationParams, RouterUtilsService} from '@app/shared/services/router-utils.service';
+import {RouteNavigationParams, RouterUtilsService} from '@app/services/router-utils.service';
 import {NgrxUtilsService} from '@app/services/ngrx-utils.service';
 
 import {<capitalized_camel_cased_name>} from '@app/models/<name_with_dashes>.model';

@@ -30,7 +30,10 @@ export class DatabasesEffects {
             DatabasesActions.ROUTER_GET_DATABASE,
             DatabasesActions.PAGE_GET_DATABASE,
         ],
-        serviceMethod: this.databasesService.getDatabase.bind(this.databasesService)
+        serviceMethod: this.databasesService.getDatabase.bind(this.databasesService),
+        // condition: (action: DatabasesActions.EffectGetDatabase | DatabasesActions.RouterGetDatabase | DatabasesActions.PageGetDatabase,
+        //     state: fromDatabases.State) =>
+        //     action.type !== DatabasesActions.ROUTER_GET_DATABASE || state.databaseName !== action.payload
     });
     @Effect() refreshDatabase: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
         actionsObs: this.actions$,
@@ -47,7 +50,7 @@ export class DatabasesEffects {
         ],
         store: this.store.pipe(select('databases')),
         payloadTransform: (action: DatabasesActions.PageCreateDatabaseTable, state: fromDatabases.State) =>
-            ({name: state.databaseName, details: action.payload}),
+            ({ name: state.databaseName, details: action.payload }),
         serviceMethod: this.databasesService.createDatabaseTable.bind(this.databasesService)
     });
 
@@ -91,7 +94,7 @@ export class DatabasesEffects {
         ],
         store: this.store.pipe(select('databases')),
         payloadTransform: (action: DatabasesActions.PageAddTemplate, state: fromDatabases.State) =>
-            ({name: state.databaseName, template: action.payload}),
+            ({ name: state.databaseName, template: action.payload }),
         serviceMethod: this.databasesService.addTemplate.bind(this.databasesService)
     });
     @Effect() createVersion: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
@@ -119,6 +122,6 @@ export class DatabasesEffects {
         private actions$: Actions,
         private databasesService: DatabaseService,
         private store: Store<fromDatabases.FeatureState>
-        ) {
+    ) {
     }
 }

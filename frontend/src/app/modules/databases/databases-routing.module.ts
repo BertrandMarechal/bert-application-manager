@@ -15,9 +15,17 @@ const routes: Routes = [{
         loadChildren: '../database-table/database-table.module#DatabaseTableModule'
       },
       {
+        path: 'details',
+        loadChildren: './database/database-details/database-details.module#DatabaseDetailsModule'
+      },
+      {
+        path: 'lookups',
+        loadChildren: './database/database-lookups/database-lookups.module#DatabaseLookupsModule'
+      },
+      {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'tables'
+        redirectTo: 'details'
       }
     ]
   }]
