@@ -8,7 +8,7 @@ import { LocalhostService } from './localhost.service';
 export class DatabaseTableService {
   constructor(private localhostService: LocalhostService) { }
 
-  async getDatabaseTables(databaseName: string): Promise<{[name: string]: DatabaseTable}> {
+  async getDatabaseTables(databaseName: string): Promise<{ [name: string]: DatabaseTable }> {
     return await this.localhostService.get(`databases/${databaseName}/tables`);
   }
   async getDatabaseTable(params: {
@@ -70,5 +70,12 @@ export class DatabaseTableService {
     return await this.localhostService.post(`databases/${params.name}/tables/${params.tableName}/${params.fieldName}/remove-tag`, {
       tagName: params.tagName,
     });
+  }
+
+  async edit(params: {
+    name: string;
+    tableName: string;
+  }): Promise<DatabaseObject> {
+    return await this.localhostService.post(`databases/${params.name}/tables/${params.tableName}/edit`);
   }
 }

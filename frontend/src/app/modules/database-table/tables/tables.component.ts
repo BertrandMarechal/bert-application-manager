@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 
-import * as fromDatabaseTable from '@app/store/reducers/database-table.reducers'
+import * as fromDatabaseTable from '@app/store/reducers/database-table.reducers';
 import { Store, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { MatTableDataSource, MatPaginator, MatSort, MatTable } from '@angular/material';
@@ -17,9 +17,8 @@ export class TablesComponent implements OnInit {
 
   filter: string;
   databaseTable$: Observable<fromDatabaseTable.State>;
-  displayedColumns: string[] = ['name'];
+  displayedColumns: string[] = ['name', 'latestVersion'];
   dataSource: MatTableDataSource<DatabaseTable>;
-
 
   constructor(
     private store: Store<fromDatabaseTable.State>
@@ -32,11 +31,9 @@ export class TablesComponent implements OnInit {
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
     });
-
   }
   applyFilter(filterValue: string) {
     this.dataSource.filter = filterValue.trim().toLowerCase();
-
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
     }

@@ -420,7 +420,6 @@ export class DatabaseDataScript extends DatabaseSubObject {
             return;
         }
         tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
-        // console.log(tableFile);
 
         const inserts = tableFile.match(/insert\W*into\W*[a-z0-9_]+\W*\(((([a-z0-9_]+)[, ]*)+)\)[^;]+/gmi) || [];
         for (let i = 0; i < inserts.length; i++) {
@@ -592,8 +591,10 @@ export class DatabaseVersion {
     };
     fileList: string[];
     files: DatabaseFile[];
+    unmappedFileList?: string[];
+    unmappedFiles?: DatabaseFile[];
 
-    constructor(params: any, fileName: string) {
+    constructor(params: any, fileName: string, unmappedFiles?: string[]) {
         this.userToUse = params.userToUse;
         this.databaseToUse = params.databaseToUse;
         this.dependencies = params.dependencies || [];
@@ -603,6 +604,10 @@ export class DatabaseVersion {
         this.files = this.fileList.map(file => {
             return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\//g, ''));
         });
+        this.unmappedFileList = (unmappedFiles || []);
+        this.unmappedFiles = this.unmappedFileList.map(file => {
+            return new DatabaseFile(fileNameMinusVersion, file.replace(/\.\.\//g, ''));
+        });
     }
 }
 export class DatabaseVersionFile {
@@ -610,10 +615,13 @@ export class DatabaseVersionFile {
     versionName: string;
     versions: DatabaseVersion[];
 
-    constructor(fileName: string, params?: any) {
+    constructor(fileName: string, params?: any, allFiles?: string[]) {
         this.fileName = fileName;
         const fileNameSplit = this.fileName.split('/');
         this.versionName = fileNameSplit[fileNameSplit.length - 2];
-        this.versions = (params || []).map((x: any) => new DatabaseVersion(x, this.fileName));
+        const thisVersionUnmappedFiles = (allFiles || []).filter(sqlFileName =>
+            sqlFileName.indexOf(`postgres/release/${this.versionName}/`) > -1
+        );
+        this.versions = (params || []).map((x: any) => new DatabaseVersion(x, this.fileName, thisVersionUnmappedFiles));
     }
 }

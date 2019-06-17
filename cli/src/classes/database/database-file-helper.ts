@@ -7,6 +7,7 @@ import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
 import { indentation } from "../../utils/syntax.utils";
+import { LoggerUtils } from "../../utils/logger.utils";
 
 export const intentationSpaceNumber = 4;
 export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
@@ -98,6 +99,42 @@ export class DatabaseFileHelper {
 
                 templateFiles.push(
                     ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups', fileName].join('/')
+                );
+                break;
+            case 'version':
+                if (databaseObject.table[databaseObject._properties.dbName + 't_version_ver']) {
+                    throw 'This application already has version table';
+                }
+
+                let folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
+
+
+                let fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `version_table.sql`));
+                let fileNameVersion = `${databaseObject._properties.dbName}t_version_ver.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileNameVersion].join('/')
+                );
+
+                folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'version');
+
+                fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `get_versions.sql`));
+                fileNameVersion = `${databaseObject._properties.dbName}f_get_versions.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'version', fileNameVersion].join('/')
+                );
+
+                folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '09-data');
+
+                fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `version_data.sql`));
+                fileNameVersion = `00-version.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '09-data', fileNameVersion].join('/')
                 );
                 break;
             default:
@@ -384,7 +421,7 @@ export class DatabaseFileHelper {
         // todo update version.json
         versionJsonFile[versionJsonFile.length - 1].fileList = [
             ...versionJsonFile[versionJsonFile.length - 1].fileList,
-            ...filePaths
+            ...filePaths.filter(x => versionJsonFile[versionJsonFile.length - 1].fileList.indexOf(x) === -1)
         ];
 
         FileUtils.createFolderStructureIfNeeded(newVersionJsonPath);
@@ -439,9 +476,65 @@ export class DatabaseFileHelper {
             // ask about fields
             let finished = false;
             let newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a field name' });
+            let referenceDetails: {
+                table: String;
+                key: String;
+            } | undefined;
             while (!finished) {
-                while (!DatabaseFileHelper._checkNewNameHasUnderscoresAndAlphanumerics(newFieldName)) {
-                    newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a field name (basic types offered here, you can also type your own type)' });
+                let validName = false;
+                let selectedType = '';
+                while (!validName) {
+                    validName = true;
+                    const matchedNewField = newFieldName.match(/^fk_([a-z0-9]{3})_([a-z0-9]{3})_/i);
+
+                    if (matchedNewField) {
+                        // check that the suffix is this table's actual suffix
+                        if (matchedNewField[2] !== tablePrefix) {
+                            validName = false;
+                            LoggerUtils.error({
+                                origin: this._origin,
+                                message: `The second set of 3 letters on the field name should be the table suffix "${tablePrefix}". "${matchedNewField[2]}" was found`
+                            });
+                        }
+
+                        let foundAMatchingTable = false;
+                        // check if we have the matching table
+                        for (let i = 0; i < Object.keys(databaseObject.table).length && !foundAMatchingTable; i++) {
+                            const databaseTableName = Object.keys(databaseObject.table)[i];
+                            const matchingTableRegex = new RegExp(`_${matchedNewField[1]}$`, 'i')
+                            if (databaseTableName.match(matchingTableRegex)) {
+                                foundAMatchingTable = true;
+                                referenceDetails = {
+                                    table: databaseTableName,
+                                    key: `pk_${matchedNewField[1]}_id`,
+                                };
+                                selectedType = 'integer';
+                            }
+                        }
+                        // check if we have the matching table in the replicated local tables
+                        for (let i = 0; i < Object.keys(databaseObject["local-tables"]).length && !foundAMatchingTable; i++) {
+                            const databaseTableName = Object.keys(databaseObject["local-tables"])[i];
+                            const matchingTableRegex = new RegExp(`_${matchedNewField[1]}$`, 'i')
+                            if (databaseTableName.match(matchingTableRegex)) {
+                                foundAMatchingTable = true;
+                                referenceDetails = {
+                                    table: databaseTableName,
+                                    key: `pk_${matchedNewField[1]}_id`,
+                                };
+                                selectedType = 'integer';
+                            }
+                        }
+                        if (!foundAMatchingTable) {
+                            LoggerUtils.warning({
+                                origin: this._origin,
+                                message: `Could not find a match for table prefix "${matchedNewField[1]}". Please check your reference`
+                            });
+                        }
+                    }
+                    validName = validName && DatabaseFileHelper._checkNewNameHasUnderscoresAndAlphanumerics(newFieldName);
+                    if (!validName) {
+                        newFieldName = await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Please provide a field name' });
+                    }
                 }
                 const types = [
                     'text',
@@ -451,13 +544,8 @@ export class DatabaseFileHelper {
                     'float',
                     'boolean'
                 ];
-                let selectedType = await uiUtils.question({
-                    origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
-                        return `\t ${i + 1} - ${x}`;
-                    }).join('\n')}`
-                });
                 while (!selectedType) {
-                    await uiUtils.question({
+                    selectedType = await uiUtils.question({
                         origin: DatabaseFileHelper._origin, text: `Please select a type, or type the desired one : \n${types.map((x, i) => {
                             return `\t ${i + 1} - ${x}`;
                         }).join('\n')}`
@@ -467,8 +555,10 @@ export class DatabaseFileHelper {
                     selectedType = types[+selectedType - 1];
                 }
                 params.tableDetails.fields.push({
-                    name: `${tablePrefix}_${newFieldName}`,
-                    type: selectedType
+                    name: `${!!referenceDetails ? tablePrefix + '_' : ''}${newFieldName}`,
+                    type: selectedType,
+                    foreignKey: referenceDetails,
+                    isForeignKey: !!referenceDetails
                 });
                 const paramIndex = params.tableDetails.fields.length - 1;
                 params.tableDetails.fields[paramIndex].notNull = (await uiUtils.question({ origin: DatabaseFileHelper._origin, text: 'Should it be not null ? (y for yes)' })).toLowerCase() === 'y';
@@ -520,6 +610,9 @@ export class DatabaseFileHelper {
             fieldString += `${field.isPrimaryKey ? ' PRIMARY KEY' : ''}`;
             fieldString += `${field.unique ? ' UNIQUE' : ''}`;
             fieldString += `${field.notNull ? ' NOT' : ''} NULL`;
+            if (field.isForeignKey && field.foreignKey) {
+                fieldString += ` REFERENCES ${field.foreignKey.table}(${field.foreignKey.key})`;
+            }
             fieldString += `${field.notNull && field.default ? ` DEFAULT ${field.default}` : ''}`;
             if (field.tags && Object.keys(field.tags).length) {
                 fieldString += `/* ${Object.keys(field.tags).map(tagName => {

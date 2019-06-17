@@ -6,6 +6,7 @@ import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { ServerUtils } from "../../utils/server.utils";
+import { start } from "repl";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -13,6 +14,7 @@ interface DatabaseStructureNode {
     folderName?: string;
     children?: DatabaseStructureNode[];
 }
+const acceptableVersionRegExp = /^current$|^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/i;
 
 export class DatabaseRepositoryReader {
     private static _origin = 'DatabaseRepositoryReader';
@@ -27,10 +29,11 @@ export class DatabaseRepositoryReader {
         const fileList = (await FileUtils.getFileList({
             filter: /\.sql$/,
             startPath: path.resolve(startPath, DatabaseHelper.releasesPath)
-        }));
+        })).map(x => x.replace(FileUtils.replaceSlashes(startPath), '../'));
         // read the current db files file and add on
         const databaseFiles: DatabaseVersionFile[] = await DatabaseRepositoryReader._readFiles(
-            versionFiles
+            versionFiles,
+            fileList
         )
         await DatabaseHelper.updateApplicationDatabaseFiles(applicationName, databaseFiles);
 
@@ -69,19 +72,21 @@ export class DatabaseRepositoryReader {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'Invalid application name';
-        }
-        if (FileUtils.checkIfFolderExists(path.resolve(databaseObject._properties.path, 'postgres', 'release'))) {
-            const response = await uiUtils.question({
-                text: 'There is already a version in this folder. Are you sure you want to override ? (y/n)',
-                origin: DatabaseRepositoryReader._origin
-            });
-            if (response.toLowerCase() !== 'y') {
-                throw 'Application forlder is not null';
+        let dbName = '';
+        let currentPath = path.resolve(process.cwd());
+        if (databaseObject) {
+            currentPath = databaseObject._properties.path;
+            if (FileUtils.checkIfFolderExists(path.resolve(currentPath, 'postgres', 'release'))) {
+                const response = await uiUtils.question({
+                    text: 'There is already a version in this folder. Are you sure you want to override ? (y/n)',
+                    origin: DatabaseRepositoryReader._origin
+                });
+                if (response.toLowerCase() !== 'y') {
+                    throw 'Application forlder is not null';
+                }
             }
+            dbName = databaseObject._properties.dbName;
         }
-        let dbName = databaseObject._properties.dbName;
 
         if (!dbName) {
             while (!DatabaseRepositoryReader._isDatabaseNameValid(dbName)) {
@@ -95,9 +100,9 @@ export class DatabaseRepositoryReader {
         const dbStructure: DatabaseStructureNode = await FileUtils.readJsonFile(
             path.resolve(DatabaseHelper.dbFolderStructureFolder, 'folder-structure.json')
         );
-        await DatabaseRepositoryReader._createDBFolderStructure(dbStructure, databaseObject._properties.path, dbName);
+        await DatabaseRepositoryReader._createDBFolderStructure(dbStructure, currentPath, dbName);
         uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: `Database structure created for ${dbName}` });
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils, true);
+        await DatabaseRepositoryReader.readRepo(currentPath, params.applicationName, uiUtils, true);
     }
 
     private static _isDatabaseNameValid(name: string) {
@@ -164,8 +169,8 @@ export class DatabaseRepositoryReader {
                 files: fileList
                     .map(filePath => new DatabaseFile(
                         databaseObject._properties.path,
-                        filePath
-                            .replace(replacedPath, '../postgres/'))),
+                        filePath.replace(replacedPath, '../postgres/')
+                    )),
                 fileList: fileList,
                 databaseToUse: ''
             }],
@@ -175,19 +180,49 @@ export class DatabaseRepositoryReader {
         // order the objects
     }
 
-    private static async _readFiles(files: string[]): Promise<DatabaseVersionFile[]> {
+    private static async _readFiles(files: string[], allFiles: string[]): Promise<DatabaseVersionFile[]> {
         const filesRead = [];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const fileData = await FileUtils.readJsonFile(file);
-            const filePath = file.replace('version.json', '');
-            filesRead.push(new DatabaseVersionFile(file, fileData));
+            filesRead.push(new DatabaseVersionFile(file, fileData, allFiles));
         }
         return filesRead;
     }
 
+    private static async _processVersionFile(
+        databaseFile: DatabaseVersionFile,
+        databaseObject: DatabaseObject,
+        sqlFile: DatabaseFile,
+        unmapped: boolean) {
+
+        if (sqlFile.type !== 'unknown') {
+            if (!databaseObject[sqlFile.type]) {
+                databaseObject[sqlFile.type] = {};
+            }
+            if (!databaseObject[sqlFile.type][sqlFile.objectName]) {
+                databaseObject[sqlFile.type][sqlFile.objectName] = new DatabaseSubObject({
+                    name: sqlFile.objectName,
+                    latestFile: sqlFile.fileName,
+                    latestVersion: databaseFile.versionName,
+                    versions: [{
+                        sqlFile: sqlFile.fileName,
+                        version: databaseFile.versionName
+                    }]
+                });
+            } else {
+                databaseObject[sqlFile.type][sqlFile.objectName].name = sqlFile.objectName;
+                databaseObject[sqlFile.type][sqlFile.objectName].latestFile = sqlFile.fileName;
+                databaseObject[sqlFile.type][sqlFile.objectName].latestVersion = databaseFile.versionName;
+                databaseObject[sqlFile.type][sqlFile.objectName].versions.push({
+                    file: sqlFile.fileName,
+                    version: databaseFile.versionName
+                });
+            }
+        }
+    }
     private static async _extractObjectInformation(databaseFiles: DatabaseVersionFile[], path: string, uiUtils: UiUtils): Promise<DatabaseObject> {
-        databaseFiles = databaseFiles.filter(x => x.versionName === 'current' || x.versionName.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/));
+        databaseFiles = databaseFiles.filter(x => x.versionName.match(acceptableVersionRegExp));
         databaseFiles.sort((a, b) => {
             let vA = 0, vB = 0;
             if (a.versionName === 'current') {
@@ -219,32 +254,18 @@ export class DatabaseRepositoryReader {
                 databaseObject._versions.push(databaseFile.versionName);
             }
             databaseFile.versions.forEach(version => {
-                version.files.forEach(file => {
-                    if (file.type !== 'unknown') {
-                        if (!databaseObject[file.type]) {
-                            databaseObject[file.type] = {};
-                        }
-                        if (!databaseObject[file.type][file.objectName]) {
-                            databaseObject[file.type][file.objectName] = new DatabaseSubObject({
-                                name: file.objectName,
-                                latestFile: file.fileName,
-                                latestVersion: databaseFile.versionName,
-                                versions: [{
-                                    file: file.fileName,
-                                    version: databaseFile.versionName
-                                }]
-                            });
-                        } else {
-                            databaseObject[file.type][file.objectName].name = file.objectName;
-                            databaseObject[file.type][file.objectName].latestFile = file.fileName;
-                            databaseObject[file.type][file.objectName].latestVersion = databaseFile.versionName;
-                            databaseObject[file.type][file.objectName].versions.push({
-                                file: file.fileName,
-                                version: databaseFile.versionName
-                            });
-                        }
-                    }
-                })
+                version.files.forEach(file => DatabaseRepositoryReader._processVersionFile(
+                    databaseFile,
+                    databaseObject,
+                    file,
+                    false
+                ));
+                (version.unmappedFiles || []).forEach(file => DatabaseRepositoryReader._processVersionFile(
+                    databaseFile,
+                    databaseObject,
+                    file,
+                    true
+                ));
             });
         });
         const filesToAnalyzeLength =

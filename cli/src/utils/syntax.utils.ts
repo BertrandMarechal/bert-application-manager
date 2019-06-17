@@ -5,7 +5,7 @@ export class SyntaxUtils {
     }
 
     static capitalize(str: string) {
-        return str.substr(0,1).toUpperCase() + str.substr(1);
+        return str.substr(0, 1).toUpperCase() + str.substr(1);
     }
 
     static camelCaseToTitleCase(str: string) {
@@ -17,7 +17,7 @@ export class SyntaxUtils {
     static simplifyDbFileForAnalysis(fileString: string): string {
         let toReturn = fileString;
         toReturn = toReturn
-            .replace(/--.*$/g, '')
+            .replace(/--.*?$/gm, '')
             .replace(/\r/g, ' ')
             .replace(/\n/g, ' ')
             .replace(/\\r/g, ' ')

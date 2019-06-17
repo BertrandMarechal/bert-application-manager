@@ -27,7 +27,7 @@ export class DatabaseServer {
             }, socketUtils);
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
-        
+
         app.get('/databases/:name/install/:version/:env', async (req: Request, res: Response) => {
             console.log('databases/:name/install/:version/:env');
             try {
@@ -79,7 +79,7 @@ export class DatabaseServer {
             }
         });
         app.get('/databases/:name/create-functions', async (req: Request, res: Response) => {
-           
+
             try {
                 await DatabaseFileHelper.createFunctions({
                     applicationName: req.params.name,
@@ -106,7 +106,7 @@ export class DatabaseServer {
         });
         app.get('/databases/:name/:objectType', async (req: Request, res: Response) => {
             const db = await ApplicationHelper.getDatabase(req.params.name);
-            let obj: {[name: string]: DatabaseSubObject} = {};
+            let obj: { [name: string]: DatabaseSubObject } = {};
             switch (req.params.objectType) {
                 case 'tables':
                     obj = db.table;
@@ -158,7 +158,7 @@ export class DatabaseServer {
         app.get('/databases/:name/:objectType/:objectName/:version', async (req: Request, res: Response) => {
             const db = await ApplicationHelper.getDatabase(req.params.name);
             let obj: DatabaseSubObject = new DatabaseSubObject();
-            
+
             switch (req.params.objectType) {
                 case 'tables':
                     obj = db.table[req.params.objectName];
@@ -175,6 +175,25 @@ export class DatabaseServer {
                 }
             }
             res.send(obj);
+        });
+        app.post('/databases/:name/:objectType/:objectName/edit', async (req: Request, res: Response) => {
+            let objectType = '';
+            switch (req.params.objectType) {
+                case 'tables':
+                    objectType = 'table';
+                    break;
+                case 'functions':
+                    objectType = 'function';
+                    break;
+                default:
+                    break;
+            }
+            await DatabaseFileHelper.editObject({
+                applicationName: req.params.name,
+                objectName: req.params.objectName,
+                objectType: objectType
+            }, socketUtils);
+            res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
     }
 }

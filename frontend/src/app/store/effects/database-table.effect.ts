@@ -130,7 +130,21 @@ export class DatabaseTableEffects {
         serviceMethod: this.databaseTableService.removeFieldTag.bind(this.databaseTableService)
     });
 
-    @Effect() refreshPostTag: Observable<Action> = NgrxUtilsService.actionToAction({
+    @Effect() editTable: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        store: this.store.pipe(select('databaseTable')),
+        actionsToListenTo: [
+            DatabaseTableActions.PAGE_EDIT_TABLE,
+        ],
+        condition: (_action: DatabaseTableActions.PageEditTable, state: fromDatabaseTable.State) => !!state.databaseTable.name,
+        payloadTransform: (action: DatabaseTableActions.PageEditTable, state: fromDatabaseTable.State) => ({
+            name: state.databaseName,
+            tableName: state.databaseTable.name
+        }),
+        serviceMethod: this.databaseTableService.edit.bind(this.databaseTableService)
+    });
+
+    @Effect() refresh: Observable<Action> = NgrxUtilsService.actionToAction({
         actionsObs: this.actions$,
         store: this.store.pipe(select('databaseTable')),
         actionsToListenTo: [
@@ -138,6 +152,7 @@ export class DatabaseTableEffects {
             DatabaseTableActions.SERVICE_ADD_TABLE_TAG_COMPLETE,
             DatabaseTableActions.SERVICE_REMOVE_FIELD_TAG_COMPLETE,
             DatabaseTableActions.SERVICE_REMOVE_TABLE_TAG_COMPLETE,
+            DatabaseTableActions.SERVICE_EDIT_TABLE_COMPLETE,
         ],
         actionToDispatch: DatabaseTableActions.EFFECT_GET_DATABASE_TABLE,
         payloadTransform: (_action, state: fromDatabaseTable.State) => ({

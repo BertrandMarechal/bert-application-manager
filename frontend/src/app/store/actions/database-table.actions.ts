@@ -9,7 +9,7 @@ export const SERVICE_GET_DATABASE_TABLES_FAILED = '[Database Table Service] get 
 
 export class PageGetDatabaseTables implements Action {
     readonly type = PAGE_GET_DATABASE_TABLES;
-    constructor(public payload: string) {
+    constructor(public payload?: string) {
     }
 }
 export class RouterGetDatabaseTables implements Action {
@@ -161,6 +161,25 @@ export class ServiceRemoveFieldTagFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_EDIT_TABLE = '[Database Table Page] edit table';
+export const SERVICE_EDIT_TABLE_COMPLETE = '[Database Table Service] edit table complete';
+export const SERVICE_EDIT_TABLE_FAILED = '[Database Table Service] edit table failed';
+
+export class PageEditTable implements Action {
+    readonly type = PAGE_EDIT_TABLE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceEditTableComplete implements Action {
+    readonly type = SERVICE_EDIT_TABLE_COMPLETE;
+    constructor(public payload?: string) {
+    }
+}
+export class ServiceEditTableFailed implements Action {
+    readonly type = SERVICE_EDIT_TABLE_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabaseTableActions =
     | PageGetDatabaseTables
@@ -194,4 +213,8 @@ export type DatabaseTableActions =
     | PageRemoveFieldTag
     | ServiceRemoveFieldTagComplete
     | ServiceRemoveFieldTagFailed
+
+    | PageEditTable
+    | ServiceEditTableComplete
+    | ServiceEditTableFailed
     ;

@@ -35,7 +35,7 @@ export class TableComponent implements OnInit {
     });
   }
 
-  async onSelectTag(params: {tag: AvailableTag, field?: DatabaseTableField}) {
+  async onSelectTag(params: { tag: AvailableTag, field?: DatabaseTableField }) {
     if (params.tag.needsValue) {
       const swalResult = await Swal.fire({
         title: 'Add Tag',
@@ -78,7 +78,7 @@ export class TableComponent implements OnInit {
     }
   }
 
-  onRemoveTag(params: {tag: Tag, field?: DatabaseTableField}) {
+  onRemoveTag(params: { tag: Tag, field?: DatabaseTableField }) {
     if (params.field) {
       this.store.dispatch(new DatabaseTableActions.PageRemoveFieldTag({
         tagName: params.tag.name,
@@ -89,5 +89,8 @@ export class TableComponent implements OnInit {
         tagName: params.tag.name,
       }));
     }
+  }
+  onEditTable() {
+    this.store.dispatch(new DatabaseTableActions.PageEditTable());
   }
 }

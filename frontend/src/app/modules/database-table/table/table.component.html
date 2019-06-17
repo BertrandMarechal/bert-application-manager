@@ -1,11 +1,14 @@
-<h3>{{(databaseTable$|async).databaseTable?.name}} - {{(databaseTable$|async).databaseTable?.latestVersion}}</h3>
-<!-- <button mat-icon-button routerLink="edit">
-    <mat-icon>edit</mat-icon>
-</button><br> -->
+<h3>{{(databaseTable$|async).databaseTable?.name}} - {{(databaseTable$|async).databaseTable?.latestVersion}}
+
+    <button mat-icon-button *ngIf="(databaseTable$|async).databaseTable?.latestVersion !== 'current'"
+        (click)="onEditTable()">
+        <mat-icon>edit</mat-icon>
+    </button><br>
+</h3>
 <span style="color: #007213">
-        <span *ngIf="((databaseTable$|async).databaseTable?.tags|objectKeys).length">/*&nbsp;</span>
-        <app-database-tag *ngFor="let tag of (databaseTable$|async).databaseTable?.tags|objectKeys"
-        [tag]="tag" (remove)="onRemoveTag({tag: tag})"></app-database-tag>
+    <span *ngIf="((databaseTable$|async).databaseTable?.tags|objectKeys).length">/*&nbsp;</span>
+    <app-database-tag *ngFor="let tag of (databaseTable$|async).databaseTable?.tags|objectKeys" [tag]="tag"
+        (remove)="onRemoveTag({tag: tag})"></app-database-tag>
     <button mat-icon-button [matMenuTriggerFor]="menuTag" *ngIf="availableTags.length">
         <mat-icon>tag</mat-icon>
     </button>
@@ -19,9 +22,7 @@
 <br>
 CREATE TABLE IF NOT EXISTS {{(databaseTable$|async).databaseTable?.name}} (
 <app-field *ngFor="let field of (databaseTable$|async).databaseTable?.fields|objectKeys" [field]="field"
-    [table]="(databaseTable$|async).databaseTable"
-    [canEdit]="false"
-    (removeTag)="onRemoveTag($event)"
+    [table]="(databaseTable$|async).databaseTable" [canEdit]="false" (removeTag)="onRemoveTag($event)"
     (addTag)="onSelectTag($event)"></app-field>
 <br>
 );

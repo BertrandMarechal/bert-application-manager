@@ -1,5 +1,5 @@
 /* #ignore */
-create table <db>t_version_ver
+create table <db_name>t_version_ver
 (
     pk_ver_id serial primary key,
     ver_name text UNIQUE not null,
