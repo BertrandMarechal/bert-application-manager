@@ -52,7 +52,7 @@ export class DatabaseFileHelper {
         version?: string;
         template?: string;
     }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to create functions.` });
+        uiUtils.info({ origin: this._origin, message: `Getting ready to create template.` });
 
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
@@ -142,6 +142,78 @@ export class DatabaseFileHelper {
         }
         if (templateFiles.length) {
             await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
+        }
+        return true;
+    }
+    static async setUpReplications(params: {
+        applicationName: string;
+        version?: string;
+        tableName?: string;
+        fromOrTo: string;
+    }, uiUtils: UiUtils): Promise<boolean> {
+        uiUtils.info({ origin: this._origin, message: `Getting ready to set up replications.` });
+
+        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
+
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        if (!databaseObject) {
+            throw 'This application does not exist';
+        }
+
+        const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
+
+        if (!params.tableName) {
+            throw 'Please provide a table name';
+        }
+        const table: DatabaseTable = databaseObject.table[params.tableName];
+        if (!table) {
+            throw 'Please provide a valid table name';
+        }
+        if (databaseObject.trigger[`${databaseObject._properties.dbName}ts_${table.tableSuffix}_replications`]) {
+            throw 'This table seems to already be set up for replications';
+        }
+        if (params.fromOrTo === 'from') {
+            const templateFiles: string[] = [];
+
+            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'replications');
+            let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `replication_function.sql`));
+            let fileName = `${databaseObject._properties.dbName}f_${table.tableSuffix}_trigger_replication.sql`;
+            const tableFields: string[] = Object.keys(table.fields)
+                .filter(fieldName =>
+                    fieldName !== 'created_by' &&
+                    fieldName !== 'created_at' &&
+                    fieldName !== 'modified_by' &&
+                    fieldName !== 'modified_at' &&
+                    !fieldName.match(new RegExp(`pk_${table.tableSuffix}_id`)));
+            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
+                .replace(/<db_name>/g, databaseObject._properties.dbName)
+                .replace(/<table_suffix>/g, table.tableSuffix)
+                .replace(/<fields_equal_dollar>/g, tableFields.map((field, i) => `${indentation.repeat(12)}${field} = $${i + 6}`).join(',\r\n'))
+                .replace(/<new_plus_field_name>/g, tableFields.map((field, i) => `${indentation.repeat(10)}NEW.${field}`).join(',\r\n'))
+                .replace(/<field_names>/g, tableFields.map((field, i) => `${indentation.repeat(12)}${field}`).join(',\r\n'))
+                .replace(/<dollars>/g, tableFields.map((_field, i) => `${i + 6}`).join(','))
+            );
+
+            templateFiles.push(
+                ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'replications', fileName].join('/')
+            );
+
+            fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `trigger.sql`));
+            fileName = `${databaseObject._properties.dbName}tr_${table.tableSuffix}_replication.sql`;
+            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
+                .replace(/<table_name>/g, params.tableName)
+                .replace(/<db_name>/g, databaseObject._properties.dbName)
+                .replace(/<table_suffix>/g, table.tableSuffix)
+            );
+
+            templateFiles.push(
+                ['../', 'postgres', 'release', versionToChange, 'schema', '08-triggers', 'replications', fileName].join('/')
+            );
+
+            if (templateFiles.length) {
+                await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
+            }
         }
         return true;
     }
@@ -950,7 +1022,6 @@ export class DatabaseFileHelper {
         } else {
             throw 'Invalid field name';
         }
-        console.log(fileString);
 
 
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);

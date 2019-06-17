@@ -57,6 +57,24 @@ const main = async () => {
                             version: dbOptions.version
                         }, loggerUtils);
                         break;
+                    case 'replication-from':
+                    case 'rf':
+                        await DatabaseFileHelper.setUpReplications({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions.version,
+                            fromOrTo: 'from',
+                            tableName: dbOptions['object-name']
+                        }, loggerUtils);
+                        break;
+                    case 'replication-to':
+                    case 'rt':
+                        await DatabaseFileHelper.setUpReplications({
+                            applicationName: dbOptions['application-name'],
+                            version: dbOptions.version,
+                            fromOrTo: 'to',
+                            tableName: dbOptions['object-name']
+                        }, loggerUtils);
+                        break;
                     case 'install':
                     case 'i':
                         await DatabaseInstaller.installDatabse({
