@@ -7,7 +7,7 @@ import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
 import { indentation } from "../../utils/syntax.utils";
-import { LoggerUtils } from "../../utils/logger.utils";
+// import { LoggerUtils } from "../../utils/logger.utils";
 
 export const intentationSpaceNumber = 4;
 export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
@@ -163,17 +163,14 @@ export class DatabaseFileHelper {
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
 
-        if (!params.tableName) {
-            throw 'Please provide a table name';
-        }
-        const table: DatabaseTable = databaseObject.table[params.tableName];
-        if (!table) {
-            throw 'Please provide a valid table name';
-        }
-        if (databaseObject.trigger[`${databaseObject._properties.dbName}ts_${table.tableSuffix}_replications`]) {
-            throw 'This table seems to already be set up for replications';
-        }
         if (params.fromOrTo === 'from') {
+            params.tableName = await DatabaseFileHelper._getObjectName(params.tableName, 'table', databaseObject, uiUtils);
+
+            const table: DatabaseTable = databaseObject.table[params.tableName];
+
+            if (databaseObject.trigger[`${databaseObject._properties.dbName}ts_${table.tableSuffix}_replications`]) {
+                throw 'This table seems to already be set up for replications';
+            }
             const templateFiles: string[] = [];
 
             let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'replications');
@@ -216,6 +213,31 @@ export class DatabaseFileHelper {
             }
         }
         return true;
+    }
+    static async _getObjectName(objectName: string | undefined, objectType: string, databaseObject: DatabaseObject, uiUtils: UiUtils): Promise<string> {
+        if (objectName && databaseObject.objectType[objectName]) {
+            return objectName;
+        }
+        let found = false;
+        const tableNames = Object.keys(databaseObject.objectType);
+        while (!found) {
+            // look for the tables
+            const validTableNames = tableNames.filter(x => x.toLowerCase().indexOf((objectName || '').toLowerCase()) > -1);
+            if (validTableNames.length === 1) {
+                found = true;
+                objectName = validTableNames[0];
+            } else if (validTableNames.length === 0 || validTableNames.length > 9) {
+                objectName = await uiUtils.question({ origin: this._origin, text: `No ${objectType} could be found with the provided name. Please type a valid name` })
+            } else {
+                // more than one object => we show a list of choices
+                objectName = (await uiUtils.choices({
+                    message: 'More than one table returned with those parameters, please select the one you want',
+                    choices: validTableNames,
+                    title: 'Select table'
+                }))['Select table'];
+            }
+        }
+        return objectName || '';
     }
     static async createFunctions(params: {
         applicationName: string;
@@ -563,7 +585,7 @@ export class DatabaseFileHelper {
                         // check that the suffix is this table's actual suffix
                         if (matchedNewField[2] !== tablePrefix) {
                             validName = false;
-                            LoggerUtils.error({
+                            uiUtils.error({
                                 origin: this._origin,
                                 message: `The second set of 3 letters on the field name should be the table suffix "${tablePrefix}". "${matchedNewField[2]}" was found`
                             });
@@ -597,7 +619,7 @@ export class DatabaseFileHelper {
                             }
                         }
                         if (!foundAMatchingTable) {
-                            LoggerUtils.warning({
+                            uiUtils.warning({
                                 origin: this._origin,
                                 message: `Could not find a match for table prefix "${matchedNewField[1]}". Please check your reference`
                             });
