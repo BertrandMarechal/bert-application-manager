@@ -149,6 +149,7 @@ export class DatabaseFileHelper {
         applicationName: string;
         version?: string;
         tableName?: string;
+        sourceDatabase?: string;
         fromOrTo: string;
     }, uiUtils: UiUtils): Promise<boolean> {
         uiUtils.info({ origin: this._origin, message: `Getting ready to set up replications.` });
@@ -162,6 +163,7 @@ export class DatabaseFileHelper {
 
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
+        const templateFiles: string[] = [];
 
         if (params.fromOrTo === 'from') {
             params.tableName = await DatabaseFileHelper._getObjectName(params.tableName, 'table', databaseObject, uiUtils);
@@ -184,6 +186,7 @@ export class DatabaseFileHelper {
                     fieldName !== 'modified_at' &&
                     !fieldName.match(new RegExp(`pk_${table.tableSuffix}_id`)));
             FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
+                .replace(/<table_name>/g, params.tableName)
                 .replace(/<db_name>/g, databaseObject._properties.dbName)
                 .replace(/<table_suffix>/g, table.tableSuffix)
                 .replace(/<fields_equal_dollar>/g, tableFields.map((field, i) => `${indentation.repeat(12)}${field} = $${i + 6}`).join(',\r\n'))
@@ -211,15 +214,153 @@ export class DatabaseFileHelper {
             if (templateFiles.length) {
                 await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
             }
+        } else if (params.fromOrTo === 'to') {
+            // todo bert
+            const databaseObjects = await DatabaseHelper.getApplicationDatabaseObjects();
+            const databaseSuffixes: string[] = Object.keys(databaseObjects).map(x => databaseObjects[x]._properties.dbName);
+            const filteredDatabasesFixes = databaseSuffixes.filter(db => db.indexOf(params.sourceDatabase as string) > -1);
+
+            if (!params.sourceDatabase || !filteredDatabasesFixes.length) {
+                throw 'Please provide a valid database name (-d)';
+            }
+            const sourceDatabaseObject: DatabaseObject = Object.keys(databaseObjects)
+                .map(x => databaseObjects[x])
+                .find(x => x._properties.dbName.indexOf(params.sourceDatabase as string) > -1) as DatabaseObject;
+            params.tableName = await DatabaseFileHelper._getObjectName(params.tableName, 'table', sourceDatabaseObject, uiUtils);
+            const hasReplication = !!sourceDatabaseObject.trigger[`${sourceDatabaseObject._properties.dbName}tr_${sourceDatabaseObject.table[params.tableName].tableSuffix}_replication`]
+
+            if (!hasReplication) {
+                throw `This table is not yet duplicated. you can set it up by running "am db replication-from -o ${params.tableName}" on the source database.`;
+            }
+
+            // the table is available for replication, we will now create the duplication code
+            // set up the extentions
+            const file = Object.keys(databaseObject.setup).filter(x => x.indexOf('extension') > -1).map(x => databaseObject.setup[x])[0]
+            // edit the extensions
+            let needsPostgresFdw = false, needsDbLink = false;
+            let fileString = file ? await FileUtils.readFile(file.latestFile) : '';
+
+            if (!fileString.match(new RegExp(`postgres_fdw`, 'gim'))) {
+                needsPostgresFdw = true;
+            }
+            if (!fileString.match(new RegExp(`dblink`, 'gim'))) {
+                needsDbLink = true;
+            }
+            if (needsPostgresFdw || needsDbLink) {
+                let newFileString = `${needsPostgresFdw ? 'CREATE EXTENSION IF NOT EXISTS postgres_fdw;\r\n' : ''}`;
+                newFileString += `${needsDbLink ? 'CREATE EXTENSION IF NOT EXISTS dblink;\r\n' : ''}`;
+
+                fileString += newFileString;
+
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '00-database-setup', file.name || '02-extensions');
+                let fileName = file.name || 'extensions.sql';
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+                fileName = file.name || 'extensions.sql';
+                FileUtils.writeFileSync(path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', fileName), newFileString);
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'scripts', fileName].join('/')
+                );
+            }
+            // set up the foreign server
+            if (!databaseObject["foreign-servers"][sourceDatabaseObject._properties.dbName]) {
+                // create the server file
+                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'to', `foreign_server.sql`));
+                fileString = fileString
+                    .replace(/<target_db>/gi, databaseObject._properties.dbName)
+                    .replace(/<source_db>/gi, sourceDatabaseObject._properties.dbName);
+
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '00-foreign-servers');
+                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+                fileName = `foreign_server_${sourceDatabaseObject._properties.dbName}.sql`;
+                FileUtils.writeFileSync(path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', fileName), fileString);
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'scripts', fileName].join('/')
+                );
+            }
+            // set up the user mapping
+            if (!databaseObject["user-mappings"][sourceDatabaseObject._properties.dbName]) {
+                // create the user mapping file
+                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'to', `user_mapping.sql`));
+                fileString = fileString
+                    .replace(/<target_db>/gi, databaseObject._properties.dbName)
+                    .replace(/<source_db>/gi, sourceDatabaseObject._properties.dbName);
+
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '01-user-mappings');
+                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '01-user-mappings', `${sourceDatabaseObject._properties.dbName}.sql`].join('/')
+                );
+            }
+            // set up the local table
+            if (!databaseObject["local-tables"][params.tableName]) {
+                // create the local table file
+                let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
+                fileString = fileString
+                    .replace(/serial\W+primary\W+key/gim, 'INTEGER');
+
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables');
+                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables', `${params.tableName}.sql`].join('/')
+                );
+            }
+            // set up the user mapping
+            if (!databaseObject["foreign-tables"][`${databaseObject._properties.dbName}_${params.tableName}`]) {
+                // create the foreign table file
+                let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
+                fileString = fileString
+                    .replace(/serial\W+primary\W+key/gim, 'INTEGER')
+                    .replace(/references\W+[a-z0-9_]+\W\([a-z0-9_]+\)/gi, '')
+                    .replace(/\Wunique/gi, '');
+
+                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables');
+                let fileName = `${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}.sql`;
+                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+                templateFiles.push(
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables', `${databaseObject._properties.dbName}_${params.tableName}.sql`].join('/')
+                );
+            }
+            // replicate the table
+            fileString = `select * from dblink('${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}', '
+                DELETE FROM ${databaseObject._properties.dbName}_${params.tableName};
+                INSERT INTO ${databaseObject._properties.dbName}_${params.tableName}(${
+                Object.keys(sourceDatabaseObject.table[params.tableName].fields).map(field => field).join(',')
+                })
+                SELECT ${
+                Object.keys(sourceDatabaseObject.table[params.tableName].fields).map(field => field).join(',')
+                }
+                FROM ${params.tableName};
+            ')`
+
+            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`);
+            let fileName = `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`;
+            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
+
+            templateFiles.push(
+                ['../', 'postgres', 'release', versionToChange, versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`].join('/')
+            );
+        }
+        if (templateFiles.length) {
+            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
         }
         return true;
     }
     static async _getObjectName(objectName: string | undefined, objectType: string, databaseObject: DatabaseObject, uiUtils: UiUtils): Promise<string> {
-        if (objectName && databaseObject.objectType[objectName]) {
+        if (objectName && databaseObject[objectType][objectName]) {
             return objectName;
         }
         let found = false;
-        const tableNames = Object.keys(databaseObject.objectType);
+        const tableNames = Object.keys(databaseObject[objectType]);
         while (!found) {
             // look for the tables
             const validTableNames = tableNames.filter(x => x.toLowerCase().indexOf((objectName || '').toLowerCase()) > -1);

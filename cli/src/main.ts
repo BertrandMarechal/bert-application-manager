@@ -36,6 +36,7 @@ const main = async () => {
                     { name: 'environment', alias: 'e', type: String, description: 'environment' },
                     { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
                     { name: 'object-name', alias: 'o', type: String, description: 'Object Name' },
+                    { name: 'source-database', alias: 'd', type: String, description: 'Source database for replications' },
                     { name: 'object-type', alias: 'y', type: String, description: 'Object Type' },
                     { name: 'version', alias: 'v', type: String, description: 'Version to install' },
                     { name: 'template', alias: 't', type: String, description: 'Template' },
@@ -72,6 +73,7 @@ const main = async () => {
                             applicationName: dbOptions['application-name'],
                             version: dbOptions.version,
                             fromOrTo: 'to',
+                            sourceDatabase: dbOptions['source-database'],
                             tableName: dbOptions['object-name']
                         }, loggerUtils);
                         break;

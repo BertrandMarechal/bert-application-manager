@@ -8,7 +8,8 @@ DECLARE
     v_cur_servers CURSOR(rec record)
     FOR
     select foreign_table_name, foreign_server_name
-    from information_schema.foreign_tables;
+    from information_schema.foreign_tables
+    WHERE foreign_table_name like '%<table_name>';
 BEGIN
     IF (TG_OP = 'DELETE') THEN
         OPEN v_cur_servers(OLD);

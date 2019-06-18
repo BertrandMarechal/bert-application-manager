@@ -25,6 +25,7 @@ export class DatabaseRepositoryReader {
             filter: /version.json$/
         });
 
+
         // read all the SQL files, to see if they are all in the installation scripts
         const fileList = (await FileUtils.getFileList({
             filter: /\.sql$/,
