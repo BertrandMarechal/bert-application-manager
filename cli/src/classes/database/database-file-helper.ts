@@ -7,7 +7,6 @@ import { DatabaseRepositoryReader } from "./database-repo-reader";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
 import { indentation } from "../../utils/syntax.utils";
-// import { LoggerUtils } from "../../utils/logger.utils";
 
 export const intentationSpaceNumber = 4;
 export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
@@ -200,6 +199,7 @@ export class DatabaseFileHelper {
             );
 
             fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `trigger.sql`));
+            folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '08-triggers', 'replications');
             fileName = `${databaseObject._properties.dbName}tr_${table.tableSuffix}_replication.sql`;
             FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
                 .replace(/<table_name>/g, params.tableName)
@@ -306,7 +306,7 @@ export class DatabaseFileHelper {
                     .replace(/serial\W+primary\W+key/gim, 'INTEGER');
 
                 let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables');
-                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
+                let fileName = `${params.tableName}.sql`;
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
 
                 templateFiles.push(
@@ -323,7 +323,7 @@ export class DatabaseFileHelper {
                     .replace(/\Wunique/gi, '');
 
                 let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables');
-                let fileName = `${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}.sql`;
+                let fileName = `${databaseObject._properties.dbName}_${params.tableName}.sql`;
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
 
                 templateFiles.push(
@@ -342,12 +342,12 @@ export class DatabaseFileHelper {
                 FROM ${params.tableName};
             ')`
 
-            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`);
+            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts');
             let fileName = `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`;
             FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
 
             templateFiles.push(
-                ['../', 'postgres', 'release', versionToChange, versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`].join('/')
+                ['../', 'postgres', 'release', versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`].join('/')
             );
         }
         if (templateFiles.length) {
@@ -860,7 +860,6 @@ export class DatabaseFileHelper {
             return fieldString;
         }).join(',\n');
         tableString += '\n);';
-        console.log(tableString);
 
 
         const fileName = `${params.tableDetails.name}.sql`;
@@ -1127,7 +1126,6 @@ export class DatabaseFileHelper {
             if (new RegExp(`#${params.tagName}[^"]*TABLE`, 'i').test(fileString)) {
                 fileString = fileString.replace(new RegExp(`#${params.tagName}[^#\*]+ ?([\#\*])`), `$1`);
             }
-            console.log(fileString);
         }
 
         FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
