@@ -63,7 +63,7 @@ export class DatabaseTemplates {
             }
         }
         FileUtils.writeFileSync(path.resolve(folderPath, params.fileName), fileString);
-        return ['../', 'postgres', 'release', params.versionToChange, 'schema', '03-tables', params.fileName].join('/');
+        return ['../', 'postgres', 'release', params.versionToChange, params.subPath, params.fileName].join('/');
     }
 
     static async addTemplate(params: {
@@ -211,7 +211,7 @@ export class DatabaseTemplates {
 
             // replication function
             templateFileParams.update({
-                subPath: '07-functions/replications',
+                subPath: 'schema/07-functions/replications',
                 fileName: `${databaseObject._properties.dbName}f_${table.tableSuffix}_trigger_replication.sql`,
                 templateFilePath: path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `replication_function.sql`),
                 replacements: [
@@ -228,7 +228,7 @@ export class DatabaseTemplates {
 
             templateFileParams.update({
                 templateFilePath: path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `trigger.sql`),
-                subPath: '08-triggers/replications',
+                subPath: 'schema/08-triggers/replications',
                 fileName: `${databaseObject._properties.dbName}tr_${table.tableSuffix}_replication.sql`,
                 replacements: [
                     { variableName: 'table_name', replaceWith: params.tableName },

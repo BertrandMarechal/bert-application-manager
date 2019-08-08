@@ -15,14 +15,13 @@ cls && npm link && aws-mock start-server
   - [x] create model files
   - [x] create modules files
   - [x] create components files
-- [ ] automatically read Database files before installation
+- [x] automatically read Database files before installation
 - [ ] fix unmapped files error message
-- [ ] create Database files
-  - [ ] fix replication from issued
-    - [ ] folder issue
-      - [ ] creating version files outside schema
-      - [ ] puting file path ralative to tables in the version.json file
-    - [ ] remove the constraints (external references and unique constraints)
+- [-] create Database files
+  - [x] fix replication from issued
+    - [x] folder issue
+      - [x] creating version files outside schema
+      - [x] puting file path ralative to tables in the version.json file
   - [ ] fix replication to foreign table script issue
     - [ ] should be a foreign table script
     - [ ] remove the constraints (external references and unique constraints)
