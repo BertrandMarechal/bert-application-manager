@@ -13,7 +13,7 @@ const ngrxParts: {
     source: 'page',
     state: '',
     for: {
-        get: false,
+        get: true,
         list: true,
         save: true,
         delete: true,
@@ -172,32 +172,32 @@ export class NgrxFileHelper {
     getFiles(): FileAndContent[] {
         const toReturn: FileAndContent[] = [];
         if (this.actions.length) {
-            this.actionsFile.fileContent
+            this.actionsFile.fileContent = this.actionsFile.fileContent
                 .replace(/<snake_case_actions_upper_case>/g, this.params.nameWithoutPrefixAndSuffix.toUpperCase())
                 .replace(/<snake_case_actions_lower_case>/g, this.params.nameWithoutPrefixAndSuffix.toLowerCase())
                 .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
-                .replace(/<action_names>/,this.actions.map(x => x.names).join('\n\n'))
-                .replace(/<action_classes>/,this.actions.map(x => x.classes).join('\n\n'))
-                .replace(/<action_types>/,this.actions.map(x => x.types).join('\n\n'));
+                .replace(/<action_names>/, this.actions.map(x => x.names).join('\n\n'))
+                .replace(/<action_classes>/, this.actions.map(x => x.classes).join('\n\n'))
+                .replace(/<action_types>/, this.actions.map(x => x.types).join('\n\n'));
             toReturn.push(this.actionsFile);
         }
         if (this.reducers.length) {
-            this.reducersFile.fileContent
+            this.reducersFile.fileContent = this.reducersFile.fileContent
                 .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
                 .replace(/<name_with_dashes>/g, this.params.nameWithDashes)
                 .replace(/<camel_cased_name>/g, this.params.camelCasedName)
-                .replace(/<types>/,this.reducers.map(x => x.stateTypes).filter(Boolean).join('\n'))
-                .replace(/<initial_state>/,this.reducers.map(x => x.stateInitialState).filter(Boolean).join('\n'))
-                .replace(/<cases>/,this.reducers.map(x => x.stateCase).filter(Boolean).join('\n'));
+                .replace(/<types>/, this.reducers.map(x => x.stateTypes).filter(Boolean).join('\n'))
+                .replace(/<initial_state>/, this.reducers.map(x => x.stateInitialState).filter(Boolean).join('\n'))
+                .replace(/<cases>/, this.reducers.map(x => x.stateCase).filter(Boolean).join('\n'));
             toReturn.push(this.reducersFile);
         }
 
         if (this.effects.length) {
-            this.effectsFile.fileContent
+            this.effectsFile.fileContent = this.effectsFile.fileContent
                 .replace(/<name_with_dashes>/g, this.params.nameWithDashes)
                 .replace(/<camel_cased_name>/g, this.params.camelCasedName)
                 .replace(/<capitalized_camel_cased_name>/g, this.params.capitalizedCamelCasedName)
-                .replace(/<effects>/,this.effects.join('\n'));
+                .replace(/<effects>/, this.effects.join('\n'));
             toReturn.push(this.effectsFile);
         }
         return toReturn;
@@ -239,13 +239,16 @@ export class NgrxFileHelper {
 
         types = [
             `${indentation}${actionBooleanPrefix}${params.capitalizedCamelCaseName}${actionvariablesSuffix}: boolean;`,
-            `${indentation}${params.camelCaseName}${actionvariablesSuffix}: ${params.capitalizedCamelCaseName}${params.action === 'list' ? '[]' : ''};`,
         ];
         initialState = [
             `${indentation}${actionBooleanPrefix}${params.capitalizedCamelCaseName}${actionvariablesSuffix}: true,`,
-            `${indentation}${params.camelCaseName}${actionvariablesSuffix}: null,`,
         ];
+        if (params.action === 'get' || params.action === 'list') {
+            types.push(`${indentation}${params.camelCaseName}${actionvariablesSuffix}: ${params.capitalizedCamelCaseName}${params.action === 'list' ? '[]' : ''};`);
+            initialState.push(`${indentation}${params.camelCaseName}${actionvariablesSuffix}: null,`);
+        }
         cases = ngrxParts
+            .filter(x => x.for[params.action])
             .map(part => {
                 let actionLine = `${indentation.repeat(2)}case ${params.capitalizedCamelCaseName}Actions.${part.source.toUpperCase()}_${params.upperCaseActionName}${part.state ? `_${part.state.toUpperCase()}` : ``}:\n`;
                 let toReturn = `${indentation.repeat(3)}return {\n`;
@@ -292,12 +295,12 @@ export class NgrxFileHelper {
                 // listen to the router
                 effectToReturn += `${indentation}@Effect()\n`;
                 effectToReturn += `${indentation}navigateTo${params.capitalizedCamelCaseName}: Observable<Action> = RouterUtilsService.handleNavigationWithParams(\n`;
-                effectToReturn += `${indentation.repeat(2)}['${params.route ? params.route + '/' : ''}${params.nameWithDashes}/:id'],this.actions$).pipe(\n`;
+                effectToReturn += `${indentation.repeat(2)}['${params.route ? params.route + '/' : ''}${params.nameWithDashes}/:id'], this.actions$).pipe(\n`;
                 effectToReturn += `${indentation.repeat(3)}map((result: RouteNavigationParams) => {\n`;
                 effectToReturn += `${indentation.repeat(4)}return {\n`;
                 effectToReturn += `${indentation.repeat(5)}type: ${params.capitalizedCamelCaseName}Actions.ROUTER_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(5)}payload: +result.params.id\n`;
-                effectToReturn += `${indentation.repeat(4)}}\n`;
+                effectToReturn += `${indentation.repeat(4)}};\n`;
                 effectToReturn += `${indentation.repeat(3)}})\n`;
                 effectToReturn += `${indentation.repeat(2)});\n`;
                 // listen to the actions
@@ -308,18 +311,18 @@ export class NgrxFileHelper {
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.ROUTER_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.EFFECT_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(2)}],\n`;
-                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.capitalizedCamelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.capitalizedCamelCaseName}Service),\n`;
+                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.camelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.camelCaseName}Service),\n`;
                 effectToReturn += `${indentation}});\n`;
                 break;
             case 'list':
                 // listen to the router
                 effectToReturn += `${indentation}@Effect()\n`;
                 effectToReturn += `${indentation}navigateTo${params.capitalizedCamelCaseName}List: Observable<Action> = RouterUtilsService.handleNavigationWithParams(\n`;
-                effectToReturn += `${indentation.repeat(2)}['${params.route ? params.route + '/' : ''}${params.nameWithDashes}'],this.actions$).pipe(\n`;
+                effectToReturn += `${indentation.repeat(2)}['${params.route ? params.route + '/' : ''}${params.nameWithDashes}'], this.actions$).pipe(\n`;
                 effectToReturn += `${indentation.repeat(3)}map(() => {\n`;
                 effectToReturn += `${indentation.repeat(4)}return {\n`;
                 effectToReturn += `${indentation.repeat(5)}type: ${params.capitalizedCamelCaseName}Actions.ROUTER_${params.upperCaseActionName},\n`;
-                effectToReturn += `${indentation.repeat(4)}}\n`;
+                effectToReturn += `${indentation.repeat(4)}};\n`;
                 effectToReturn += `${indentation.repeat(3)}})\n`;
                 effectToReturn += `${indentation.repeat(2)});\n`;
                 // listen to the actions
@@ -331,7 +334,7 @@ export class NgrxFileHelper {
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.ROUTER_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.EFFECT_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(2)}],\n`;
-                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.capitalizedCamelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.capitalizedCamelCaseName}Service),\n`;
+                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.camelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.camelCaseName}Service),\n`;
                 effectToReturn += `${indentation}});\n`;
                 break;
             case 'delete':
@@ -343,8 +346,8 @@ export class NgrxFileHelper {
                 effectToReturn += `${indentation.repeat(2)}actionsToListenTo: [\n`;
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.PAGE_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(2)}],\n`;
-                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.capitalizedCamelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.capitalizedCamelCaseName}Service),\n`;
-                effectToReturn += `${indentation.repeat(2)}outputTransform: (id: number) => \n`;
+                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.camelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.camelCaseName}Service),\n`;
+                effectToReturn += `${indentation.repeat(2)}outputTransform: (id: number) =>\n`;
                 effectToReturn += `${indentation.repeat(3)}this.router.navigate(['/${params.route ? params.route + '/' : ''}${params.nameWithDashes}'])\n`;
                 effectToReturn += `${indentation}});\n`;
                 // reload and navigate back
@@ -352,13 +355,13 @@ export class NgrxFileHelper {
             case 'save':
                 // listen to the actions
                 effectToReturn += `${indentation}@Effect()\n`;
-                effectToReturn += `${indentation}${params.action}{params.capitalizedCamelCaseName}: Observable<Action> = NgrxUtilsService.actionToServiceToAction({\n`;
+                effectToReturn += `${indentation}${params.action}${params.capitalizedCamelCaseName}: Observable<Action> = NgrxUtilsService.actionToServiceToAction({\n`;
                 effectToReturn += `${indentation.repeat(2)}actionsObs: this.actions$,\n`;
                 effectToReturn += `${indentation.repeat(2)}actionsToListenTo: [\n`;
                 effectToReturn += `${indentation.repeat(3)}${params.capitalizedCamelCaseName}Actions.PAGE_${params.upperCaseActionName},\n`;
                 effectToReturn += `${indentation.repeat(2)}],\n`;
-                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.capitalizedCamelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.capitalizedCamelCaseName}Service),\n`;
-                effectToReturn += `${indentation.repeat(2)}outputTransform: (id: number) => \n`;
+                effectToReturn += `${indentation.repeat(2)}serviceMethod: this.${params.camelCaseName}Service.${params.action}${params.capitalizedCamelCaseName}.bind(this.${params.camelCaseName}Service),\n`;
+                effectToReturn += `${indentation.repeat(2)}outputTransform: (id: number) =>\n`;
                 effectToReturn += `${indentation.repeat(3)}this.router.navigate(['/${params.route ? params.route + '/' : ''}${params.nameWithDashes}', id])\n`;
                 effectToReturn += `${indentation}});\n`;
                 break;

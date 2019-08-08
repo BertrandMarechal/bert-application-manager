@@ -6,6 +6,7 @@ import path from 'path';
 import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database/database-installer';
 import { DatabaseVersionChecker } from './classes/database/database-version-checker';
+import { DatabaseTemplates } from './classes/database/database-templates';
 import { DatabaseFileHelper } from './classes/database/database-file-helper';
 import { ServerlessFileHelper } from './classes/serverless/serverless-file-helper';
 import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
@@ -60,7 +61,7 @@ const main = async () => {
                         break;
                     case 'replication-from':
                     case 'rf':
-                        await DatabaseFileHelper.setUpReplications({
+                        await DatabaseTemplates.setUpReplications({
                             applicationName: dbOptions['application-name'],
                             version: dbOptions.version,
                             fromOrTo: 'from',
@@ -69,7 +70,7 @@ const main = async () => {
                         break;
                     case 'replication-to':
                     case 'rt':
-                        await DatabaseFileHelper.setUpReplications({
+                        await DatabaseTemplates.setUpReplications({
                             applicationName: dbOptions['application-name'],
                             version: dbOptions.version,
                             fromOrTo: 'to',
@@ -137,7 +138,7 @@ const main = async () => {
                         break;
                     case 't':
                     case 'add-template':
-                        await DatabaseFileHelper.addTemplate({
+                        await DatabaseTemplates.addTemplate({
                             applicationName: dbOptions['application-name'],
                             version: dbOptions['version'],
                             template: dbOptions.template,

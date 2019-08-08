@@ -1,0 +1,102 @@
+<div class="card-container" @detailsAnimation>
+  <mat-card *ngFor="let detailContainer of details|detailContainerConditionFilter:entity" class="detail-card">
+    <mat-card-content>
+      <mat-card-title>
+        {{detailContainer.name}}
+      </mat-card-title>
+      <mat-list *ngIf="entity">
+        <mat-list-item *ngFor="let detail of detailContainer.entityDetails" style="height: 100%; min-height: 30px;">
+          <div class="line-container">
+            <span class="line-container-detail-name">{{detail.name}}: </span>
+            <span [ngSwitch]="detail.type">
+
+              <span *ngSwitchCase="'datetime'">
+                {{entity[detail.key]| date:'dd/MM/yyyy HH:mm'}}
+              </span>
+
+              <div *ngSwitchCase="'boolean'">
+                <ng-template #elseBool>
+                  <span>
+                    {{entity[detail.key] ? detail.booleanTrueValue : detail.booleanFalseValue}}
+                  </span>
+                </ng-template>
+                <mat-form-field *ngIf="detail.editable; else elseBool" style="border: 0">
+                  <mat-select [value]=entity[detail.key]
+                    (selectionChange)="change({key: detail.key, value: $event.value, debounce: false})">
+                    <mat-option [value]="true">True</mat-option>
+                    <mat-option [value]="false">False</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div *ngSwitchCase="'weekDay'">
+                <ng-template #elseWeekDay>
+                  <span>
+                    {{entity[detail.key] === 0 ? 'Sunday' : (!!entity[detail.key] ? days[entity[detail.key] - 1] : days[0])}}
+                  </span>
+                </ng-template>
+                <mat-form-field *ngIf="detail.editable; else elseWeekDay">
+                  <mat-select [value]=entity[detail.key]
+                    (selectionChange)="change({key: detail.key, value: $event.value, debounce: false})">
+                    <mat-option [value]="1">Monday</mat-option>
+                    <mat-option [value]="2">Tuesday</mat-option>
+                    <mat-option [value]="3">Wednesday</mat-option>
+                    <mat-option [value]="4">Thursday</mat-option>
+                    <mat-option [value]="5">Friday</mat-option>
+                    <mat-option [value]="6">Saturday</mat-option>
+                    <mat-option [value]="7">Sunday</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div *ngSwitchCase="'terminated'">
+                <span>
+                  {{entity[detail.key] === 'true' ? 'Yes' : 'No'}}
+                </span>
+              </div>
+
+              <div *ngSwitchCase="'date'">
+                <ng-template #elseDate>
+                  <span>
+                    {{entity[detail.key]| date:'dd/MM/yyyy'}}
+                  </span>
+                </ng-template>
+
+                <mat-form-field *ngIf="detail.editable; else elseDate" style="border: 0">
+                  <input matInput [matDatepicker]="picker"
+                    (dateChange)="change({key: detail.key, value: $event.value, debounce: false})">
+                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+              </div>
+
+              <div *ngSwitchCase="'string'">
+                <ng-template #elseString>
+                  <span>
+                    {{entity[detail.key]}}
+                  </span>
+                </ng-template>
+                <mat-form-field *ngIf="detail.editable; else elseString" style="border: 0">
+                  <input matInput [value]="entity[detail.key]"
+                    (keyup)="change({key: detail.key, value: $event.target.value, debounce: true})">
+                </mat-form-field>
+              </div>
+
+              <span *ngSwitchCase="'color'">
+                <div style="width: 60px; height: 30px; border-radius: 5px"
+                  [ngStyle]="{'background-color': entity[detail.key]}"></div>
+              </span>
+              <span *ngSwitchCase="'composite'">
+                {{detail.compose(entity)}}
+              </span>
+
+              <span *ngSwitchDefault>
+                {{entity[detail.key]}}
+              </span>
+            </span>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+</div>

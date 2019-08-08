@@ -1,0 +1,6 @@
+<div class="button-container" [style.justify-content]="orientation">
+  <button mat-raised-button *ngIf="showDelete" (click)="delete.emit()">Delete</button>
+  <button mat-stroked-button *ngIf="showCancel && !cancelLink" (click)="cancel.emit()">Cancel</button>
+  <button mat-stroked-button *ngIf="showCancel && cancelLink" [routerLink]="cancelLink">Cancel</button>
+  <button mat-stroked-button color="primary" [disabled]="!canSave" (click)="save.emit()">Save</button>
+</div>

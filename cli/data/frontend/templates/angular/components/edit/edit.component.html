@@ -1,11 +1,11 @@
 <form [formGroup]="form" style="padding: 20px">
 <html_form_fields>
     <app-edition-buttons
-      [canSave]="form.valid && form.dirty && !(<camel_cased_name>Store$|async).saving<capitalized_camel_cased_name>"
+      [canSave]="form.valid && form.dirty && !(<camel_cased_name>$|async).saving<capitalized_camel_cased_name>"
       (cancel)="onCancel()"
       (save)="onSave()"
       [showDelete]="false"
       [showCancel]="true"></app-edition-buttons>
-    <mat-progress-bar mode="indeterminate" *ngIf="(<camel_cased_name>Store$|async).saving<capitalized_camel_cased_name>"></mat-progress-bar>
+    <mat-progress-bar mode="indeterminate" *ngIf="(<camel_cased_name>$|async).saving<capitalized_camel_cased_name>"></mat-progress-bar>
   </form>
   

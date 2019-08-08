@@ -1,10 +1,10 @@
-import {AppState} from './app.reducers';
+import {AppState} from '@app/reducers';
 
 import * as <capitalized_camel_cased_name>Actions from '../actions/<name_with_dashes>.actions';
 import {<capitalized_camel_cased_name>} from '@app/models/<name_with_dashes>.model';
 
 export interface FeatureState extends AppState {
-  <camel_cased_name>Store: State;
+  <camel_cased_name>: State;
 }
 
 export interface State {

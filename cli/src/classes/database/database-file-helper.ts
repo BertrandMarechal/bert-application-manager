@@ -15,7 +15,7 @@ const fieldSettingsRegex = '+([^(),]+\\([^,]\\)|[^(),]+)([^(),]+\\([^()]+\\)[^()
 export class DatabaseFileHelper {
     private static _origin = 'DatabaseFileHelper';
 
-    private static async _getVersionToChange(params: {
+    static async getVersionToChange(params: {
         version?: string;
     }, databaseVersionFiles: DatabaseVersionFile[], uiUtils: UiUtils): Promise<string> {
         const databaseVersionFile: DatabaseVersionFile | undefined = databaseVersionFiles[databaseVersionFiles.length - 1];
@@ -46,316 +46,7 @@ export class DatabaseFileHelper {
         return versionToChange;
     }
 
-    static async addTemplate(params: {
-        applicationName: string;
-        version?: string;
-        template?: string;
-    }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to create template.` });
-
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-
-        const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
-
-        const templateFiles: string[] = [];
-
-        switch (params.template) {
-            case 'lookup':
-                if (databaseObject.table[databaseObject._properties.dbName + 't_lookup_lkp'] || databaseObject.table[databaseObject._properties.dbName + 't_lookup_type_lty']) {
-                    throw 'This application already has lookup tables';
-                }
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
-
-
-                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `lookup_type.sql`));
-                let fileName = `${databaseObject._properties.dbName}t_lookup_type_lty.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
-                );
-
-                fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `lookup.sql`));
-                fileName = `${databaseObject._properties.dbName}t_lookup_lkp.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileName].join('/')
-                );
-
-                folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups');
-
-                fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'lookup', `get_lookups.sql`));
-                fileName = `${databaseObject._properties.dbName}f_get_lookups.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'lookups', fileName].join('/')
-                );
-                break;
-            case 'version':
-                if (databaseObject.table[databaseObject._properties.dbName + 't_version_ver']) {
-                    throw 'This application already has version table';
-                }
-
-                let folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '03-tables');
-
-
-                let fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `version_table.sql`));
-                let fileNameVersion = `${databaseObject._properties.dbName}t_version_ver.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '03-tables', fileNameVersion].join('/')
-                );
-
-                folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'version');
-
-                fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `get_versions.sql`));
-                fileNameVersion = `${databaseObject._properties.dbName}f_get_versions.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'version', fileNameVersion].join('/')
-                );
-
-                folderPathVersion = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '09-data');
-
-                fileStringVersion = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'version', `version_data.sql`));
-                fileNameVersion = `00-version.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPathVersion, fileNameVersion), fileStringVersion.replace(/<db_name>/g, databaseObject._properties.dbName));
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '09-data', fileNameVersion].join('/')
-                );
-                break;
-            default:
-                throw 'Unknown template';
-        }
-        if (templateFiles.length) {
-            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
-        }
-        return true;
-    }
-    static async setUpReplications(params: {
-        applicationName: string;
-        version?: string;
-        tableName?: string;
-        sourceDatabase?: string;
-        fromOrTo: string;
-    }, uiUtils: UiUtils): Promise<boolean> {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to set up replications.` });
-
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-
-        const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
-        const templateFiles: string[] = [];
-
-        if (params.fromOrTo === 'from') {
-            params.tableName = await DatabaseFileHelper._getObjectName(params.tableName, 'table', databaseObject, uiUtils);
-
-            const table: DatabaseTable = databaseObject.table[params.tableName];
-
-            if (databaseObject.trigger[`${databaseObject._properties.dbName}ts_${table.tableSuffix}_replications`]) {
-                throw 'This table seems to already be set up for replications';
-            }
-            const templateFiles: string[] = [];
-
-            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '07-functions', 'replications');
-            let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `replication_function.sql`));
-            let fileName = `${databaseObject._properties.dbName}f_${table.tableSuffix}_trigger_replication.sql`;
-            const tableFields: string[] = Object.keys(table.fields)
-                .filter(fieldName =>
-                    fieldName !== 'created_by' &&
-                    fieldName !== 'created_at' &&
-                    fieldName !== 'modified_by' &&
-                    fieldName !== 'modified_at' &&
-                    !fieldName.match(new RegExp(`pk_${table.tableSuffix}_id`)));
-            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
-                .replace(/<table_name>/g, params.tableName)
-                .replace(/<db_name>/g, databaseObject._properties.dbName)
-                .replace(/<table_suffix>/g, table.tableSuffix)
-                .replace(/<fields_equal_dollar>/g, tableFields.map((field, i) => `${indentation.repeat(12)}${field} = $${i + 6}`).join(',\r\n'))
-                .replace(/<new_plus_field_name>/g, tableFields.map((field, i) => `${indentation.repeat(10)}NEW.${field}`).join(',\r\n'))
-                .replace(/<field_names>/g, tableFields.map((field, i) => `${indentation.repeat(12)}${field}`).join(',\r\n'))
-                .replace(/<dollars>/g, tableFields.map((_field, i) => `${i + 6}`).join(','))
-            );
-
-            templateFiles.push(
-                ['../', 'postgres', 'release', versionToChange, 'schema', '07-functions', 'replications', fileName].join('/')
-            );
-
-            fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'from', `trigger.sql`));
-            folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '08-triggers', 'replications');
-            fileName = `${databaseObject._properties.dbName}tr_${table.tableSuffix}_replication.sql`;
-            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString
-                .replace(/<table_name>/g, params.tableName)
-                .replace(/<db_name>/g, databaseObject._properties.dbName)
-                .replace(/<table_suffix>/g, table.tableSuffix)
-            );
-
-            templateFiles.push(
-                ['../', 'postgres', 'release', versionToChange, 'schema', '08-triggers', 'replications', fileName].join('/')
-            );
-
-            if (templateFiles.length) {
-                await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
-            }
-        } else if (params.fromOrTo === 'to') {
-            // todo bert
-            const databaseObjects = await DatabaseHelper.getApplicationDatabaseObjects();
-            const databaseSuffixes: string[] = Object.keys(databaseObjects).map(x => databaseObjects[x]._properties.dbName);
-            const filteredDatabasesFixes = databaseSuffixes.filter(db => db.indexOf(params.sourceDatabase as string) > -1);
-
-            if (!params.sourceDatabase || !filteredDatabasesFixes.length) {
-                throw 'Please provide a valid database name (-d)';
-            }
-            const sourceDatabaseObject: DatabaseObject = Object.keys(databaseObjects)
-                .map(x => databaseObjects[x])
-                .find(x => x._properties.dbName.indexOf(params.sourceDatabase as string) > -1) as DatabaseObject;
-            params.tableName = await DatabaseFileHelper._getObjectName(params.tableName, 'table', sourceDatabaseObject, uiUtils);
-            const hasReplication = !!sourceDatabaseObject.trigger[`${sourceDatabaseObject._properties.dbName}tr_${sourceDatabaseObject.table[params.tableName].tableSuffix}_replication`]
-
-            if (!hasReplication) {
-                throw `This table is not yet duplicated. you can set it up by running "am db replication-from -o ${params.tableName}" on the source database.`;
-            }
-
-            // the table is available for replication, we will now create the duplication code
-            // set up the extentions
-            const file = Object.keys(databaseObject.setup).filter(x => x.indexOf('extension') > -1).map(x => databaseObject.setup[x])[0]
-            // edit the extensions
-            let needsPostgresFdw = false, needsDbLink = false;
-            let fileString = file ? await FileUtils.readFile(file.latestFile) : '';
-
-            if (!fileString.match(new RegExp(`postgres_fdw`, 'gim'))) {
-                needsPostgresFdw = true;
-            }
-            if (!fileString.match(new RegExp(`dblink`, 'gim'))) {
-                needsDbLink = true;
-            }
-            if (needsPostgresFdw || needsDbLink) {
-                let newFileString = `${needsPostgresFdw ? 'CREATE EXTENSION IF NOT EXISTS postgres_fdw;\r\n' : ''}`;
-                newFileString += `${needsDbLink ? 'CREATE EXTENSION IF NOT EXISTS dblink;\r\n' : ''}`;
-
-                fileString += newFileString;
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '00-database-setup', file.name || '02-extensions');
-                let fileName = file.name || 'extensions.sql';
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-                fileName = file.name || 'extensions.sql';
-                FileUtils.writeFileSync(path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', fileName), newFileString);
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'scripts', fileName].join('/')
-                );
-            }
-            // set up the foreign server
-            if (!databaseObject["foreign-servers"][sourceDatabaseObject._properties.dbName]) {
-                // create the server file
-                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'to', `foreign_server.sql`));
-                fileString = fileString
-                    .replace(/<target_db>/gi, databaseObject._properties.dbName)
-                    .replace(/<source_db>/gi, sourceDatabaseObject._properties.dbName);
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '00-foreign-servers');
-                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-                fileName = `foreign_server_${sourceDatabaseObject._properties.dbName}.sql`;
-                FileUtils.writeFileSync(path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts', fileName), fileString);
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'scripts', fileName].join('/')
-                );
-            }
-            // set up the user mapping
-            if (!databaseObject["user-mappings"][sourceDatabaseObject._properties.dbName]) {
-                // create the user mapping file
-                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'to', `user_mapping.sql`));
-                fileString = fileString
-                    .replace(/<target_db>/gi, databaseObject._properties.dbName)
-                    .replace(/<source_db>/gi, sourceDatabaseObject._properties.dbName);
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '01-user-mappings');
-                let fileName = `${sourceDatabaseObject._properties.dbName}.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '01-user-mappings', `${sourceDatabaseObject._properties.dbName}.sql`].join('/')
-                );
-            }
-            // set up the local table
-            if (!databaseObject["local-tables"][params.tableName]) {
-                // create the local table file
-                let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
-                fileString = fileString
-                    .replace(/serial\W+primary\W+key/gim, 'INTEGER');
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables');
-                let fileName = `${params.tableName}.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables', `${params.tableName}.sql`].join('/')
-                );
-            }
-            // set up the user mapping
-            if (!databaseObject["foreign-tables"][`${databaseObject._properties.dbName}_${params.tableName}`]) {
-                // create the foreign table file
-                let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
-                fileString = fileString
-                    .replace(/serial\W+primary\W+key/gim, 'INTEGER')
-                    .replace(/references\W+[a-z0-9_]+\W\([a-z0-9_]+\)/gi, '')
-                    .replace(/\Wunique/gi, '');
-
-                let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables');
-                let fileName = `${databaseObject._properties.dbName}_${params.tableName}.sql`;
-                FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-                templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables', `${databaseObject._properties.dbName}_${params.tableName}.sql`].join('/')
-                );
-            }
-            // replicate the table
-            fileString = `select * from dblink('${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}', '
-                DELETE FROM ${databaseObject._properties.dbName}_${params.tableName};
-                INSERT INTO ${databaseObject._properties.dbName}_${params.tableName}(${
-                Object.keys(sourceDatabaseObject.table[params.tableName].fields).map(field => field).join(',')
-                })
-                SELECT ${
-                Object.keys(sourceDatabaseObject.table[params.tableName].fields).map(field => field).join(',')
-                }
-                FROM ${params.tableName};
-            ')`
-
-            let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts');
-            let fileName = `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`;
-            FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
-
-            templateFiles.push(
-                ['../', 'postgres', 'release', versionToChange, 'scripts', `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`].join('/')
-            );
-        }
-        if (templateFiles.length) {
-            await DatabaseFileHelper.updateVersionFile(databaseObject._properties.path, versionToChange, templateFiles, params.applicationName, uiUtils);
-        }
-        return true;
-    }
-    static async _getObjectName(objectName: string | undefined, objectType: string, databaseObject: DatabaseObject, uiUtils: UiUtils): Promise<string> {
+    static async getObjectName(objectName: string | undefined, objectType: string, databaseObject: DatabaseObject, uiUtils: UiUtils): Promise<string> {
         if (objectName && databaseObject[objectType][objectName]) {
             return objectName;
         }
@@ -376,10 +67,38 @@ export class DatabaseFileHelper {
                     choices: validTableNames,
                     title: 'Select table'
                 }))['Select table'];
+                found = true;
             }
         }
         return objectName || '';
     }
+    static async _getDatabaseObject(dbName: string, uiUtils: UiUtils): Promise<DatabaseObject> {
+        const databaseObjects: { [name: string]: DatabaseObject } = await DatabaseHelper.getApplicationDatabaseObjects();
+        if (databaseObjects[dbName]) {
+            return databaseObjects[dbName];
+        }
+        let found = false;
+        const dbNames = Object.keys(databaseObjects);
+        while (!found) {
+            // look for the tables
+            const validTableNames = dbNames.filter(x => x.toLowerCase().indexOf(dbName.toLowerCase()) > -1);
+            if (validTableNames.length === 1) {
+                return databaseObjects[validTableNames[0]];
+            } else if (validTableNames.length === 0 || validTableNames.length > 9) {
+                dbName = await uiUtils.question({ origin: this._origin, text: `No database could be found with the provided name. Please type a valid name` })
+            } else {
+                // more than one object => we show a list of choices
+                dbName = (await uiUtils.choices({
+                    message: 'More than one table returned with those parameters, please select the one you want',
+                    choices: validTableNames,
+                    title: 'Select table'
+                }))['Select table'];
+            }
+        }
+        return databaseObjects[dbName];
+    }
+
+
     static async createFunctions(params: {
         applicationName: string;
         version?: string;
@@ -395,7 +114,7 @@ export class DatabaseFileHelper {
         }
 
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
+        const versionToChange = await DatabaseFileHelper.getVersionToChange(params, databaseVersionFiles, uiUtils);
 
         const actions = [
             'save',
@@ -467,12 +186,10 @@ export class DatabaseFileHelper {
                     listJsonObject: string[] = [],
                     listSortingAsc: string[] = [],
                     listSortingDesc: string[] = [];
-
                 for (let i = 0; i < fields.length; i++) {
                     const field = databaseObject.table[tableName].fields[fields[i]];
-                    camelCasedFields.push(`${indentationSpaces.repeat(2)}"${field.camelCasedName}" ${field.type}`);
+                    camelCasedFields.push(`${indentationSpaces.repeat(2)}"${field.camelCasedName}" ${!!field.type && field.type.toLowerCase() === 'serial' ? 'integer' : field.type}`);
                     tableFields.push(indentationSpaces.repeat(2) + field.name);
-
                     if (tablesToRetrieveAlong.length) {
                         for (let j = 0; j < tablesToRetrieveAlong.length; j++) {
                             const subTable = tablesToRetrieveAlong[j];
@@ -636,7 +353,7 @@ export class DatabaseFileHelper {
         return await Promise.resolve(true);
     }
 
-    private static async updateVersionFile(filePath: string, version: string, filePaths: string[], applicationName: string, uiUtils: UiUtils) {
+    static async updateVersionFile(filePath: string, version: string, filePaths: string[], applicationName: string, uiUtils: UiUtils) {
 
         // if something has been changed, we update the file
         const newVersionJsonPath = path.resolve(filePath, 'postgres', 'release', version, 'version.json');
@@ -679,7 +396,7 @@ export class DatabaseFileHelper {
         }
 
         const databaseVersionFiles: DatabaseVersionFile[] = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
-        const versionToChange = await DatabaseFileHelper._getVersionToChange(params, databaseVersionFiles, uiUtils);
+        const versionToChange = await DatabaseFileHelper.getVersionToChange(params, databaseVersionFiles, uiUtils);
 
         if (!params.tableDetails || (params.tableDetails && !params.tableDetails.name)) {
             // we have User Interraction to build the table

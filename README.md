@@ -10,11 +10,25 @@ cls && npm link && aws-mock start-server
 - [x] check in which version we want to add the functions
 - [x] add the functions to the version.json file
 - [x] create lambda functions
-- [-] create Angular files
+- [x] create Angular files
   - [x] create store files
   - [x] create model files
   - [x] create modules files
-  - [-] create components files
+  - [x] create components files
+- [ ] automatically read Database files before installation
+- [ ] fix unmapped files error message
+- [ ] create Database files
+  - [ ] fix replication from issued
+    - [ ] folder issue
+      - [ ] creating version files outside schema
+      - [ ] puting file path ralative to tables in the version.json file
+    - [ ] remove the constraints (external references and unique constraints)
+  - [ ] fix replication to foreign table script issue
+    - [ ] should be a foreign table script
+    - [ ] remove the constraints (external references and unique constraints)
+  - [ ] fix replication to replication script
+    - [ ] should be a "select dblink(..." not "select * from dblink(..."
+    - [ ] should have the correct table names
 - [x] read version files on install (version files only), and check file orders
 - [x] pass the uiUtils object to the lower levels (for later integration)
 - [x] check connection parameters on DB installtion

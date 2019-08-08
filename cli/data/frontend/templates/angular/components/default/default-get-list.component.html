@@ -1,14 +1,14 @@
 <div style="height: calc(100vh - 64px);">
   <as-split direction="horizontal" [useTransition]="true">
     <as-split-area size="40">
-      <app-item-list title="<title_case_name>"
+      <app-paginated-table title="<title_case_name>"
         [showNew]="<show_new_true_false>"
-        [itemList]="(<camel_cased_name>Store$|async)?.<camel_cased_name>List"
-        [loading]="(<camel_cased_name>Store$|async)?.getting<capitalized_camel_cased_name>"
+        [itemList]="(<camel_cased_name>$|async)?.<camel_cased_name>List"
+        [loading]="(<camel_cased_name>$|async)?.getting<capitalized_camel_cased_name>"
           linkAttribute="id"
-        displayAttribute="name"></app-item-list>
+        displayAttribute="name"></app-paginated-table>
     </as-split-area>
-    <as-split-area size="60" [visible]="!!(<camel_cased_name>Store$|async)?.<camel_cased_name>">
+    <as-split-area size="60" [visible]="!!(<camel_cased_name>$|async)?.<camel_cased_name>">
       <router-outlet></router-outlet>
     </as-split-area>
   </as-split>

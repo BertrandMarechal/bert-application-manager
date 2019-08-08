@@ -15,6 +15,7 @@ export class NgrxUtilsService {
   public static actionToServiceToAction(params: {
     actionsObs: Actions,
     actionsToListenTo: string[],
+    actionsToTransform?: string,
     serviceMethod: Function,
     payloadTransform?: (action: any, state?: any, state2?: any) => any,
     condition?: (action: any, state?: any, state2?: any) => boolean,
@@ -22,7 +23,8 @@ export class NgrxUtilsService {
     store?: Observable<Store<any>>,
     store2?: Observable<Store<any>>,
     successToastMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
-    successSwalMessage?: (data: any, action?: any, state?: any, state2?: any) => string
+    successSwalMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
+    postCall?: (data: any, action?: any, state?: any, state2?: any) => void
   }): Observable<Action> {
     return params.actionsObs
       .pipe(
@@ -31,11 +33,11 @@ export class NgrxUtilsService {
         withLatestFrom(params.store || interval(1)),
         withLatestFrom(params.store2 || interval(1)),
         mergeMap(([[action, state], state2]: [[{ type: string, payload?: any }, any], any]) => {
-          const actionString = action.type.replace(/router|page|effect|force/gi, 'Service');
+          const actionString = (params.actionsToTransform || action.type).replace(/router|page|effect|force/gi, 'Service');
           if (params.condition) {
             if (!params.condition(action, state, state2)) {
               return [{
-                type: 'Nothing'
+                type: actionString + ' nothing'
               }];
             }
           }
@@ -62,6 +64,9 @@ export class NgrxUtilsService {
                   type: 'success',
                   text: params.successToastMessage(data, action, state, state2)
                 });
+              }
+              if (params.postCall) {
+                params.postCall(data, action, state, state2);
               }
               return [
                 {
@@ -92,17 +97,19 @@ export class NgrxUtilsService {
     actionsObs: Actions,
     actionsToListenTo: string[],
     actionToDispatch: string,
-    condition?: (action: any, state?: any) => boolean,
-    payloadTransform?: (action: any, state?: any) => any,
+    condition?: (action: any, state?: any, state2?: any) => boolean,
+    payloadTransform?: (action: any, state?: any, state2?: any) => any,
     store?: Observable<Store<any>>
+    store2?: Observable<Store<any>>,
   }): Observable<Action> {
     return params.actionsObs
       .pipe(
         ofType(...params.actionsToListenTo),
         withLatestFrom(params.store || interval(1)),
-        mergeMap(([action, state]: [{ type: string, payload?: any }, any]) => {
+        withLatestFrom(params.store2 || interval(1)),
+        mergeMap(([[action, state], state2]: [[{ type: string, payload?: any }, any], any]) => {
           if (params.condition) {
-            if (!params.condition(action, state)) {
+            if (!params.condition(action, state, state2)) {
               return [{
                 type: 'Nothing'
               }];
@@ -110,7 +117,7 @@ export class NgrxUtilsService {
           }
           return [{
             type: params.actionToDispatch,
-            payload: params.payloadTransform ? params.payloadTransform(action, state) : action.payload
+            payload: params.payloadTransform ? params.payloadTransform(action, state, state2) : action.payload
           }];
         }),
         catchError((error: any) => {

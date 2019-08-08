@@ -333,7 +333,6 @@ export class DatabaseTable extends DatabaseSubObject {
             return;
         }
         tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
-
         const tableNameMatch = /[table|exists] (\"?public\"?\.)?\"?([a-z0-9_]+)\"? \(/i.exec(tableFile);
         if (tableNameMatch) {
             this.name = tableNameMatch[2];
@@ -370,6 +369,17 @@ export class DatabaseTable extends DatabaseSubObject {
                         agg[agg.length - 1] += ',' + curr;
                         return agg;
                     } else if (aggMatchOpen.length > aggMatchClose.length) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    }
+                }
+                const aggMatchOpenSquare = agg[agg.length - 1].match(/\[/g);
+                if (aggMatchOpenSquare) {
+                    const aggMatchCloseSquare = agg[agg.length - 1].match(/\]/g);
+                    if (!aggMatchCloseSquare) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    } else if (aggMatchOpenSquare.length > aggMatchCloseSquare.length) {
                         agg[agg.length - 1] += ',' + curr;
                         return agg;
                     }

@@ -23,7 +23,6 @@ const packagesToInstall = [
     'ngx-analytics',
     'ngx-cookie-service',
     'rxjs',
-    'rxjs-compat',
     'sweetalert2',
     '@angular/router',
     '@angular/animations',
@@ -65,7 +64,7 @@ export class FrontendFileHelper {
                     stdio: 'ignore',
                     cwd: frontendPath
                 });
-                
+
                 child.unref();
                 uiUtils.info({ origin: this._origin, message: 'installing dependencies in a separate process' });
             }
@@ -131,6 +130,7 @@ export class FrontendFileHelper {
         const modelFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'model.ts'));
         const moduleFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'module.ts'));
         const routingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'routing.ts'));
+        const materialFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'material.module.ts'));
         const appRoutingFileTemplate = await FileUtils.readFile(path.resolve(FrontendFileHelper.frontendTemplatesFolder, 'angular', 'app.routing.ts'));
 
         const ngrxFileHelper = new NgrxFileHelper();
@@ -177,7 +177,6 @@ export class FrontendFileHelper {
                     .replace(/<name_with_dashes>/g, nameWithDashes)
             };
             const serviceFunctions: string[] = [];
-
             let components: {
                 name: string;
                 path: string;
@@ -238,11 +237,11 @@ export class FrontendFileHelper {
                     name: `${capitalizedCamelCasedName}ViewComponent`,
                     path: `${nameWithDashes}-view/${nameWithDashes}-view.component`,
                     type: 'view'
-                }, {
+                }, /*{
                     name: `${capitalizedCamelCasedName}ListComponent`,
                     path: `${nameWithDashes}-list/${nameWithDashes}-list.component`,
                     type: 'list'
-                }, {
+                }, */{
                     name: `${capitalizedCamelCasedName}DetailsComponent`,
                     path: `${nameWithDashes}-details/${nameWithDashes}-details.component`,
                     type: 'details'
@@ -259,7 +258,6 @@ export class FrontendFileHelper {
                 );
                 filesToCreate.push(serviceFile);
             }
-
             const ngrxFiles: FileAndContent[] = ngrxFileHelper.getFiles();
             for (let i = 0; i < ngrxFiles.length; i++) {
                 filesToCreate.push(ngrxFiles[i]);
@@ -277,7 +275,6 @@ export class FrontendFileHelper {
                     fields: Object.keys(databaseObject.table[tableName].fields).map(key => databaseObject.table[tableName].fields[key])
                 });
 
-
                 for (let j = 0; j < componentFiles.length; j++) {
                     const componentFile = componentFiles[j];
                     filesToCreate.push({
@@ -286,7 +283,6 @@ export class FrontendFileHelper {
                     });
                 }
             }
-
             // module
             const moduleFile: FileAndContent = {
                 path: path.resolve(frontendPath, 'src', 'app', 'modules', nameWithDashes, `${nameWithDashes}.module.ts`),
@@ -300,6 +296,12 @@ export class FrontendFileHelper {
                     .replace(/<components_class_names>/g, components.map(component => {
                         return `${indentation.repeat(2)}${component.name},`
                     }).join('\n'))
+            };
+            // material module
+            const materialModuleFile: FileAndContent = {
+                path: path.resolve(frontendPath, 'src', 'app', 'modules', nameWithDashes, 'material', `${nameWithDashes}-material.module.ts`),
+                fileContent: materialFileTemplate
+                    .replace(/<capitalized_camel_cased_name>/g, capitalizedCamelCasedName)
             };
             // routing
             const routingFile: FileAndContent = {
@@ -338,6 +340,7 @@ export class FrontendFileHelper {
                 moduleCapitalizedCamelCasedName: capitalizedCamelCasedName
             })
             filesToCreate.push(moduleFile);
+            filesToCreate.push(materialModuleFile);
             filesToCreate.push(routingFile);
         }
         if (modulesToAdd.length) {
@@ -355,7 +358,7 @@ export class FrontendFileHelper {
             }
             for (let i = 0; i < modulesToAdd.length; i++) {
                 const moduleToAdd = modulesToAdd[i];
-                const expectedPath = `.${moduleToAdd.modulePath.replace(/\.ts$/, `#${moduleToAdd.moduleCapitalizedCamelCasedName}Module`)}`
+                const expectedPath = `.${moduleToAdd.modulePath.replace(/\.ts$/, ``)}`
                 const moduleRegexp = new RegExp(expectedPath
                     .replace(/\./g, '\\.')
                     .replace(/\\/g, '\\\\'), 'i');
@@ -365,14 +368,14 @@ export class FrontendFileHelper {
                     if (firstBlock && firstBlock[2]) {
                         appRoutingFileContent = appRoutingFileContent.replace(firstBlock[1],
                             `[{\n${indentation.repeat(2)}path: '${moduleToAdd.nameWithDashes}',\n` +
-                            `${indentation.repeat(2)}loadChildren: '${expectedPath}',\n${indentation}},\n${firstBlock[2]}]`);
+                            `${indentation.repeat(2)}loadChildren: () => import('${expectedPath}').then(mod => mod.${moduleToAdd.moduleCapitalizedCamelCasedName}Module)`);
                     }
                 }
             }
-            filesToCreate.push({
-                fileContent: appRoutingFileContent,
-                path: routingFilePath
-            });
+            // filesToCreate.push({
+            //     fileContent: appRoutingFileContent,
+            //     path: routingFilePath
+            // });
         }
         uiUtils.stoprProgress();
 
@@ -403,24 +406,25 @@ export class FrontendFileHelper {
         switch (params.action) {
             case 'get':
                 functionParameters = 'id: number';
-                lambdaFunctionParameters = 'id: id';
+                lambdaFunctionParameters = 'id';
                 break;
             case 'delete':
                 functionParameters = 'id: number';
-                lambdaFunctionParameters = 'id: id';
+                lambdaFunctionParameters = 'id';
                 break;
             case 'list':
                 functionParameters = 'params: any';
-                lambdaFunctionParameters = 'params: params';
+                lambdaFunctionParameters = 'params';
                 break;
             case 'save':
                 functionParameters = `params: ${params.capitalizedCamelCasedName}`;
-                lambdaFunctionParameters = 'params: params';
+                lambdaFunctionParameters = 'params';
                 break;
             default:
                 break;
         }
         let f = `${indentation}async ${params.action}${params.capitalizedCamelCasedName}(${functionParameters}): Promise<${params.capitalizedCamelCasedName}> {\n`;
+        f += `${indentation}return this.lambdaService.callLambdaPromise({\n`;
         f += `${indentation.repeat(2)}apiName: '${params.serviceName}',\n`;
         f += `${indentation.repeat(2)}functionName: 'runfunction',\n`;
         f += `${indentation.repeat(2)}payload: {functionName: '${params.serviceFunctionName}', ${lambdaFunctionParameters}}\n`;
@@ -447,10 +451,16 @@ export class FrontendFileHelper {
             case 'integer':
             case 'serial':
                 return 'number';
+            case 'int[]':
+            case 'integer[]':
+            case 'serial[]':
+                return 'number[]';
             case 'text':
             case 'char':
+            case 'character':
             case 'varchar':
             case 'nvarchar':
+            case 'uuid':
                 return 'string';
             case 'boolean':
                 return 'boolean';

@@ -4,15 +4,15 @@ import * as from<capitalized_camel_cased_name> from '@app/store/reducers/<name_w
 import {Store} from '@ngrx/store';
 
 @Component({
-  selector: 'app-<name_with_dashes>-details',
-  templateUrl: './<name_with_dashes>-details.component.html'
+  selector: 'app-<name_with_dashes>-view',
+  templateUrl: './<name_with_dashes>-view.component.html'
 })
-export class <capitalized_camel_cased_name>DetailsComponent implements OnInit {
-  <camel_cased_name>Store$: Observable<from<capitalized_camel_cased_name>.State>;
+export class <capitalized_camel_cased_name>ViewComponent implements OnInit {
+  <camel_cased_name>$: Observable<from<capitalized_camel_cased_name>.State>;
 
   constructor(private store: Store<from<capitalized_camel_cased_name>.FeatureState>) { }
 
   ngOnInit() {
-    this.<camel_cased_name>Store$ = this.store.select('<camel_cased_name>Store');
+    this.<camel_cased_name>$ = this.store.select('<camel_cased_name>');
   }
 }

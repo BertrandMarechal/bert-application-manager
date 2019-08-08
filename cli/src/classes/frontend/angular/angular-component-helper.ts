@@ -47,6 +47,7 @@ export class AngularComponentHelper {
         let actionImport = '';
         if (params.hasList) {
             actionImport = `import * as ${params.capitalizedCamelCasedName}Actions from '@app/store/actions/${params.nameWithDashes}.actions';`
+            actionImport = `import {DatabasePaginationInput} from '@app/models/pagination.model';`
 
             listAction = `${indentation}onList(event: DatabasePaginationInput) {\n;`;
             listAction += `${indentation.repeat(2)}this.store.dispatch(new AdminActions.PageGetContractPersonsAction(event));\n`
@@ -62,6 +63,7 @@ export class AngularComponentHelper {
                 FrontendFileHelper.frontendTemplatesFolder, 'angular', 'components', 'default', `default${params.hasGet ? '-get' : ''}${params.hasList ? '-list' : ''}.component.html`
             )
         );
+
         return [{
             fileContent: defaultComponentTs
                 .replace(/<capitalized_camel_cased_name>/g, params.capitalizedCamelCasedName)
@@ -75,6 +77,7 @@ export class AngularComponentHelper {
                 .replace(/<capitalized_camel_cased_name>/g, params.capitalizedCamelCasedName)
                 .replace(/<camel_cased_name>/g, params.camelCasedName)
                 .replace(/<can_save_true_false>/g, params.hasSave ? 'true' : 'false')
+                .replace(/<show_new_true_false>/g, params.hasSave ? 'true' : 'false')
                 .replace(/<title_case_name>/g, SyntaxUtils.camelCaseToTitleCase(params.capitalizedCamelCasedName)),
             path: `${params.path}.html`,
         }];
@@ -115,7 +118,6 @@ export class AngularComponentHelper {
                 FrontendFileHelper.frontendTemplatesFolder, 'angular', 'components', 'details', `details.component.html`
             )
         );
-
         const detailsFields = params.fields
             .filter(field => !field.tags['not-for-details'] &&
                 (['modifiedAt', 'modifiedBy', 'createdAt', 'createdBy'].indexOf(field.camelCasedName) === -1 || field.tags['for-details']))
@@ -136,7 +138,7 @@ export class AngularComponentHelper {
                     default:
                         break;
                 }
-                toReturn += `${indentation.repeat(4)})`;
+                toReturn += `${indentation.repeat(4)}}`;
                 return toReturn;
             }).join(',\n');
         return [{
@@ -170,9 +172,9 @@ export class AngularComponentHelper {
                 ['modifiedAt', 'modifiedBy', 'createdAt', 'createdBy'].indexOf(field.camelCasedName) === -1)
             .map(field => {
                 if (field.camelCasedName === 'id') {
-                    return `${indentation.repeat(3)}'id': new FormControl(this.${params.camelCasedName}.id)`;
+                    return `${indentation.repeat(3)}id: new FormControl(this.${params.camelCasedName}.id)`;
                 } else {
-                    let toReturn = `${indentation.repeat(3)}'${field.camelCasedName}': new FormControl(this.${params.camelCasedName}.${field.camelCasedName}`;
+                    let toReturn = `${indentation.repeat(3)}${field.camelCasedName}: new FormControl(this.${params.camelCasedName}.${field.camelCasedName}`;
                     if (field.notNull) {
                         toReturn += ', Validators.required';
                     }

@@ -7,6 +7,7 @@ import { SocketUtils } from '../utils/socket.utils';
 import { RepositoryUtils } from '../utils/repository.utils';
 import { DatabaseInstaller } from '../classes/database/database-installer';
 import { UiUtils } from '../utils/ui.utils';
+import { DatabaseTemplates } from '../classes/database/database-templates';
 
 export class DatabaseServer {
     static declareRoutes(app: Express, socketUtils: SocketUtils) {
@@ -67,7 +68,7 @@ export class DatabaseServer {
         });
         app.post('/databases/:name/add-template', async (req: Request, res: Response) => {
             try {
-                await DatabaseFileHelper.addTemplate({
+                await DatabaseTemplates.addTemplate({
                     applicationName: req.params.name,
                     template: req.body.template
                 }, socketUtils);

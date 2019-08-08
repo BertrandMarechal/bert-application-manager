@@ -1,0 +1,25 @@
+.container-card {
+  min-width: 200px;
+}
+.line-container {
+  display: grid;
+  grid-column-gap: 20px;
+  grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
+  width: 100%;
+  align-content: center;
+  align-items: center;
+}
+.line-container-detail-name {
+  color: #adadad
+}
+.right-align {
+  justify-self: right;
+}
+.card-container {
+  display: grid;
+  grid-column-gap: 20px;
+  grid-template-columns: repeat(auto-fit,minmax(300px,1fr))
+}
+.detail-card {
+  margin: 10px;
+}

@@ -18,13 +18,14 @@ export class SyntaxUtils {
         let toReturn = fileString;
         toReturn = toReturn
             .replace(/--.*?$/gm, '')
-            .replace(/\r/g, ' ')
-            .replace(/\n/g, ' ')
+            // .replace(/\r/g, ' ')
+            // .replace(/\n/g, ' ')
             .replace(/\\r/g, ' ')
             .replace(/\\n/g, ' ')
-            .replace(/\t/g, ' ')
-            .replace(/ {2}/g, ' ')
-            .replace(/ {2}/g, ' ') // we do this one twice to manage the odd number of spaces
+            // .replace(/\t/g, ' ')
+            // .replace(/ {2}/g, ' ')
+            // .replace(/ {2}/g, ' ') // we do this one twice to manage the odd number of spaces
+            .replace(/\s+/g, ' ')
             .replace(/\\"/g, '');
         return toReturn;
     }

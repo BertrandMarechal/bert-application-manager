@@ -1,10 +1,9 @@
-import { DatabaseVersionFile, DatabaseObject } from "../../models/database-file.model";
+import { DatabaseVersionFile } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
 import { PostgresUtils } from "../../utils/postgres.utils";
-import { DatabaseHelper } from "./database-helper";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { UiUtils } from "../../utils/ui.utils";
-import { DatabaseRepositoryReader } from "./database-repo-reader";
+import { DatabaseHelper } from "./database-helper";
 
 export class DatabaseInstaller {
     private static _origin = 'DatabaseInstaller';
@@ -19,7 +18,10 @@ export class DatabaseInstaller {
             params.environment = 'local';
         }
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        
+        await RepositoryUtils.readRepository({
+            type: "postgres"
+        }, uiUtils);
+
         // get the db as object to get the params
         let databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         // get the application and its versions
@@ -29,17 +31,17 @@ export class DatabaseInstaller {
         }
 
         // await DatabaseRepositoryReader.readRepo(params.applicationName, databaseObject._properties.path, uiUtils);
-        
+
         // get the application parameters
         const fileParameters = await DatabaseHelper.getApplicationDatabaseParameters(params.applicationName);
         if (!fileParameters[params.environment] || !fileParameters[params.environment].password_root || fileParameters[params.environment].server) {
-            while(!fileParameters[params.environment].password_root) {
+            while (!fileParameters[params.environment].password_root) {
                 fileParameters[params.environment].password_root = await uiUtils.question({
                     origin: DatabaseInstaller._origin,
                     text: 'Please provide the root password'
                 });
             }
-            while(!fileParameters[params.environment].server) {
+            while (!fileParameters[params.environment].server) {
                 fileParameters[params.environment].server = await uiUtils.question({
                     origin: DatabaseInstaller._origin,
                     text: 'Please provide the root password'
@@ -63,7 +65,7 @@ export class DatabaseInstaller {
         } else {
             versionsToInstall = databaseData;
         }
-        
+
         if (!versionsToInstall[0]) {
             throw 'Invalid version name. Please run the "am repo read" again if this version is missing.';
         }
@@ -110,10 +112,10 @@ export class DatabaseInstaller {
                     const subVersion = version.versions[j];
                     if (subVersion.databaseToUse === 'postgres') {
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/postgres`, uiUtils);
-                    } else {                        
+                    } else {
                         postgresUtils.setConnectionString(`postgres://root:${fileParameters[params.environment].password_root}@${fileParameters[params.environment].server || 'localhost'}:5432/${params.environment}_${databaseObject._properties.dbName}`, uiUtils);
                     }
-                    uiUtils.startProgress({length: subVersion.files.length, start: 0, title: `${params.applicationName} - ${version.versionName}`});
+                    uiUtils.startProgress({ length: subVersion.files.length, start: 0, title: `${params.applicationName} - ${version.versionName}` });
                     for (let k = 0; k < subVersion.files.length && carryOn; k++) {
                         const file = subVersion.files[k];
                         let fileString = await FileUtils.readFile(file.fileName);
@@ -126,16 +128,17 @@ export class DatabaseInstaller {
                         }
                         try {
                             await postgresUtils.execute(fileString);
+
                         } catch (error) {
                             uiUtils.stoprProgress();
-                            console.log(error);
-                            uiUtils.error({origin: this._origin, message: fileString});
-                            uiUtils.error({origin: this._origin, message: `Error on file ${file.fileName}`});
+                            uiUtils.error({ origin: this._origin, message: fileString });
+                            uiUtils.error({ origin: this._origin, message: `Error on file ${file.fileName}` });
                             FileUtils.openFileInFileEditor(file.fileName);
                             let text = 'There has been an issue with this file.\n';
                             text += 'Press "Enter" to retry this file\n';
                             text += 'Use "r" to restart the whole installation\n';
                             text += 'Use "s" to stop\n';
+                            console.log(error);
                             const response = await uiUtils.question({
                                 origin: this._origin,
                                 text: text
@@ -147,7 +150,7 @@ export class DatabaseInstaller {
                                     break;
                                 case '':
                                     k = k - 1;
-                                    uiUtils.startProgress({length: subVersion.files.length, start: k + 1, title: `${params.applicationName} - ${version.versionName}`});
+                                    uiUtils.startProgress({ length: subVersion.files.length, start: k + 1, title: `${params.applicationName} - ${version.versionName}` });
                                     break;
                                 case 's':
                                 default:
@@ -161,7 +164,7 @@ export class DatabaseInstaller {
                 }
             }
         } catch (error) {
-            uiUtils.error({origin: this._origin, message: error});
+            uiUtils.error({ origin: this._origin, message: error });
             postgresUtils.endConnection();
             process.exit();
         }
