@@ -15,22 +15,25 @@ cls && npm link && aws-mock start-server
   - [x] create model files
   - [x] create modules files
   - [x] create components files
-- [x] automatically read Database files before installation
-- [ ] fix unmapped files error message
-- [-] create Database files
-  - [x] fix replication from issued
-    - [x] folder issue
-      - [x] creating version files outside schema
-      - [x] puting file path ralative to tables in the version.json file
-  - [ ] fix replication to foreign table script issue
-    - [ ] should be a foreign table script
-    - [ ] remove the constraints (external references and unique constraints)
-  - [ ] fix replication to replication script
-    - [ ] should be a "select dblink(..." not "select * from dblink(..."
-    - [ ] should have the correct table names
-- [x] read version files on install (version files only), and check file orders
-- [x] pass the uiUtils object to the lower levels (for later integration)
-- [x] check connection parameters on DB installtion
+- [ ] DB
+  - [x] automatically read Database files before installation
+  - [ ] accept database suffix as name
+  - [ ] edit object - accept partial object name
+  - [ ] fix unmapped files error message
+  - [x] create Database files
+    - [x] fix replication from issued
+      - [x] folder issue
+        - [x] creating version files outside schema
+        - [x] puting file path ralative to tables in the version.json file
+    - [x] fix replication to foreign table script issue
+      - [x] should be a foreign table script
+      - [x] remove the external references
+    - [x] fix replication to replication script
+      - [x] should be a "select dblink(..." not "select * from dblink(..."
+      - [x] should have the correct table names
+  - [x] read version files on install (version files only), and check file orders
+  - [x] pass the uiUtils object to the lower levels (for later integration)
+  - [x] check connection parameters on DB installtion
 
 
 ## Tags

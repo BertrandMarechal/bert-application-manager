@@ -323,7 +323,7 @@ export class DatabaseTemplates {
                 // create the local table file
                 let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
                 fileString = fileString
-                    .replace(/serial\W+primary\W+key/gim, 'INTEGER');
+                    .replace(/serial\W+primary\W+key/gim, 'INTEGER NOT NULL UNIQUE');
 
                 let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables');
                 let fileName = `${params.tableName}.sql`;
@@ -333,27 +333,34 @@ export class DatabaseTemplates {
                     ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '02-local-tables', `${params.tableName}.sql`].join('/')
                 );
             }
+            const foreignTableName = `${databaseObject._properties.dbName}_${params.tableName}`;
             // set up the user mapping
-            if (!databaseObject["foreign-tables"][`${databaseObject._properties.dbName}_${params.tableName}`]) {
+            if (!databaseObject["foreign-tables"][foreignTableName]) {
                 // create the foreign table file
-                let fileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
-                fileString = fileString
-                    .replace(/serial\W+primary\W+key/gim, 'INTEGER')
+                let fileString = await FileUtils.readFile(path.resolve(process.argv[1], DatabaseHelper.dbTemplatesFolder, 'replications', 'to', `foreign_table.sql`));
+                let currentFileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
+                currentFileString = currentFileString
+                    .replace(params.tableName, foreignTableName)
                     .replace(/references\W+[a-z0-9_]+\W\([a-z0-9_]+\)/gi, '')
-                    .replace(/\Wunique/gi, '');
+                    .replace(/serial\W+primary\W+key/gim, 'INTEGER NOT NULL UNIQUE');
+                fileString = fileString
+                    .replace(/<target_db>/gi, databaseObject._properties.dbName)
+                    .replace(/<source_db>/gi, sourceDatabaseObject._properties.dbName)
+                    .replace(/<table_name>/gi, params.tableName)
+                    .replace(/<table_code_on_foreign_server>/gi, currentFileString);
 
                 let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables');
-                let fileName = `${databaseObject._properties.dbName}_${params.tableName}.sql`;
+                let fileName = `${foreignTableName}.sql`;
                 FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
 
                 templateFiles.push(
-                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables', `${databaseObject._properties.dbName}_${params.tableName}.sql`].join('/')
+                    ['../', 'postgres', 'release', versionToChange, 'schema', '02-external-systems', '00-replications', '03-foreign-tables', `${foreignTableName}.sql`].join('/')
                 );
             }
             // replicate the table
-            fileString = `select * from dblink('${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}', '
-                DELETE FROM ${databaseObject._properties.dbName}_${params.tableName};
-                INSERT INTO ${databaseObject._properties.dbName}_${params.tableName}(${
+            fileString = `select dblink('${databaseObject._properties.dbName}_${sourceDatabaseObject._properties.dbName}', '
+                DELETE FROM ${foreignTableName};
+                INSERT INTO ${foreignTableName}(${
                 Object.keys(sourceDatabaseObject.table[params.tableName].fields).map(field => field).join(',')
                 })
                 SELECT ${
@@ -363,7 +370,7 @@ export class DatabaseTemplates {
             ')`
 
             let folderPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', versionToChange, 'scripts');
-            let fileName = `${databaseObject._properties.dbName}_${params.tableName}_replication.sql`;
+            let fileName = `${foreignTableName}_replication.sql`;
             FileUtils.writeFileSync(path.resolve(folderPath, fileName), fileString);
 
             templateFiles.push(
