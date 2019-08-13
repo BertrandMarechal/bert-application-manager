@@ -13,6 +13,7 @@ import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
 import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
 import { LoggerUtils } from './utils/logger.utils';
 import { mainHelp, databaseHelp } from './utils/documentation.utils';
+import { ServerlessRepositoryReader } from './classes/serverless/serverless-repo-reader';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -192,6 +193,7 @@ const main = async () => {
                     { name: 'type', alias: 't', type: String, description: 'Type of the repository to read' },
                     { name: 'application-name', alias: 'a', type: String, description: 'Application Name' },
                     { name: 'filter', alias: 'f', type: String, description: 'regex filter to apply to the commands' },
+                    { name: 'database', alias: 'd', type: String, description: 'database name if DB name differs from the middle tier name' },
                 ]
                 const serverlessOptions = commandLineArgs(serverlessOptionsDefinitions, { argv, stopAtFirstUnknown: true });
 
@@ -203,6 +205,14 @@ const main = async () => {
                     case 'generate-functions':
                         await ServerlessFileHelper.generateFunctions({
                             applicationName: serverlessOptions['application-name'],
+                            filter: serverlessOptions.filter
+                        }, loggerUtils);
+                    case 'cro':
+                    case 'ro':
+                    case 'check-read-only':
+                        await ServerlessRepositoryReader.checkPostgresCalls({
+                            applicationName: serverlessOptions['application-name'],
+                            databaseName: serverlessOptions['database'],
                             filter: serverlessOptions.filter
                         }, loggerUtils);
                     default:

@@ -17,10 +17,23 @@ export class DatabaseHelper {
         if (FileUtils.checkIfFolderExists(DatabaseHelper.postgresDbDataPath)) {
             fileData = await FileUtils.readJsonFile(DatabaseHelper.postgresDbDataPath);
         }
-        return fileData[applicationName];
+        if (applicationName.match(/-database$/i)) {
+            return fileData[applicationName];
+        } else {
+            // we might be trying to get the database from its suffix
+            // let's map the db to those, and check if ours exists
+            const databaseMapping: { [name: string]: string } = Object.keys(fileData)
+                .reduce((agg: { [name: string]: string }, curr: string) => {
+                    if (fileData[curr]._properties && fileData[curr]._properties.dbName) {
+                        agg[fileData[curr]._properties.dbName] = curr;
+                    }
+                    return agg;
+                }, {});
+            return fileData[databaseMapping[applicationName]];
+        }
     }
 
-    static async getApplicationDatabaseObjects(): Promise<{[dbName: string]: DatabaseObject}> {
+    static async getApplicationDatabaseObjects(): Promise<{ [dbName: string]: DatabaseObject }> {
         FileUtils.createFolderStructureIfNeeded(DatabaseHelper.tempFolderPath);
         let fileData: { [name: string]: DatabaseObject } = {};
         if (FileUtils.checkIfFolderExists(DatabaseHelper.postgresDbDataPath)) {

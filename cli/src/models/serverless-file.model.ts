@@ -26,7 +26,7 @@ export class LambdaFunctionEvent {
                 this.params = {
                     bucket: params.s3.bucket,
                     event: params.s3.event,
-                    rules: params.s3.rules.map((x: {suffix?: string, prefix?: string}) => {
+                    rules: params.s3.rules.map((x: { suffix?: string, prefix?: string }) => {
                         if (x.suffix) {
                             return {
                                 type: 'suffix',
@@ -37,7 +37,7 @@ export class LambdaFunctionEvent {
                             return {
                                 type: 'prefix',
                                 value: x.prefix
-                            }; 
+                            };
                         }
                     })
                 };
@@ -51,7 +51,7 @@ export class LambdaFunction {
     handler: string;
     handlerFunctionName: string;
     events: LambdaFunctionEvent[];
-    layers: LambdaLayer[]
+    layers: LambdaLayer[];
 
     constructor(params?: any) {
         this.name = '';
@@ -63,11 +63,11 @@ export class LambdaFunction {
             this.name = params.functionName;
             this.handler = params.handler.split('.')[0];
             this.handlerFunctionName = params.handler.split('.')[1];
-            if (params.events) {                
+            if (params.events) {
                 this.events = params.events.map((x: any) => new LambdaFunctionEvent(x));
             }
-            if (params.layers) {                
-                this.layers = params.layers.map((x: string) => {name: x});
+            if (params.layers) {
+                this.layers = params.layers.map((x: string) => { name: x });
             }
         }
     }
@@ -76,7 +76,7 @@ export class LambdaFunction {
 export class ServerlessFile {
     fileName: string;
     serviceName: string;
-    environmentVariables: {key: string, value: string, variableFileName?: string, declared: boolean}[];
+    environmentVariables: { key: string, value: string, variableFileName?: string, declared: boolean }[];
     functions: LambdaFunction[];
 
     constructor(params?: any) {
@@ -97,7 +97,7 @@ export class ServerlessFile {
                 });
             }
             this.functions = Object.keys(params.functions)
-                .map(x => new LambdaFunction({...params.functions[x], functionName: x}));
+                .map(x => new LambdaFunction({ ...params.functions[x], functionName: x }));
         }
     }
 }

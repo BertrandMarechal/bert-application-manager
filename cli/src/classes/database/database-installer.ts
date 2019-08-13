@@ -101,6 +101,16 @@ export class DatabaseInstaller {
         uiUtils.info({ origin: this._origin, message: `Found ${versionsToInstall.length} versions to install` });
         const postgresUtils = new PostgresUtils();
         let carryOn = true;
+        versionsToInstall.sort((a, b) => {
+            if (a.versionName === 'current') {
+                return 1;
+            } else if (b.versionName === 'current') {
+                return -1;
+            }
+            const countA = a.versionName.split('.').reverse().reduce((agg, x, i) => agg + +x * Math.pow(100, i), 0);
+            const countB = b.versionName.split('.').reverse().reduce((agg, x, i) => agg + +x * Math.pow(100, i), 0);
+            return countA - countB;
+        })
         try {
             for (let i = 0; i < versionsToInstall.length && carryOn; i++) {
                 const version = versionsToInstall[i];

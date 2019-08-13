@@ -15,10 +15,13 @@ cls && npm link && aws-mock start-server
   - [x] create model files
   - [x] create modules files
   - [x] create components files
+- [x] Middle tier
+  - [x] check that we are using process or processReadOnly in the correct cases
 - [ ] DB
   - [x] automatically read Database files before installation
-  - [ ] accept database suffix as name
+  - [x] accept database suffix as name
   - [ ] edit object - accept partial object name
+  - [ ] edit object - accept object names without type
   - [ ] fix unmapped files error message
   - [x] create Database files
     - [x] fix replication from issued

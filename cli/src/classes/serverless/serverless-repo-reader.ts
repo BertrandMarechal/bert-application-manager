@@ -4,6 +4,10 @@ import { ServerlessFile } from "../../models/serverless-file.model";
 import path from 'path';
 import colors from 'colors';
 import { UiUtils } from "../../utils/ui.utils";
+import { RepositoryUtils } from "../../utils/repository.utils";
+import { DatabaseObject } from "../../models/database-file.model";
+import { DatabaseHelper } from "../database/database-helper";
+import { LoggerUtils } from "../../utils/logger.utils";
 
 export class ServerlessRepositoryReader {
     private static _origin = 'ServerlessRepositoryReader';
@@ -21,7 +25,7 @@ export class ServerlessRepositoryReader {
         });
         const serverlessFiles = await ServerlessRepositoryReader._readFiles(files, variableFiles, uiUtils);
 
-        // read the current db file and add on
+        // read the current serverless file and add on
         FileUtils.createFolderStructureIfNeeded(ServerlessRepositoryReader._tempFolderPath);
         let fileData: { [name: string]: ServerlessFile[] } = {};
         if (FileUtils.checkIfFolderExists(ServerlessRepositoryReader._serverlessDbPath)) {
@@ -39,7 +43,7 @@ export class ServerlessRepositoryReader {
     private static async _readFiles(files: string[], variableFiles: string[], uiUtils: UiUtils): Promise<ServerlessFile[]> {
         const serverlessFiles: ServerlessFile[] = [];
 
-        uiUtils.startProgress({ length: files.length, start: 0, title: 'serverless.yml'});
+        uiUtils.startProgress({ length: files.length, start: 0, title: 'serverless.yml' });
         for (let i = 0; i < files.length; i++) {
             uiUtils.progress(i + 1);
             const fileString = FileUtils.readFileSync(files[i]);
@@ -89,10 +93,10 @@ export class ServerlessRepositoryReader {
 
     static async listFunctions(filter: string, uiUtils: UiUtils): Promise<void> {
         filter = filter || '';
-        
+
         let regex: RegExp = new RegExp(filter);
         const fileData: { [name: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
-        
+
         if (!fileData) {
             uiUtils.warning({ origin: ServerlessRepositoryReader._origin, message: 'No functions found' });
         } else {
@@ -115,5 +119,110 @@ export class ServerlessRepositoryReader {
                 }).reduce((agg, curr) => agg.concat(curr), []).filter(Boolean);
             console.log(functions.join('\n'));
         }
+    }
+
+    static async checkPostgresCalls(params: {
+        applicationName: string;
+        databaseName?: string;
+        filter: string;
+    }, uiUtils: UiUtils) {
+        await RepositoryUtils.checkOrGetApplicationName(params, 'middle-tier', uiUtils);
+        const applicationDatabaseName = params.databaseName || params.applicationName.replace(/\-middle-tier$/, '-database');
+        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(applicationDatabaseName);
+        if (!databaseObject) {
+            throw 'This application does not exist';
+        }
+
+        const allServerlessFiles: { [appName: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
+        const serverlessFiles = allServerlessFiles[params.applicationName];
+        if (!serverlessFiles) {
+            throw 'This application does not exist';
+        }
+        const functionsAndMode: { [functionName: string]: string } = Object.keys(databaseObject.function)
+            .reduce((agg, curr) => ({ ...agg, [curr]: databaseObject.function[curr].mode }), {});
+        const functionsWithIssues: {
+            lambdaFunctionName: string;
+            error: string;
+            severity: 'error' | 'warning';
+        }[] = [];
+        const fileCount = serverlessFiles.reduce((agg, curr) => agg + curr.functions.length, 0);
+        uiUtils.startProgress({ length: fileCount, start: 0, title: 'analyzing functions' });
+
+        for (let i = 0; i < serverlessFiles.length; i++) {
+            uiUtils.progress(i + 1);
+            const serverlessFile = serverlessFiles[i];
+            for (let j = 0; j < serverlessFile.functions.length; j++) {
+                const serverlessFunction = serverlessFile.functions[j];
+                let serverlessFunctionString = '';
+                try {
+                    serverlessFunctionString = await FileUtils.readFile(path.resolve(
+                        serverlessFile.fileName.replace(/serverless\.yml$/, ''),
+                        `${serverlessFunction.handler}.js`
+                    ));
+                } catch (error) {
+                    functionsWithIssues.push({
+                        lambdaFunctionName: serverlessFunction.handlerFunctionName,
+                        severity: "error",
+                        error: `File "${
+                            path.resolve(serverlessFile.fileName.replace(/serverless\.yml$/, ''), `${serverlessFunction.handler}.js`)
+                            }" does not exist`
+                    });
+                }
+                if (serverlessFunctionString) {
+
+                    serverlessFunctionString = ServerlessRepositoryReader
+                        .formatServerlessFile(serverlessFunctionString);
+                    const processRegex = /(process|processReadOnly)\([^']+(?:\'|")([a-z0-9]+\_[a-z0-9]+\_[a-z0-9]+)(?:\'|")/gi;
+                    let extracted = processRegex.exec(serverlessFunctionString);
+                    while (extracted) {
+                        const [, typeOfProcess, functionName] = extracted;
+                        if (!functionsAndMode[functionName]) {
+                            functionsWithIssues.push({
+                                lambdaFunctionName: serverlessFunction.handlerFunctionName,
+                                severity: "error",
+                                error: 'Missing postgres function'
+                            });
+                        }
+                        if (typeOfProcess === 'process') {
+                            if (functionsAndMode[functionName] !== 'volatile') {
+                                // can be put on read only
+                                functionsWithIssues.push({
+                                    lambdaFunctionName: serverlessFunction.handlerFunctionName,
+                                    severity: 'warning',
+                                    error: `"${functionName}" can be put on read only mode`
+                                });
+                            }
+                        } else if (typeOfProcess === 'processReadOnly') {
+                            if (functionsAndMode[functionName] === 'volatile') {
+                                // can be put on read only
+                                functionsWithIssues.push({
+                                    lambdaFunctionName: serverlessFunction.handlerFunctionName,
+                                    severity: 'error',
+                                    error: `Please call "${functionName}" with the "process" operator`
+                                });
+                            }
+                        }
+                        extracted = processRegex.exec(serverlessFunctionString);
+                    }
+                }
+            }
+        }
+        uiUtils.stoprProgress();
+        for (let i = 0; i < functionsWithIssues.length; i++) {
+            const f = functionsWithIssues[i];
+            LoggerUtils[f.severity]({
+                message: `${f.lambdaFunctionName} - ${f.error}`,
+                origin: ServerlessRepositoryReader._origin
+            });
+        }
+    }
+
+    private static formatServerlessFile(fileString: string): string {
+        return fileString
+            .replace(/\r/g, '')
+            .replace(/\n/g, '')
+            .replace(/\t/g, ' ')
+            .replace(/  /g, ' ')
+            .replace(/  /g, ' ');
     }
 }

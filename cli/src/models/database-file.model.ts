@@ -476,7 +476,7 @@ export class DatabaseObject {
 
     table: { [name: string]: DatabaseTable; };
     setup: { [name: string]: DatabaseSubObject; };
-    function: { [name: string]: DatabaseSubObject; };
+    function: { [name: string]: DatabaseFunction; };
     index: { [name: string]: DatabaseSubObject; };
     type: { [name: string]: DatabaseSubObject; };
     data: { [name: string]: DatabaseDataScript; };

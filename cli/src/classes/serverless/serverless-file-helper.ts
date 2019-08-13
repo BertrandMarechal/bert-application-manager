@@ -1,10 +1,10 @@
-import {DatabaseHelper} from '../database/database-helper';
+import { DatabaseHelper } from '../database/database-helper';
 import { DatabaseObject } from '../../models/database-file.model';
 import { FileUtils } from '../../utils/file.utils';
 import path from 'path';
 import colors from 'colors';
 import yamljs from 'yamljs';
-import {ServerlessRepositoryReader} from './serverless-repo-reader';
+import { ServerlessRepositoryReader } from './serverless-repo-reader';
 import { indentationSpaces } from '../database/database-file-helper';
 import { RepositoryUtils } from '../../utils/repository.utils';
 import { UiUtils } from '../../utils/ui.utils';
@@ -19,7 +19,7 @@ export class ServerlessFileHelper {
         filter: string;
     }, uiUtils: UiUtils) {
         await RepositoryUtils.checkOrGetApplicationName(params, 'middle-tier', uiUtils);
-        
+
         const applicationDatabaseName = params.applicationName.replace(/\-middle-tier$/, '-database');
 
         // read the db File, to get the list of functions
@@ -27,7 +27,7 @@ export class ServerlessFileHelper {
         if (!databaseObject) {
             throw 'This application does not exist';
         }
-        
+
         const actions = [
             'save',
             'get',
@@ -37,10 +37,10 @@ export class ServerlessFileHelper {
         let filesCreated = 0;
         let filesIgnored = 0;
         let filesOverwritten = 0;
-        
+
         const tables = Object.keys(databaseObject.table);
 
-        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions'});
+        uiUtils.startProgress({ length: tables.length * 4, start: 0, title: 'Functions' });
 
         const functionsToAdd: {
             functionName: string;
@@ -55,7 +55,7 @@ export class ServerlessFileHelper {
         for (let t = 0; t < tables.length; t++) {
             const tableName = tables[t];
             if (!databaseObject.table[tableName].tags.ignore) {
-                const slsParams: {[name: string]: string} = {
+                const slsParams: { [name: string]: string } = {
                     function_name: '',
                     read_only: '',
                     db_function_name: '',
@@ -66,10 +66,10 @@ export class ServerlessFileHelper {
                     .replace(new RegExp(`\_${databaseObject.table[tableName].tableSuffix}$`), '')
                     .replace(new RegExp(`^${databaseObject._properties.dbName}t\_`), '');
                 const nameWithoutUnderscore = nameWithoutPrefixAndSuffix.replace(/_/g, '');
-                const serviceName: string = databaseObject.table[tableName].tags['service-name'] ? 
+                const serviceName: string = databaseObject.table[tableName].tags['service-name'] ?
                     databaseObject.table[tableName].tags['service-name'].value : 'service';
                 const folderPath = path.resolve(databaseObject._properties.path.replace('database', 'middle-tier'), 'lambda', serviceName);
-    
+
                 FileUtils.createFolderStructureIfNeeded(folderPath);
                 for (let i = 0; i < actions.length; i++) {
                     const action = actions[i];
@@ -97,14 +97,14 @@ export class ServerlessFileHelper {
 
                     if (!databaseObject.table[tableName].tags[`no-${action}`]) {
                         // let fileString = await FileUtils.readFile(path.resolve(process.argv[1], ServerlessFileHelper.serverlessTemplatesFolder, 'handlers', `lambda.js`));
-        
+
                         // for (let j = 0; j < slsParamsFields.length; j++) {
                         //     const param = slsParamsFields[j];
                         //     fileString = fileString.replace(new RegExp(`<${param}>`, 'gi'), slsParams[param]);
                         // }
 
                         let writeFile = true;
-    
+
                         // if (FileUtils.checkIfFolderExists(fileName)) {
                         //     // we have an existing file. We get the content, and check if it is different. If yer, we override
                         //     const currentFileCOntent = await FileUtils.readFile(fileName);
@@ -121,7 +121,7 @@ export class ServerlessFileHelper {
                         if (writeFile) {
                             // FileUtils.writeFileSync(fileName, fileString);
                             filesCreated++;
-                            
+
                             functionsToAdd.push({
                                 functionName: slsParams.function_name,
                                 dbFunctionName: slsParams.db_function_name,
@@ -152,9 +152,9 @@ export class ServerlessFileHelper {
         }
 
         if (filesCreated) {
-            uiUtils.success({origin: this._origin, message: feedback});
+            uiUtils.success({ origin: this._origin, message: feedback });
         } else {
-            uiUtils.warning({origin: this._origin, message: feedback});
+            uiUtils.warning({ origin: this._origin, message: feedback });
         }
 
         const takenNames: {
@@ -176,10 +176,10 @@ export class ServerlessFileHelper {
                     agg.push(curr.serviceName);
                 }
                 return agg;
-            }, []);            
+            }, []);
             for (let i = 0; i < services.length; i++) {
                 const service = services[i];
-                
+
                 let abbreviation = databaseObject._properties.dbName + '-' + service.substr(0, 1);
                 // get the service name
                 if (takenNames.serviceNames[service]) {
@@ -241,7 +241,7 @@ export class ServerlessFileHelper {
                             fileToCreate.to
                         );
                     }
-                    
+
                 }
                 if (existingService) {
                     // update the current service
@@ -258,16 +258,16 @@ export class ServerlessFileHelper {
                         yamljs.stringify(serverlessYmlAsJson, 15, 2)
                     );
                 } else {
-                    
+
                     // update the functions file
                     const functions = `module.exports.functions = {\n${
                         functionsToAdd
-                        .filter(x => x.serviceName === service)
-                        .map(x => `${indentationSpaces}${x.functionName}: {dbName: '${x.dbFunctionName}', fields: [${
-                            x.functionFields.map(y => `'${y}'`).join(', ')
-                        }], operationName: '${x.operation}', readOnly: ${x.readOnly ? 'true' : 'false'}}`)
-                        .join(',\n')
-                    }\n};`;
+                            .filter(x => x.serviceName === service)
+                            .map(x => `${indentationSpaces}${x.functionName}: {dbName: '${x.dbFunctionName}', fields: [${
+                                x.functionFields.map(y => `'${y}'`).join(', ')
+                                }], operationName: '${x.operation}', readOnly: ${x.readOnly ? 'true' : 'false'}}`)
+                            .join(',\n')
+                        }\n};`;
                     FileUtils.writeFileSync(
                         path.resolve(folderPath, 'handlers', 'functions.js'),
                         functions
@@ -289,7 +289,7 @@ export class ServerlessFileHelper {
                     );
                 }
             }
-            
+
             await ServerlessRepositoryReader.readRepo(
                 databaseObject._properties.path.replace('database', 'middle-tier'),
                 params.applicationName,
@@ -298,7 +298,7 @@ export class ServerlessFileHelper {
         }
         return await Promise.resolve(true);
     }
-    
+
     private static ymlToJson(yml: string) {
         return yamljs.parse(yml.replace(/\t/g, '  ').replace(/\r\n\r\n/g, '\r\n').replace(/\r\n\r\n/g, '\r\n').replace(/\n$/, "").trim());
     }
