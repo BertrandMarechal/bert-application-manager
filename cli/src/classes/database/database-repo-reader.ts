@@ -7,6 +7,8 @@ import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { ServerUtils } from "../../utils/server.utils";
 import { start } from "repl";
+import { stringify } from "querystring";
+import { LoggerUtils } from "../../utils/logger.utils";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -269,6 +271,11 @@ export class DatabaseRepositoryReader {
                 ));
             });
         });
+        const objectsWithFileNameIssue: {
+            objectType: string;
+            objectName: string;
+            fileName: string;
+        }[] = [];
         const filesToAnalyzeLength =
             Object.keys(databaseObject.table).length +
             Object.keys(databaseObject.function).length +
@@ -281,27 +288,60 @@ export class DatabaseRepositoryReader {
             });
             let i = 0;
             if (Object.keys(databaseObject.table).length > 0) {
-                Object.keys(databaseObject.table).forEach(async key => {
+                const keys = Object.keys(databaseObject.table);
+                for (let j = 0; j < keys.length; j++) {
+                    const key = keys[j];
                     uiUtils.progress(++i);
                     databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
                     await databaseObject.table[key].analyzeFile(uiUtils);
-                });
+                    if (databaseObject.table[key].name !== key) {
+                        // the name of the object is not the same as the file name, we have to report that
+                        objectsWithFileNameIssue.push({
+                            objectName: databaseObject.table[key].name,
+                            fileName: key,
+                            objectType: 'table',
+                        });
+                    }
+                }
             }
             if (Object.keys(databaseObject.function).length > 0) {
-                Object.keys(databaseObject.function).forEach(async key => {
+                const keys = Object.keys(databaseObject.function);
+                for (let j = 0; j < keys.length; j++) {
+                    const key = keys[j];
                     uiUtils.progress(++i);
                     databaseObject.function[key] = new DatabaseFunction(databaseObject.function[key]);
                     await databaseObject.function[key].analyzeFile(uiUtils);
-                });
+
+                    if (databaseObject.function[key].name !== key) {
+                        // the name of the object is not the same as the file name, we have to report that
+                        objectsWithFileNameIssue.push({
+                            objectName: databaseObject.function[key].name,
+                            fileName: key,
+                            objectType: 'function',
+                        });
+                    }
+                }
             }
             if (Object.keys(databaseObject.data).length > 0) {
-                Object.keys(databaseObject.data).forEach(async key => {
+                const keys = Object.keys(databaseObject.data);
+                for (let j = 0; j < keys.length; j++) {
+                    const key = keys[j];
                     uiUtils.progress(++i);
                     databaseObject.data[key] = new DatabaseDataScript(databaseObject.data[key]);
                     await databaseObject.data[key].analyzeFile(uiUtils);
-                });
+                }
             }
             uiUtils.stoprProgress();
+
+            if (objectsWithFileNameIssue.length > 0) {
+                for (let i = 0; i < objectsWithFileNameIssue.length; i++) {
+                    const objectWithFileNameIssue = objectsWithFileNameIssue[i];
+                    uiUtils.error({
+                        origin: DatabaseRepositoryReader._origin,
+                        message: `${objectWithFileNameIssue.objectType} "${objectWithFileNameIssue.fileName}" is actually named "${objectWithFileNameIssue.objectName}"`
+                    });
+                }
+            }
         }
 
 

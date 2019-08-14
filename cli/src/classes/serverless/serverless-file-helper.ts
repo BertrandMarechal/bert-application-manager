@@ -4,6 +4,7 @@ import { FileUtils } from '../../utils/file.utils';
 import path from 'path';
 import colors from 'colors';
 import yamljs from 'yamljs';
+import jsyaml from 'js-yaml';
 import { ServerlessRepositoryReader } from './serverless-repo-reader';
 import { indentationSpaces } from '../database/database-file-helper';
 import { RepositoryUtils } from '../../utils/repository.utils';
@@ -299,7 +300,15 @@ export class ServerlessFileHelper {
         return await Promise.resolve(true);
     }
 
-    private static ymlToJson(yml: string) {
-        return yamljs.parse(yml.replace(/\t/g, '  ').replace(/\r\n\r\n/g, '\r\n').replace(/\r\n\r\n/g, '\r\n').replace(/\n$/, "").trim());
+    static ymlToJson(yml: string) {
+        return jsyaml.load(yml);
+        // return yamljs.parse(yml.replace(/\t/g, '  ').replace(/\r\n\r\n/g, '\r\n').replace(/\r\n\r\n/g, '\r\n').replace(/\n$/, "").trim());
+    }
+
+    static jsonToYml(json: any) {
+        return jsyaml.dump(json, {
+            noArrayIndent: true
+        });
+        // return yamljs.stringify(json, 10, 2);
     }
 }

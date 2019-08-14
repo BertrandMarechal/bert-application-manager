@@ -8,6 +8,7 @@ import { RepositoryUtils } from "../../utils/repository.utils";
 import { DatabaseObject } from "../../models/database-file.model";
 import { DatabaseHelper } from "../database/database-helper";
 import { LoggerUtils } from "../../utils/logger.utils";
+import { ServerlessFileHelper } from "./serverless-file-helper";
 
 export class ServerlessRepositoryReader {
     private static _origin = 'ServerlessRepositoryReader';
@@ -130,7 +131,7 @@ export class ServerlessRepositoryReader {
         const applicationDatabaseName = params.databaseName || params.applicationName.replace(/\-middle-tier$/, '-database');
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(applicationDatabaseName);
         if (!databaseObject) {
-            throw 'This application does not exist';
+            throw `No database could be found with those parameters, please use the --database (-d) parameter`;
         }
 
         const allServerlessFiles: { [appName: string]: ServerlessFile[] } = await FileUtils.readJsonFile(ServerlessRepositoryReader._serverlessDbPath);
@@ -142,37 +143,42 @@ export class ServerlessRepositoryReader {
             .reduce((agg, curr) => ({ ...agg, [curr]: databaseObject.function[curr].mode }), {});
         const functionsWithIssues: {
             lambdaFunctionName: string;
+            postgresFunctionName: string;
             error: string;
+            fileName: string;
+            errorType: 'missing-file' | 'missing-function' | 'put-to-read-only' | 'put-to-process';
             severity: 'error' | 'warning';
         }[] = [];
-        const fileCount = serverlessFiles.reduce((agg, curr) => agg + curr.functions.length, 0);
+        const fileCount = serverlessFiles.reduce((agg, curr) => agg + Object.keys(curr.functions).length, 0);
         uiUtils.startProgress({ length: fileCount, start: 0, title: 'analyzing functions' });
-
+        let k = 1;
         for (let i = 0; i < serverlessFiles.length; i++) {
-            uiUtils.progress(i + 1);
             const serverlessFile = serverlessFiles[i];
             for (let j = 0; j < serverlessFile.functions.length; j++) {
+                uiUtils.progress(k + 1);
+                k++;
                 const serverlessFunction = serverlessFile.functions[j];
                 let serverlessFunctionString = '';
+                const fileName = path.resolve(
+                    serverlessFile.fileName.replace(/serverless\.yml$/, ''),
+                    `${serverlessFunction.handler}.js`
+                );
                 try {
-                    serverlessFunctionString = await FileUtils.readFile(path.resolve(
-                        serverlessFile.fileName.replace(/serverless\.yml$/, ''),
-                        `${serverlessFunction.handler}.js`
-                    ));
+                    serverlessFunctionString = await FileUtils.readFile(fileName);
                 } catch (error) {
                     functionsWithIssues.push({
                         lambdaFunctionName: serverlessFunction.handlerFunctionName,
                         severity: "error",
+                        postgresFunctionName: '',
+                        fileName: serverlessFile.fileName,
+                        errorType: 'missing-file',
                         error: `File "${
                             path.resolve(serverlessFile.fileName.replace(/serverless\.yml$/, ''), `${serverlessFunction.handler}.js`)
                             }" does not exist`
                     });
                 }
                 if (serverlessFunctionString) {
-
-                    serverlessFunctionString = ServerlessRepositoryReader
-                        .formatServerlessFile(serverlessFunctionString);
-                    const processRegex = /(process|processReadOnly)\([^']+(?:\'|")([a-z0-9]+\_[a-z0-9]+\_[a-z0-9]+)(?:\'|")/gi;
+                    const processRegex = /CommonUtils\.(process|processReadOnly)\([^']+(?:\'|")([a-z0-9]+\_[a-z0-9]+\_[a-z0-9]+)(?:\'|")/gi;
                     let extracted = processRegex.exec(serverlessFunctionString);
                     while (extracted) {
                         const [, typeOfProcess, functionName] = extracted;
@@ -180,7 +186,10 @@ export class ServerlessRepositoryReader {
                             functionsWithIssues.push({
                                 lambdaFunctionName: serverlessFunction.handlerFunctionName,
                                 severity: "error",
-                                error: 'Missing postgres function'
+                                postgresFunctionName: functionName,
+                                fileName,
+                                errorType: 'missing-function',
+                                error: `Missing postgres function "${functionName}"`
                             });
                         }
                         if (typeOfProcess === 'process') {
@@ -189,6 +198,9 @@ export class ServerlessRepositoryReader {
                                 functionsWithIssues.push({
                                     lambdaFunctionName: serverlessFunction.handlerFunctionName,
                                     severity: 'warning',
+                                    postgresFunctionName: functionName,
+                                    fileName,
+                                    errorType: 'put-to-read-only',
                                     error: `"${functionName}" can be put on read only mode`
                                 });
                             }
@@ -198,6 +210,9 @@ export class ServerlessRepositoryReader {
                                 functionsWithIssues.push({
                                     lambdaFunctionName: serverlessFunction.handlerFunctionName,
                                     severity: 'error',
+                                    postgresFunctionName: functionName,
+                                    fileName,
+                                    errorType: 'put-to-process',
                                     error: `Please call "${functionName}" with the "process" operator`
                                 });
                             }
@@ -210,10 +225,56 @@ export class ServerlessRepositoryReader {
         uiUtils.stoprProgress();
         for (let i = 0; i < functionsWithIssues.length; i++) {
             const f = functionsWithIssues[i];
-            LoggerUtils[f.severity]({
+            uiUtils[f.severity]({
                 message: `${f.lambdaFunctionName} - ${f.error}`,
                 origin: ServerlessRepositoryReader._origin
             });
+        }
+        const issuesWeCanFix = functionsWithIssues.filter(x => x.errorType !== 'missing-function');
+        if (issuesWeCanFix.length) {
+            const fix = await uiUtils.question({
+                origin: ServerlessRepositoryReader._origin,
+                text: `Do you want to resolve the issues above ? (y/n)`
+            });
+            if (fix.toLowerCase() === 'y') {
+                LoggerUtils.info({
+                    origin: ServerlessRepositoryReader._origin,
+                    message: 'Solving...'
+                });
+
+                for (let i = 0; i < issuesWeCanFix.length; i++) {
+                    const issue = issuesWeCanFix[i];
+                    if (issue.errorType === 'put-to-process') {
+                        let fileString = await FileUtils.readFile(issue.fileName);
+                        const regex = new RegExp(`\.processReadOnly\\(([^']+)(\'|")(${issue.postgresFunctionName})(\'|")`, 'gi');
+                        fileString = fileString.replace(regex, `.process($1$2$3$4`);
+                        await FileUtils.writeFileSync(issue.fileName, fileString);
+                    } else if (issue.errorType === 'put-to-read-only') {
+                        let fileString = await FileUtils.readFile(issue.fileName);
+                        const regex = new RegExp(`\.process\\(([^']+)(\'|")(${issue.postgresFunctionName})(\'|")`, 'gi');
+                        fileString = fileString.replace(regex, `.processReadOnly($1$2$3$4`);
+                        await FileUtils.writeFileSync(issue.fileName, fileString);
+                    } else if (issue.errorType === 'missing-file') {
+                        let serverlessFile = ServerlessFileHelper.ymlToJson(await FileUtils.readFile(issue.fileName));
+                        delete serverlessFile.functions[issue.lambdaFunctionName];
+                        if (Object.keys(serverlessFile.functions).length) {
+                            const newFileData = ServerlessFileHelper.jsonToYml(serverlessFile);
+                            await FileUtils.writeFileSync(issue.fileName, newFileData);
+                        } else {
+
+                            LoggerUtils.warning({
+                                origin: ServerlessRepositoryReader._origin,
+                                message: `Removing ${issue.lambdaFunctionName} will make this service useless. Please delete manually`
+                            });
+                        }
+                    }
+                }
+
+                LoggerUtils.success({
+                    origin: ServerlessRepositoryReader._origin,
+                    message: 'Solved...'
+                });
+            }
         }
     }
 

@@ -234,6 +234,7 @@ export class DatabaseFunction extends DatabaseSubObject {
         const functionMatch = /create(?: or replace)? function (\"?public\"?\.)?\"?([a-z0-9_]+)\"? \(/i.exec(functionFile);
         if (functionMatch) {
             this.name = functionMatch[2];
+
             if (this.name.match(/[a-z0-9]{2,3}f_[a-z0-9_]+/i)) {
                 const [dbPrefix, tableName] =
                     /([a-z0-9]{2,3})f_([a-z0-9_]+)/i.exec(this.name) || ['', ''];
@@ -241,10 +242,10 @@ export class DatabaseFunction extends DatabaseSubObject {
                 this.camelCasedName = SyntaxUtils.snakeCaseToCamelCase(tableName);
             }
         }
-
-        const modeMatch = /immutable|stable|volatile|(?:not )?leakproof/i.exec(functionFile);
+        // const modeMatch = / (immutable|stable|volatile|(?:not )) ?leakproof/i.exec(functionFile);
+        const modeMatch = /\W(immutable|stable|volatile)\W/i.exec(functionFile);
         if (modeMatch) {
-            this.mode = modeMatch[0].toLowerCase();
+            this.mode = modeMatch[1].toLowerCase();
         }
 
         const paramsMatch = /create(?: or replace)? function (?:\"?public\"?\.)?\"?[a-z0-9_]+\"? \(([^()]+)\)/i.exec(functionFile);
