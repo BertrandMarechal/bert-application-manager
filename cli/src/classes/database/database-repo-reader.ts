@@ -6,9 +6,6 @@ import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { ServerUtils } from "../../utils/server.utils";
-import { start } from "repl";
-import { stringify } from "querystring";
-import { LoggerUtils } from "../../utils/logger.utils";
 
 interface DatabaseStructureNode {
     fileName?: string;
@@ -48,24 +45,10 @@ export class DatabaseRepositoryReader {
         );
         await DatabaseHelper.updateApplicationDatabaseObject(applicationName, databaseObject);
 
-        const files = databaseFiles.reduce((agg: string[], versionFile) => {
-            return agg.concat(versionFile.versions.reduce((agg2: string[], version) => {
-                return agg2.concat(version.files.map(y => y.fileName))
-            }, []));
-        }, []).map(FileUtils.replaceSlashes);
-
-        const unmappedFiles = fileList.filter(file => files.indexOf(file) === -1);
-        const incorrectlyMappedFiles = files.filter(file => fileList.indexOf(file) === -1);
-
-        let feedback = 'Repository read';
-        if (unmappedFiles.length) {
-            feedback += `, ` + colors.yellow(`${unmappedFiles.length} unmapped files`);
-        }
-        if (incorrectlyMappedFiles.length) {
-            feedback += `, ` + colors.red(`${incorrectlyMappedFiles.length} incorrectly mapped files`);
-        }
-
-        uiUtils.success({ origin: DatabaseRepositoryReader._origin, message: feedback });
+        uiUtils.success({
+            origin: DatabaseRepositoryReader._origin,
+            message: 'Done'
+        });
         await ServerUtils.somethingChanged(applicationName);
     }
 

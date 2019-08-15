@@ -25,7 +25,7 @@ cls && npm link && aws-mock start-server
   - [x] check file name against object name
   - [ ] edit object - accept partial object name
   - [ ] edit object - accept object names without type
-  - [ ] fix unmapped files error message
+  - [x] fix unmapped files error message
   - [x] create Database files
     - [x] fix replication from issued
       - [x] folder issue
