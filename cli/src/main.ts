@@ -114,6 +114,12 @@ const main = async () => {
                             version: dbOptions['version']
                         }, loggerUtils);
                         break;
+                    case 'check-code':
+                    case 'c':
+                        await DatabaseRepositoryReader.checkCode({
+                            applicationName: dbOptions['application-name']
+                        }, loggerUtils);
+                        break;
                     case 'params':
                     case 'p':
                         await RepositoryUtils.checkDbParams({

@@ -334,7 +334,7 @@ export class DatabaseTable extends DatabaseSubObject {
             return;
         }
         tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
-        const tableNameMatch = /[table|exists] (\"?public\"?\.)?\"?([a-z0-9_]+)\"? \(/i.exec(tableFile);
+        const tableNameMatch = /[table|exists] (\"?public\"?\.)?\"?([a-z0-9_]+)\"?\W?\(/i.exec(tableFile);
         if (tableNameMatch) {
             this.name = tableNameMatch[2];
             if (this.name.match(/[a-z0-9]{2,3}t_[a-z0-9_]+_[a-z0-9]{3}/i)) {

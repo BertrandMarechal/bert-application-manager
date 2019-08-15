@@ -15,7 +15,7 @@ export class FileUtils {
         maxLevels?: number;
         currentLevel?: number;
         filter: RegExp;
-    }): Promise<string[]> {        
+    }): Promise<string[]> {
         params.startPath = FileUtils.replaceSlashes(params.startPath);
         params.currentLevel = (params.currentLevel || 0) + 1;
         const foldersToIgnore = params.foldersToIgnore || ['node_modules'];
@@ -41,7 +41,7 @@ export class FileUtils {
             });
             let files = fileNames.filter((x: string) => {
                 let fileName = path.join(params.startPath, x);
-                let stat = fs.lstatSync(fileName);                
+                let stat = fs.lstatSync(fileName);
                 return !stat.isDirectory() && params.filter.test(fileName);
             });
             if (directories.length > 0 && (!params.maxLevels || params.maxLevels >= params.currentLevel)) {
@@ -56,7 +56,7 @@ export class FileUtils {
                 const newFileList: string[] = fileList.concat(files.map((x: string) => params.startPath + '/' + x));
                 return newFileList;
             }
-            else {    
+            else {
                 return files.map((x: string) => params.startPath + '/' + x);
             }
         }
@@ -180,8 +180,6 @@ export class FileUtils {
     }
 
     static deleteFileSync(fileName: string) {
-        console.log('Deleting ' + fileName);
-
         fs.unlinkSync(fileName);
     }
 
@@ -191,9 +189,6 @@ export class FileUtils {
      * @param sub (used for logging purpose only)
      */
     static deleteFolderRecursiveSync(path: string, sub: boolean = false) {
-        if (!sub) {
-            LoggerUtils.info({ origin: 'FileUtils', message: `Deleting ${path}` });
-        }
         if (fs.existsSync(path)) {
             fs.readdirSync(path).forEach((file) => {
                 const curPath = path + "/" + file;

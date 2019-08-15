@@ -17,11 +17,12 @@ cls && npm link && aws-mock start-server
   - [x] create components files
 - [x] Middle tier
   - [x] check that we are using process or processReadOnly in the correct cases
+  - [x] check file name against object name
 - [ ] DB
   - [x] automatically read Database files before installation
   - [x] accept database suffix as name
   - [x] check read only from common utils
-  - [-] check file name against object name
+  - [x] check file name against object name
   - [ ] edit object - accept partial object name
   - [ ] edit object - accept object names without type
   - [ ] fix unmapped files error message

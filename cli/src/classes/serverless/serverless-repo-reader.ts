@@ -146,6 +146,7 @@ export class ServerlessRepositoryReader {
             postgresFunctionName: string;
             error: string;
             fileName: string;
+            serverlessFileName?: string;
             errorType: 'missing-file' | 'missing-function' | 'put-to-read-only' | 'put-to-process';
             severity: 'error' | 'warning';
         }[] = [];
@@ -172,6 +173,7 @@ export class ServerlessRepositoryReader {
                         postgresFunctionName: '',
                         fileName: serverlessFile.fileName,
                         errorType: 'missing-file',
+                        serverlessFileName: serverlessFile.fileName,
                         error: `File "${
                             path.resolve(serverlessFile.fileName.replace(/serverless\.yml$/, ''), `${serverlessFunction.handler}.js`)
                             }" does not exist`
@@ -237,7 +239,7 @@ export class ServerlessRepositoryReader {
                 text: `Do you want to resolve the issues above ? (y/n)`
             });
             if (fix.toLowerCase() === 'y') {
-                LoggerUtils.info({
+                uiUtils.info({
                     origin: ServerlessRepositoryReader._origin,
                     message: 'Solving...'
                 });
@@ -245,11 +247,19 @@ export class ServerlessRepositoryReader {
                 for (let i = 0; i < issuesWeCanFix.length; i++) {
                     const issue = issuesWeCanFix[i];
                     if (issue.errorType === 'put-to-process') {
+                        uiUtils.info({
+                            origin: ServerlessRepositoryReader._origin,
+                            message: `  - Putting ${issue.lambdaFunctionName} to process on calling ${issue.postgresFunctionName}`
+                        });
                         let fileString = await FileUtils.readFile(issue.fileName);
                         const regex = new RegExp(`\.processReadOnly\\(([^']+)(\'|")(${issue.postgresFunctionName})(\'|")`, 'gi');
                         fileString = fileString.replace(regex, `.process($1$2$3$4`);
                         await FileUtils.writeFileSync(issue.fileName, fileString);
                     } else if (issue.errorType === 'put-to-read-only') {
+                        uiUtils.info({
+                            origin: ServerlessRepositoryReader._origin,
+                            message: `  - Putting ${issue.lambdaFunctionName} to processReadOnly on calling ${issue.postgresFunctionName}`
+                        });
                         let fileString = await FileUtils.readFile(issue.fileName);
                         const regex = new RegExp(`\.process\\(([^']+)(\'|")(${issue.postgresFunctionName})(\'|")`, 'gi');
                         fileString = fileString.replace(regex, `.processReadOnly($1$2$3$4`);
@@ -258,19 +268,39 @@ export class ServerlessRepositoryReader {
                         let serverlessFile = ServerlessFileHelper.ymlToJson(await FileUtils.readFile(issue.fileName));
                         delete serverlessFile.functions[issue.lambdaFunctionName];
                         if (Object.keys(serverlessFile.functions).length) {
+                            uiUtils.info({
+                                origin: ServerlessRepositoryReader._origin,
+                                message: `  - Removing ${issue.lambdaFunctionName} from serverless.yml`
+                            });
                             const newFileData = ServerlessFileHelper.jsonToYml(serverlessFile);
                             await FileUtils.writeFileSync(issue.fileName, newFileData);
                         } else {
-
-                            LoggerUtils.warning({
+                            uiUtils.warning({
                                 origin: ServerlessRepositoryReader._origin,
                                 message: `Removing ${issue.lambdaFunctionName} will make this service useless. Please delete manually`
                             });
+                            const deleteFolder = await uiUtils.choices({
+                                choices: [
+                                    'No',
+                                    'Yes',
+                                ],
+                                title: 'Delete folder',
+                                message: 'Do you want to delete this folder'
+                            });
+                            if (deleteFolder['Delete folder'] === 'Yes') {
+                                uiUtils.info({
+                                    origin: ServerlessRepositoryReader._origin,
+                                    message: `  - Removing ${issue.lambdaFunctionName} from serverless.yml`
+                                });
+                                if (issue.serverlessFileName) {
+                                    FileUtils.deleteFolderRecursiveSync(issue.serverlessFileName.replace(/(\\|\/)serverless.yml$/, ''))
+                                }
+                            }
                         }
                     }
                 }
 
-                LoggerUtils.success({
+                uiUtils.success({
                     origin: ServerlessRepositoryReader._origin,
                     message: 'Solved...'
                 });
