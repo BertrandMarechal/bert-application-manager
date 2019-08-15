@@ -67,6 +67,7 @@ export interface DatabaseTableForSave {
 
 export class DatabaseSubObject {
     name: string;
+    type: DatabaseFileType;
     latestVersion: string;
     latestFile: string;
     camelCasedName?: string;
@@ -78,6 +79,7 @@ export class DatabaseSubObject {
     constructor(params?: any) {
         params = params || {};
         this.name = params.name || '';
+        this.type = params.type || 'unknown';
         this.latestVersion = params.latestVersion;
         this.latestFile = params.latestFile || '';
         this.versions = params.versions || [];
@@ -223,6 +225,7 @@ export class DatabaseFunction extends DatabaseSubObject {
     }
 
     async analyzeFile(uiUtils: UiUtils) {
+        this.type = "function";
         let functionFile = '';
         try {
             functionFile = await FileUtils.readFile(this.latestFile);
@@ -326,6 +329,7 @@ export class DatabaseTable extends DatabaseSubObject {
     }
 
     async analyzeFile(uiUtils: UiUtils) {
+        this.type = "table";
         let tableFile = '';
         try {
             tableFile = await FileUtils.readFile(this.latestFile);
@@ -423,6 +427,7 @@ export class DatabaseDataScript extends DatabaseSubObject {
         this.tableChanges = {};
     }
     async analyzeFile(uiUtils: UiUtils) {
+        this.type = "data";
         let tableFile = '';
         try {
             tableFile = await FileUtils.readFile(this.latestFile);

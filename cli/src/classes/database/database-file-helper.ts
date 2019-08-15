@@ -724,16 +724,8 @@ export class DatabaseFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-        if (!databaseObject[params.objectType]) {
-            throw 'Invalid object type.';
-        }
-        const databaseSubObject: DatabaseSubObject = databaseObject[params.objectType][params.objectName];
-        if (!databaseSubObject) {
-            throw 'This object does not exist';
-        }
+        const databaseSubObject: DatabaseSubObject =
+            await DatabaseHelper.getDatabaseSubObject(params, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         if (databaseSubObject.latestVersion === 'current') {
             // object is at the current version LREADY
@@ -750,11 +742,11 @@ export class DatabaseFileHelper {
         );
 
         // todo add the other types
-        if (params.objectType === 'function') {
+        if (databaseSubObject.type === 'function') {
             filesToInstall.push(
                 newFileName.replace(new RegExp(`.*?(postgres\/release\/current\/schema/.*?)`, 'i'), '..//$1')
             );
-        } else if (params.objectType === 'table') {
+        } else if (databaseSubObject.type === 'table') {
             // create the alter table file if not exist
             const alterTableFileName = newFileName.replace(new RegExp(`.*?postgres\/release\/current\/schema/.*?/([a-z0-9_]+.sql)`, 'i'),
                 '..//postgres/release/current/scripts/alter_$1');
@@ -791,13 +783,8 @@ export class DatabaseFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-        const databaseSubObject: DatabaseSubObject = databaseObject.table[params.objectName];
-        if (!databaseSubObject) {
-            throw 'This object does not exist';
-        }
+        const databaseSubObject: DatabaseSubObject =
+            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
@@ -829,13 +816,8 @@ export class DatabaseFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-        const databaseSubObject: DatabaseSubObject = databaseObject.table[params.objectName];
-        if (!databaseSubObject) {
-            throw 'This object does not exist';
-        }
+        const databaseSubObject: DatabaseSubObject =
+            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
@@ -859,13 +841,8 @@ export class DatabaseFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-        const databaseSubObject: DatabaseSubObject = databaseObject.table[params.objectName];
-        if (!databaseSubObject) {
-            throw 'This object does not exist';
-        }
+        const databaseSubObject: DatabaseSubObject =
+            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         // look for our field's text
@@ -915,13 +892,8 @@ export class DatabaseFileHelper {
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        if (!databaseObject) {
-            throw 'This application does not exist';
-        }
-        const databaseSubObject: DatabaseSubObject = databaseObject.table[params.objectName];
-        if (!databaseSubObject) {
-            throw 'This object does not exist';
-        }
+        const databaseSubObject: DatabaseSubObject =
+            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
         // look for our field's text
