@@ -23,6 +23,7 @@ cls && npm link && aws-mock start-server
   - [x] accept database suffix as name
   - [x] check read only from common utils
   - [x] check file name against object name
+  - [-] check fields foreign keys definitions
   - [x] edit object - accept object names without type
   - [x] edit object - accept partial object name
   - [x] fix unmapped files error message

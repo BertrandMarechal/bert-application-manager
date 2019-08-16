@@ -1,7 +1,7 @@
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction, DatabaseDataScript } from "../../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction, DatabaseDataScript, DatabaseLocalReplicatedTable } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
@@ -245,11 +245,6 @@ export class DatabaseRepositoryReader {
                 ));
             });
         });
-        const objectsWithFileNameIssue: {
-            objectType: string;
-            objectName: string;
-            fileName: string;
-        }[] = [];
         const filesToAnalyzeLength =
             Object.keys(databaseObject.table).length +
             Object.keys(databaseObject.function).length +
@@ -268,14 +263,6 @@ export class DatabaseRepositoryReader {
                     uiUtils.progress(++i);
                     databaseObject.table[key] = new DatabaseTable(databaseObject.table[key]);
                     await databaseObject.table[key].analyzeFile(uiUtils);
-                    if (databaseObject.table[key].name !== key) {
-                        // the name of the object is not the same as the file name, we have to report that
-                        objectsWithFileNameIssue.push({
-                            objectName: databaseObject.table[key].name,
-                            fileName: key,
-                            objectType: 'table',
-                        });
-                    }
                 }
             }
             if (Object.keys(databaseObject.function).length > 0) {
@@ -285,15 +272,15 @@ export class DatabaseRepositoryReader {
                     uiUtils.progress(++i);
                     databaseObject.function[key] = new DatabaseFunction(databaseObject.function[key]);
                     await databaseObject.function[key].analyzeFile(uiUtils);
-
-                    if (databaseObject.function[key].name !== key) {
-                        // the name of the object is not the same as the file name, we have to report that
-                        objectsWithFileNameIssue.push({
-                            objectName: databaseObject.function[key].name,
-                            fileName: key,
-                            objectType: 'function',
-                        });
-                    }
+                }
+            }
+            if (Object.keys(databaseObject['local-tables']).length > 0) {
+                const keys = Object.keys(databaseObject['local-tables']);
+                for (let j = 0; j < keys.length; j++) {
+                    const key = keys[j];
+                    uiUtils.progress(++i);
+                    databaseObject['local-tables'][key] = new DatabaseLocalReplicatedTable(databaseObject['local-tables'][key]);
+                    await databaseObject['local-tables'][key].analyzeFile(uiUtils);
                 }
             }
             if (Object.keys(databaseObject.data).length > 0) {
@@ -306,20 +293,6 @@ export class DatabaseRepositoryReader {
                 }
             }
             uiUtils.stoprProgress();
-
-            if (objectsWithFileNameIssue.length > 0) {
-                uiUtils.warning({
-                    origin: DatabaseRepositoryReader._origin,
-                    message: `The database has files named incorrectly. You can fix the following issues running "am db c"`
-                });
-                for (let i = 0; i < objectsWithFileNameIssue.length; i++) {
-                    const objectWithFileNameIssue = objectsWithFileNameIssue[i];
-                    uiUtils.warning({
-                        origin: DatabaseRepositoryReader._origin,
-                        message: `   - ${objectWithFileNameIssue.objectType} "${objectWithFileNameIssue.fileName}" is actually named "${objectWithFileNameIssue.objectName}"`
-                    });
-                }
-            }
         }
 
 
@@ -395,9 +368,9 @@ export class DatabaseRepositoryReader {
     }, uiUtils: UiUtils) {
 
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        // await RepositoryUtils.readRepository({
-        //     type: "postgres"
-        // }, uiUtils);
+        await RepositoryUtils.readRepository({
+            type: "postgres"
+        }, uiUtils);
 
         // get the db as object to get the params
         let databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
@@ -407,9 +380,12 @@ export class DatabaseRepositoryReader {
             throw 'Invalid application name. Please run the "am repo read" command in the desired folder beforehand.';
         }
 
-        const objectsWithFileNameIssue: {
+        const objectsWithIssue: {
             objectType: string;
             objectName: string;
+            fieldName?: string;
+            expected?: string;
+            issueType: 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk';
             fileName: string;
         }[] = [];
         const filesToAnalyzeLength =
@@ -417,55 +393,113 @@ export class DatabaseRepositoryReader {
             Object.keys(databaseObject.function).length +
             Object.keys(databaseObject.data).length;
         if (filesToAnalyzeLength > 0) {
-            uiUtils.startProgress({
-                length: filesToAnalyzeLength,
-                start: 0,
-                title: 'Analyzing files'
-            });
+            // uiUtils.startProgress({
+            //     length: filesToAnalyzeLength,
+            //     start: 0,
+            //     title: 'Analyzing files...'
+            // });
             let i = 0;
             if (Object.keys(databaseObject.table).length > 0) {
                 const keys = Object.keys(databaseObject.table);
                 for (let j = 0; j < keys.length; j++) {
-                    const key = keys[j];
                     uiUtils.progress(++i);
+                    const key = keys[j];
                     if (databaseObject.table[key].name !== key) {
                         // the name of the object is not the same as the file name, we have to report that
-                        objectsWithFileNameIssue.push({
+                        objectsWithIssue.push({
                             objectName: databaseObject.table[key].name,
                             fileName: key,
                             objectType: 'table',
+                            issueType: 'incorrect-name',
                         });
+                    }
+                    // check that the files columns are named correctly (foreign keys are prefixed "fk_")
+                    const fieldKeys = Object.keys(databaseObject.table[key].fields);
+                    for (let k = 0; k < fieldKeys.length; k++) {
+                        const field = databaseObject.table[key].fields[fieldKeys[k]];
+                        if (field.isForeignKey) {
+                            if (field.foreignKey) {
+                                const foreignKeyTableSuffix = (databaseObject.table[field.foreignKey.table] || databaseObject['local-tables'][field.foreignKey.table]).tableSuffix;
+                                if (field.name.indexOf('fk_') !== 0) {
+                                    objectsWithIssue.push({
+                                        objectName: databaseObject.table[key].name,
+                                        fileName: key,
+                                        fieldName: field.name,
+                                        expected: `fk_${foreignKeyTableSuffix}_${databaseObject.table[key].tableSuffix}_*`,
+                                        objectType: 'table',
+                                        issueType: 'incorrect-fk-name',
+                                    });
+                                } else if (!field.name.match(new RegExp(`fk\_${foreignKeyTableSuffix}\_${databaseObject.table[key].tableSuffix}\_[a-z0-9_]+`))) {
+                                    objectsWithIssue.push({
+                                        objectName: databaseObject.table[key].name,
+                                        fileName: key,
+                                        fieldName: field.name,
+                                        expected: `fk_${foreignKeyTableSuffix}_${databaseObject.table[key].tableSuffix}_*`,
+                                        objectType: 'table',
+                                        issueType: 'incorrect-fk-name',
+                                    });
+                                }
+                            }
+                        } else if (field.name.indexOf('fk_') === 0) {
+                            objectsWithIssue.push({
+                                objectName: databaseObject.table[key].name,
+                                fileName: key,
+                                fieldName: field.name,
+                                expected: `${databaseObject.table[key].tableSuffix}_*`,
+                                objectType: 'table',
+                                issueType: 'not-fk',
+                            });
+                        }
                     }
                 }
             }
             if (Object.keys(databaseObject.function).length > 0) {
                 const keys = Object.keys(databaseObject.function);
                 for (let j = 0; j < keys.length; j++) {
-                    const key = keys[j];
                     uiUtils.progress(++i);
+                    const key = keys[j];
                     if (databaseObject.function[key].name !== key) {
                         // the name of the object is not the same as the file name, we have to report that
-                        objectsWithFileNameIssue.push({
+                        objectsWithIssue.push({
                             objectName: databaseObject.function[key].name,
                             fileName: key,
                             objectType: 'function',
+                            issueType: 'incorrect-name'
                         });
                     }
                 }
             }
             uiUtils.stoprProgress();
 
-            if (objectsWithFileNameIssue.length > 0) {
-                uiUtils.warning({
-                    origin: DatabaseRepositoryReader._origin,
-                    message: `The database has files named incorrectly.`
-                });
-                for (let i = 0; i < objectsWithFileNameIssue.length; i++) {
-                    const objectWithFileNameIssue = objectsWithFileNameIssue[i];
-                    uiUtils.warning({
-                        origin: DatabaseRepositoryReader._origin,
-                        message: `   - ${objectWithFileNameIssue.objectType} "${objectWithFileNameIssue.fileName}" is actually named "${objectWithFileNameIssue.objectName}"`
-                    });
+            objectsWithIssue.sort((a, b) => {
+                if (a.issueType < b.issueType) {
+                    return -1;
+                } else if (a.issueType > b.issueType) {
+                    return 1;
+                }
+                return 0;
+            })
+            if (objectsWithIssue.length > 0) {
+                if (objectsWithIssue.length > 0) {
+                    for (let i = 0; i < objectsWithIssue.length; i++) {
+                        const objectWithIssue = objectsWithIssue[i];
+                        if (objectWithIssue.issueType === 'incorrect-name') {
+                            uiUtils.warning({
+                                origin: DatabaseRepositoryReader._origin,
+                                message: `   - ${objectWithIssue.objectType} "${colors.green(objectWithIssue.fileName)}" is actually named "${colors.yellow(objectWithIssue.objectName)}"`
+                            });
+                        } else if (objectWithIssue.issueType === 'incorrect-fk-name') {
+                            uiUtils.warning({
+                                origin: DatabaseRepositoryReader._origin,
+                                message: `   - ${objectWithIssue.objectType} "${objectWithIssue.fileName}"."${colors.yellow(objectWithIssue.fieldName as string)}" was expected to be called ${colors.green(objectWithIssue.expected as string)}`
+                            });
+                        } else if (objectWithIssue.issueType === 'not-fk') {
+                            uiUtils.warning({
+                                origin: DatabaseRepositoryReader._origin,
+                                message: `   - ${objectWithIssue.objectType} "${objectWithIssue.fileName}"."${colors.yellow(objectWithIssue.fieldName as string)}" does not seem to be a foreign key, and yet is prefixed fk`
+                            });
+                        }
+                    }
                 }
                 const response = await uiUtils.question({
                     origin: DatabaseRepositoryReader._origin,
@@ -477,61 +511,77 @@ export class DatabaseRepositoryReader {
                         origin: DatabaseRepositoryReader._origin,
                         message: `Fixing...`
                     });
-                    for (let i = 0; i < objectsWithFileNameIssue.length; i++) {
-                        const objectWithFileNameIssue = objectsWithFileNameIssue[i];
-                        uiUtils.info({
-                            origin: DatabaseRepositoryReader._origin,
-                            message: ` - Renaming ${objectWithFileNameIssue.objectType} "${objectWithFileNameIssue.fileName}" as "${objectWithFileNameIssue.objectName}"`
-                        });
-                        const currentObject: DatabaseSubObject = databaseObject[objectWithFileNameIssue.objectType][objectWithFileNameIssue.fileName];
-                        let lastVersion: string = '';
-                        for (let j = 0; j < currentObject.versions.length; j++) {
-                            const currentObjectVersion = currentObject.versions[j];
-                            // copy file content into new file name
-                            if (lastVersion !== currentObjectVersion.version) {
-                                lastVersion = currentObjectVersion.version;
-                                FileUtils.writeFileSync(
-                                    currentObjectVersion.file.replace(
+
+                    // check if we have files to rename only, or more
+                    const objectsWithFileNameIssue = objectsWithIssue.filter(x => x.issueType === 'incorrect-name');
+                    let rerunAfterUpdateNames = objectsWithFileNameIssue.length < objectsWithIssue.length;
+                    if (objectsWithFileNameIssue.length) {
+                        if (rerunAfterUpdateNames) {
+                            uiUtils.warning({
+                                origin: DatabaseRepositoryReader._origin,
+                                message: `We found objects with incorrect name. we will run those fixes, and rerun the check afterwhile to fix the rest`
+                            });
+                        }
+                        for (let i = 0; i < objectsWithFileNameIssue.length; i++) {
+                            const objectWithFileNameIssue = objectsWithFileNameIssue[i];
+                            uiUtils.info({
+                                origin: DatabaseRepositoryReader._origin,
+                                message: ` - Renaming ${objectWithFileNameIssue.objectType} "${objectWithFileNameIssue.fileName}" as "${objectWithFileNameIssue.objectName}"`
+                            });
+                            const currentObject: DatabaseSubObject = databaseObject[objectWithFileNameIssue.objectType][objectWithFileNameIssue.fileName];
+                            let lastVersion: string = '';
+                            for (let j = 0; j < currentObject.versions.length; j++) {
+                                const currentObjectVersion = currentObject.versions[j];
+                                // copy file content into new file name
+                                if (lastVersion !== currentObjectVersion.version) {
+                                    lastVersion = currentObjectVersion.version;
+                                    FileUtils.writeFileSync(
+                                        currentObjectVersion.file.replace(
+                                            `${objectWithFileNameIssue.fileName}.sql`,
+                                            `${objectWithFileNameIssue.objectName}.sql`
+                                        ), (await FileUtils.readFile(currentObjectVersion.file)));
+                                    // change version.json
+                                    const versionJsonFilePath = currentObjectVersion.file.replace(
+                                        new RegExp(`(.*?\/postgres\/release\/${currentObjectVersion.version}\/)(.*?)$`),
+                                        '\$1version.json'
+                                    );
+                                    const objectRelativePath = currentObjectVersion.file.replace(new RegExp(`.*?(postgres\/release\/${currentObjectVersion.version}.*?)${objectWithFileNameIssue.fileName}.sql`), '$1');
+
+                                    FileUtils.writeFileSync(
+                                        versionJsonFilePath,
+                                        (await FileUtils.readFile(versionJsonFilePath))
+                                            .replace(`${objectRelativePath}${objectWithFileNameIssue.fileName}.sql`, `${objectRelativePath}${objectWithFileNameIssue.objectName}.sql`)
+                                    );
+                                    // // delete old object
+                                    FileUtils.deleteFileSync(currentObjectVersion.file);
+                                }
+                            }
+                            // update schema file
+                            if (currentObject.latestVersion) {
+                                const existingSchemaFileNamePath = currentObject.latestFile
+                                    .replace(`release/${currentObject.latestVersion}/`, '/');
+                                const newSchemaFileNamePath = existingSchemaFileNamePath
+                                    .replace(
                                         `${objectWithFileNameIssue.fileName}.sql`,
                                         `${objectWithFileNameIssue.objectName}.sql`
-                                    ), (await FileUtils.readFile(currentObjectVersion.file)));
-                                // change version.json
-                                const versionJsonFilePath = currentObjectVersion.file.replace(
-                                    new RegExp(`(.*?\/postgres\/release\/${currentObjectVersion.version}\/)(.*?)$`),
-                                    '\$1version.json'
-                                );
-                                const objectRelativePath = currentObjectVersion.file.replace(new RegExp(`.*?(postgres\/release\/${currentObjectVersion.version}.*?)${objectWithFileNameIssue.fileName}.sql`), '$1');
-
+                                    );
                                 FileUtils.writeFileSync(
-                                    versionJsonFilePath,
-                                    (await FileUtils.readFile(versionJsonFilePath))
-                                        .replace(`${objectRelativePath}${objectWithFileNameIssue.fileName}.sql`, `${objectRelativePath}${objectWithFileNameIssue.objectName}.sql`)
-                                );
-                                // // delete old object
-                                FileUtils.deleteFileSync(currentObjectVersion.file);
-                            }
-                        }
-                        // update schema file
-                        if (currentObject.latestVersion) {
-                            const existingSchemaFileNamePath = currentObject.latestFile
-                                .replace(`release/${currentObject.latestVersion}/`, '/');
-                            const newSchemaFileNamePath = existingSchemaFileNamePath
-                                .replace(
-                                    `${objectWithFileNameIssue.fileName}.sql`,
-                                    `${objectWithFileNameIssue.objectName}.sql`
-                                );
-                            FileUtils.writeFileSync(
-                                newSchemaFileNamePath,
-                                await FileUtils.readFile(existingSchemaFileNamePath));
+                                    newSchemaFileNamePath,
+                                    await FileUtils.readFile(existingSchemaFileNamePath));
 
-                            FileUtils.deleteFileSync(existingSchemaFileNamePath);
+                                FileUtils.deleteFileSync(existingSchemaFileNamePath);
+                            }
                         }
                     }
                     uiUtils.success({
                         origin: DatabaseRepositoryReader._origin,
                         message: `Fixed`
                     });
-                    await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+                    if (rerunAfterUpdateNames) {
+                        await DatabaseRepositoryReader.checkCode(params, uiUtils);
+                    } else {
+                        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+                    }
                 }
             } else {
                 uiUtils.success({

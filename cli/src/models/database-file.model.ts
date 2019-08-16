@@ -29,6 +29,7 @@ const TableConstraintsFirstWord = [
     'check',
     'unique',
     'primary',
+    'constraint',
     'exclude',
     'foreign'
 ];
@@ -96,8 +97,8 @@ export class DatabaseTableField {
     tags: { [name: string]: Tag };
     isForeignKey: boolean;
     foreignKey?: {
-        table: String;
-        key: String;
+        table: string;
+        key: string;
     };
     isPrimaryKey: boolean;
     retrieveInList: boolean;
@@ -135,7 +136,7 @@ export class DatabaseTableField {
         this.default = false;
         this.defaultValue = '';
 
-        const reference = /references (.*?)\((.*?)\)/i.exec(field.fullText);
+        const reference = /references (?!\"?public\"?\.)?\"?([a-z0-9_]+)\"?\W?\((.*?)\)/i.exec(field.fullText);
         if (reference) {
             this.isForeignKey = true;
             this.foreignKey = {
@@ -330,6 +331,108 @@ export class DatabaseTable extends DatabaseSubObject {
 
     async analyzeFile(uiUtils: UiUtils) {
         this.type = "table";
+        let tableFile = '';
+        try {
+            tableFile = await FileUtils.readFile(this.latestFile);
+        } catch (error) {
+            uiUtils.warning({ message: `File ${this.latestFile} does not exist`, origin: 'DatabaseTable' });
+            return;
+        }
+        tableFile = SyntaxUtils.simplifyDbFileForAnalysis(tableFile);
+        const tableNameMatch = /[table|exists] (\"?public\"?\.)?\"?([a-z0-9_]+)\"?\W?\(/i.exec(tableFile);
+        if (tableNameMatch) {
+            this.name = tableNameMatch[2];
+            if (this.name.match(/[a-z0-9]{2,3}t_[a-z0-9_]+_[a-z0-9]{3}/i)) {
+                const [, dbPrefix, tableName, tableSuffix] =
+                    /([a-z0-9]{2,3})t_([a-z0-9_]+)_([a-z0-9]{3})/i.exec(this.name) || ['', '', '', ''];
+                this.dbPrefix = dbPrefix;
+                this.camelCasedName = SyntaxUtils.snakeCaseToCamelCase(tableName);
+                this.tableSuffix = tableSuffix;
+            }
+        }
+        const stringBeforeCreate = tableFile.substr(0, tableFile.indexOf('create'));
+        this.tags = (stringBeforeCreate.match(/#[a-z-]+(=[\[|\(]?[a-zA-Z0-9-_' ,]+[\]|\)]?)?/gi) || [])
+            .reduce((agg, current) => {
+                const tag = new Tag(current);
+                return {
+                    ...agg,
+                    [tag.name]: tag
+                }
+            }, {});
+
+        const tableMatch = /\((.*?)\);/.exec(tableFile);
+        if (tableMatch) {
+            const fieldsAsStringWithParenthesis = tableMatch[1];
+            const fieldsAsString = fieldsAsStringWithParenthesis;
+            const fields = fieldsAsString.split(',').reduce((agg: string[], curr: string, i: number) => {
+                if (i === 0) {
+                    return [curr];
+                }
+                const aggMatchOpen = agg[agg.length - 1].match(/\(/g);
+                if (aggMatchOpen) {
+                    const aggMatchClose = agg[agg.length - 1].match(/\)/g);
+                    if (!aggMatchClose) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    } else if (aggMatchOpen.length > aggMatchClose.length) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    }
+                }
+                const aggMatchOpenSquare = agg[agg.length - 1].match(/\[/g);
+                if (aggMatchOpenSquare) {
+                    const aggMatchCloseSquare = agg[agg.length - 1].match(/\]/g);
+                    if (!aggMatchCloseSquare) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    } else if (aggMatchOpenSquare.length > aggMatchCloseSquare.length) {
+                        agg[agg.length - 1] += ',' + curr;
+                        return agg;
+                    }
+                }
+                agg.push(curr);
+                return agg;
+            }, []).map(x => x.trim());
+            const newFields = fields.map(x => {
+                return {
+                    fullText: x,
+                    split: x.split(' ')
+                };
+            });
+            for (let i = 0; i < newFields.length; i++) {
+                const field = newFields[i];
+                if (TableConstraintsFirstWord.find(fw => field.split[0].toLowerCase().indexOf(fw) > -1)) {
+                    continue;
+                }
+                this.fields[field.split[0]] = new DatabaseTableField(field, this.tableSuffix);
+            }
+        }
+        const primaryKeyName = Object.keys(this.fields).find(x => this.fields[x].isPrimaryKey);
+        if (primaryKeyName) {
+            this.primaryKey = this.fields[primaryKeyName];
+        }
+    }
+}
+export class DatabaseLocalReplicatedTable extends DatabaseSubObject {
+    fields: {
+        [name: string]: DatabaseTableField;
+    };
+    tableSuffix: string;
+    dbPrefix: string;
+    camelCasedName: string;
+    tags: { [name: string]: Tag };
+    primaryKey?: DatabaseTableField;
+    constructor(params?: any) {
+        super(params);
+        this.fields = (params || {}).fields || {};
+        this.tableSuffix = '';
+        this.dbPrefix = '';
+        this.camelCasedName = '';
+        this.tags = {};
+    }
+
+    async analyzeFile(uiUtils: UiUtils) {
+        this.type = "local-tables";
         let tableFile = '';
         try {
             tableFile = await FileUtils.readFile(this.latestFile);
