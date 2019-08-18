@@ -5,19 +5,20 @@ import { DatabaseTagger } from './database-tagger';
 import { DatabaseRepositoryReader } from './database-repo-reader';
 import colors from 'colors';
 import path from 'path';
-import { DatabaseSubObject, DatabaseObject, DatabaseTable, DatabaseTableField } from '../../models/database-file.model';
+import { DatabaseSubObject, DatabaseObject, DatabaseTable, DatabaseTableField, DatabaseFileType } from '../../models/database-file.model';
 import { FileUtils } from '../../utils/file.utils';
 import { DatabaseFileHelper } from './database-file-helper';
 
-type ObjectIssueTyes = 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk';
+type ObjectIssueTyes = 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk' | 'no-index-on-local-replicated-table';
 
 interface ObjectWithIssue {
-    objectType: string;
+    objectType: DatabaseFileType;
     objectName: string;
     fieldName?: string;
     expected?: string;
     issueType: ObjectIssueTyes;
     fileName: string;
+    usefulData?: any;
 }
 
 export class DatabaseChecker {
@@ -44,7 +45,8 @@ export class DatabaseChecker {
         const filesToAnalyzeLength =
             Object.keys(databaseObject.table).length +
             Object.keys(databaseObject.function).length +
-            Object.keys(databaseObject.data).length;
+            Object.keys(databaseObject.data).length +
+            Object.keys(databaseObject['local-tables']).length;
         if (filesToAnalyzeLength > 0) {
             let i = 0;
             if (Object.keys(databaseObject.table).length > 0) {
@@ -119,6 +121,30 @@ export class DatabaseChecker {
                     }
                 }
             }
+            if (Object.keys(databaseObject['local-tables']).length > 0) {
+                const keys = Object.keys(databaseObject['local-tables']);
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    // check that the column named 'pk_*' is unique or primary key
+                    const fileString = await FileUtils.readFile(databaseObject['local-tables'][key].latestFile);
+                    const matched = fileString.match(/\W(pk_[a-z0-9]{3}_id)\W([^,]+),/i);
+                    if (matched) {
+                        const restOfTheCode = matched[2].toLowerCase();
+                        if (restOfTheCode.indexOf('primary key') === -1 && restOfTheCode.indexOf('unique') === -1) {
+                            objectsWithIssue.push({
+                                objectName: key,
+                                fileName: key,
+                                fieldName: matched[1].toLowerCase(),
+                                objectType: 'local-tables',
+                                issueType: 'no-index-on-local-replicated-table',
+                                usefulData: {
+                                    fullFieldText: matched[0]
+                                }
+                            });
+                        }
+                    }
+                }
+            }
             uiUtils.stoprProgress();
 
             objectsWithIssue.sort((a, b) => {
@@ -147,6 +173,11 @@ export class DatabaseChecker {
                             uiUtils.warning({
                                 origin: DatabaseChecker._origin,
                                 message: `   - ${objectWithIssue.objectType} "${objectWithIssue.fileName}"."${colors.yellow(objectWithIssue.fieldName as string)}" does not seem to be a foreign key, and yet is prefixed "fk"`
+                            });
+                        } else if (objectWithIssue.issueType === 'no-index-on-local-replicated-table') {
+                            uiUtils.warning({
+                                origin: DatabaseChecker._origin,
+                                message: `   - ${objectWithIssue.objectType} "${objectWithIssue.fileName}"."${colors.yellow(objectWithIssue.fieldName as string)}" does not have an index defined on it`
                             });
                         }
                     }
@@ -193,6 +224,13 @@ export class DatabaseChecker {
                                 await this.fixNotFkIssue(objectToProcess, databaseObject, params, uiUtils);
                             }
                         }
+                        objectsToProcess = objectsWithIssue.filter(x => x.issueType === 'no-index-on-local-replicated-table');
+                        if (objectsToProcess.length) {
+                            for (let i = 0; i < objectsToProcess.length; i++) {
+                                const objectToProcess = objectsToProcess[i];
+                                await this.fixNotIndexOnLocalReplicatedTableIssue(objectToProcess, databaseObject, params, uiUtils);
+                            }
+                        }
                     }
                     uiUtils.success({
                         origin: DatabaseChecker._origin,
@@ -207,17 +245,67 @@ export class DatabaseChecker {
             } else {
                 uiUtils.success({
                     origin: DatabaseChecker._origin,
-                    message: `The checked database files are looking all good.`
+                    message: `Checked ${filesToAnalyzeLength} files - The files are looking all good.`
                 });
             }
         }
     }
 
+    private static async fixNotIndexOnLocalReplicatedTableIssue(objectWithIssue: ObjectWithIssue, databaseObject: DatabaseObject, params: { applicationName: string }, uiUtils: UiUtils) {
+        uiUtils.info({
+            origin: DatabaseChecker._origin,
+            message: `Dealing with ${colors.green(objectWithIssue.objectName)}.${colors.green(objectWithIssue.fieldName || '')}`
+        });
+        // - Create the new table script, and the alter table script
+        try {
+            await DatabaseFileHelper.editObject({
+                applicationName: params.applicationName,
+                objectName: objectWithIssue.objectName,
+                objectType: 'local-table'
+            }, uiUtils);
+        }
+        catch (e) {
+            uiUtils.info({
+                origin: this._origin,
+                message: e
+            });
+        }
+        const usefulData = objectWithIssue.usefulData || { fullFieldText: '' };
+
+        uiUtils.info({
+            origin: this._origin,
+            message: `Updating ${objectWithIssue.objectName} script`
+        });
+        FileUtils.writeFileSync(
+            databaseObject.table[objectWithIssue.objectName].latestFile,
+            (await FileUtils.readFile(databaseObject.table[objectWithIssue.objectName].latestFile))
+                .replace(usefulData.fullFieldText, usefulData.fullFieldText.replace(/([,)])$/, ` UNIQUE \$1`))
+        );
+
+        // - update the alter script, and add the alter table add the constraint
+        const newRenameScript = `ALTER TABLE ${objectWithIssue.objectName} ADD CONSTRAINT ${objectWithIssue.objectName}_${objectWithIssue.fieldName}_uniq UNIQUE (${objectWithIssue.fieldName});`;
+        const currentAlterScriptPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', 'current', 'scripts', `alter_${objectWithIssue.objectName}.sql`);
+        let currentAlterScript = await FileUtils.readFile(currentAlterScriptPath);
+        if (currentAlterScript) {
+            currentAlterScript += '\r\n';
+        }
+        currentAlterScript += newRenameScript;
+
+        uiUtils.info({
+            origin: this._origin,
+            message: `Updating ${objectWithIssue.objectName} alter script`
+        });
+        await FileUtils.writeFileSync(
+            currentAlterScriptPath,
+            currentAlterScript
+        );
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+    }
     private static async fixNotFkIssue(objectWithIssue: ObjectWithIssue, databaseObject: DatabaseObject, params: { applicationName: string }, uiUtils: UiUtils) {
         uiUtils.info({
             origin: DatabaseChecker._origin,
             message: `Dealing with ${colors.green(objectWithIssue.objectName)}.${colors.green(objectWithIssue.fieldName || '')}`
-        })
+        });
         let fieldName = objectWithIssue.fieldName || '';
         let newFieldName = fieldName;
         let [, targetTableSuffix, sourceTableSuffix] = ['', '', ''];

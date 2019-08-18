@@ -747,7 +747,7 @@ export class DatabaseFileHelper {
             filesToInstall.push(
                 newFileName.replace(new RegExp(`.*?(postgres\/release\/current\/schema/.*?)`, 'i'), '..//$1')
             );
-        } else if (databaseSubObject.type === 'table') {
+        } else if (databaseSubObject.type === 'table' || databaseSubObject.type === 'local-tables') {
             // create the alter table file if not exist
             const alterTableFileName = newFileName.replace(new RegExp(`.*?postgres\/release\/current\/schema/.*?/([a-z0-9_]+.sql)`, 'i'),
                 '..//postgres/release/current/scripts/alter_$1');
