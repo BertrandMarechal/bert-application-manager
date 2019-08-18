@@ -137,7 +137,14 @@ export class DatabaseInstaller {
                             }
                         }
                         try {
-                            await postgresUtils.execute(fileString);
+                            if (!fileString) {
+                                uiUtils.warning({
+                                    origin: this._origin,
+                                    message: `File "${fileString}" is empty - ignoring`
+                                });
+                            } else {
+                                await postgresUtils.execute(fileString);
+                            }
 
                         } catch (error) {
                             uiUtils.stoprProgress();

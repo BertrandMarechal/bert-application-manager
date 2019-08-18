@@ -136,12 +136,12 @@ export class DatabaseTableField {
         this.default = false;
         this.defaultValue = '';
 
-        const reference = /references (?!\"?public\"?\.)?\"?([a-z0-9_]+)\"?\W?\((.*?)\)/i.exec(field.fullText);
+        const reference = /references\W*(\"?public\"?\.)?\"?([a-z0-9_]+)\"?\W*\((.*?)\)/i.exec(field.fullText);
         if (reference) {
             this.isForeignKey = true;
             this.foreignKey = {
-                table: reference[1],
-                key: reference[2]
+                table: reference[2],
+                key: reference[3]
             };
         }
         const unique = / unique[^a-z]/i.exec(field.fullText);

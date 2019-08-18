@@ -7,7 +7,9 @@ import { RepositoryUtils } from './utils/repository.utils';
 import { DatabaseInstaller } from './classes/database/database-installer';
 import { DatabaseVersionChecker } from './classes/database/database-version-checker';
 import { DatabaseTemplates } from './classes/database/database-templates';
+import { DatabaseChecker } from './classes/database/database-checker';
 import { DatabaseFileHelper } from './classes/database/database-file-helper';
+import { DatabaseTagger } from './classes/database/database-tagger';
 import { ServerlessFileHelper } from './classes/serverless/serverless-file-helper';
 import { FrontendFileHelper } from './classes/frontend/frontend-file-helper';
 import { DatabaseRepositoryReader } from './classes/database/database-repo-reader';
@@ -116,7 +118,7 @@ const main = async () => {
                         break;
                     case 'check-code':
                     case 'c':
-                        await DatabaseRepositoryReader.checkCode({
+                        await DatabaseChecker.checkCode({
                             applicationName: dbOptions['application-name']
                         }, loggerUtils);
                         break;
@@ -155,14 +157,14 @@ const main = async () => {
                     case 'tag':
                         if (!dbOptions['filter']) {
                             if (!dbOptions['remove']) {
-                                await DatabaseFileHelper.addTagOnTable({
+                                await DatabaseTagger.addTagOnTable({
                                     applicationName: dbOptions['application-name'],
                                     objectName: dbOptions['object-name'],
                                     tagName: dbOptions['tag'],
                                     tagValue: dbOptions['value']
                                 }, loggerUtils);
                             } else {
-                                await DatabaseFileHelper.removeTagFromTable({
+                                await DatabaseTagger.removeTagFromTable({
                                     applicationName: dbOptions['application-name'],
                                     objectName: dbOptions['object-name'],
                                     tagName: dbOptions['tag']
@@ -170,7 +172,7 @@ const main = async () => {
                             }
                         } else {
                             if (!dbOptions['remove']) {
-                                await DatabaseFileHelper.addTagOnField({
+                                await DatabaseTagger.addTagOnField({
                                     applicationName: dbOptions['application-name'],
                                     objectName: dbOptions['object-name'],
                                     fieldName: dbOptions['filter'],
@@ -178,7 +180,7 @@ const main = async () => {
                                     tagValue: dbOptions['value']
                                 }, loggerUtils);
                             } else {
-                                await DatabaseFileHelper.removeTagFromField({
+                                await DatabaseTagger.removeTagFromField({
                                     applicationName: dbOptions['application-name'],
                                     objectName: dbOptions['object-name'],
                                     fieldName: dbOptions['filter'],

@@ -1,4 +1,4 @@
-import { DatabaseObject, DatabaseVersionFile, DatabaseTable, Tag, DatabaseTableForSave, DatabaseVersion, DatabaseSubObject } from "../../models/database-file.model";
+import { DatabaseObject, DatabaseVersionFile, DatabaseTable, DatabaseTableForSave, DatabaseVersion, DatabaseSubObject } from "../../models/database-file.model";
 import { FileUtils } from "../../utils/file.utils";
 import path from 'path';
 import colors from 'colors';
@@ -10,7 +10,8 @@ import { indentation } from "../../utils/syntax.utils";
 
 export const intentationSpaceNumber = 4;
 export const indentationSpaces = ' '.repeat(intentationSpaceNumber);
-const fieldSettingsRegex = '+([^(),]+\\([^,]\\)|[^(),]+)([^(),]+\\([^()]+\\)[^(),]?)?[^(),\\/*]+(\\/\\*[^\\/*]+\\*\\/)?)[,)]';
+// const fieldSettingsRegex = '+([^(),]+\\([^,]\\)|[^(),]+)([^(),]+\\([^()]+\\)[^(),]?)?[^(),\\/*]+(\\/\\*[^\\/*]+\\*\\/)?)[,)]';
+export const fieldSettingsRegex = '+([^(),]+\\([^,]\\)|[^(),]+)(\\([^()]+\\))?[^(),\\/*]*(\\/\\*[^\\/*]+\\*\\/)?)[,)]';
 
 export class DatabaseFileHelper {
     private static _origin = 'DatabaseFileHelper';
@@ -720,7 +721,7 @@ export class DatabaseFileHelper {
         objectName: string;
         objectType: string;
     }, uiUtils: UiUtils) {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
+        uiUtils.info({ origin: this._origin, message: `Getting ready to edit ${params.objectType} "${params.objectName}".` });
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
         const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
@@ -728,8 +729,8 @@ export class DatabaseFileHelper {
             await DatabaseHelper.getDatabaseSubObject(params, databaseObject, DatabaseFileHelper._origin, uiUtils);
 
         if (databaseSubObject.latestVersion === 'current') {
-            // object is at the current version LREADY
-            return;
+            // object is at the current version ALREADY
+            throw 'Object is already at the current version';
         }
         const filesToInstall: string[] = []
         const fileName = databaseSubObject.latestFile;
@@ -769,159 +770,129 @@ export class DatabaseFileHelper {
 
         uiUtils.success({ origin: this._origin, message: 'New file version created' });
 
-        DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
-    }
-
-
-    static async addTagOnTable(params: {
-        applicationName: string;
-        objectName: string;
-        tagName: string;
-        tagValue: string;
-    }, uiUtils: UiUtils) {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        const databaseSubObject: DatabaseSubObject =
-            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
-
-        let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
-        if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
-            // in that case, we already have tags
-            if (!new RegExp(`#${params.tagName}[^"]*TABLE`).test(fileString)) {
-                // but we don't have the one we're looking for
-                fileString = fileString.replace(/\/\*([^*\/]+)\*\//im, `/*$1 #${params.tagName}${params.tagValue ? '=' + params.tagValue : ''} */`);
-            } else if (params.tagValue) {
-                // we the replace what we have to replace
-                fileString = fileString.replace(new RegExp(`#${params.tagName}[^#]+ ?([\#\*])`), `#${params.tagName}=${params.tagValue} $1`);
-            } else if (new RegExp(`#${params.tagName}=[^"]*TABLE`).test(fileString)) {
-                // we had a value, we don't have one anymore
-                fileString = fileString.replace(new RegExp(`#${params.tagName}[^#\*]+ ?([\#\*])`), `#${params.tagName} $1`);
-            }
-        } else {
-            fileString = `/* #${params.tagName}${params.tagValue ? '=' + params.tagValue : ''} */\n` + fileString;
-        }
-
-        FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
 
-    static async removeTagFromTable(params: {
-        applicationName: string;
-        objectName: string;
-        tagName: string;
-    }, uiUtils: UiUtils) {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        const databaseSubObject: DatabaseSubObject =
-            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
-
-        let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
-        if (/\/\*[^*\/]+\*\/[^"]*TABLE/im.test(fileString)) {
-            // in that case, we already have tags
-            if (new RegExp(`#${params.tagName}[^"]*TABLE`, 'i').test(fileString)) {
-                fileString = fileString.replace(new RegExp(`#${params.tagName}[^#\*]+ ?([\#\*])`), `$1`);
-            }
-        }
-
-        FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
-    }
-    static async addTagOnField(params: {
+    static async renameTableField(params: {
         applicationName: string;
         objectName: string;
         fieldName: string;
-        tagName: string;
-        tagValue: string;
+        newName: string;
     }, uiUtils: UiUtils) {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
 
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        let databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
         const databaseSubObject: DatabaseSubObject =
             await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
+        const tableName = databaseSubObject.name;
 
-        let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
-        // look for our field's text
-        const fieldRegexCaptured = new RegExp(`(${params.fieldName} ${fieldSettingsRegex}`, 'i')
-            .exec(fileString);
+        // rename in the table
+        // - Create the new table script, and the alter table script
+        try {
+            await DatabaseFileHelper.editObject({
+                applicationName: params.applicationName,
+                objectName: databaseSubObject.name,
+                objectType: 'table'
+            }, uiUtils);
+        }
+        catch (e) {
+            uiUtils.info({
+                origin: this._origin,
+                message: e
+            });
+        }
+        // refresh the database object
+        databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
 
 
-        if (fieldRegexCaptured && fieldRegexCaptured[1]) {
-            const tagToPut = `#${params.tagName}${params.tagValue ? '=' + params.tagValue : ''}`;
-            // we got our tield
-            const fieldText = fieldRegexCaptured[1];
-            const tags = fieldRegexCaptured[4];
+        uiUtils.info({
+            origin: this._origin,
+            message: `Updating ${tableName} script`
+        });
+        FileUtils.writeFileSync(
+            databaseObject.table[tableName].latestFile,
+            (await FileUtils.readFile(databaseObject.table[tableName].latestFile))
+                .replace(new RegExp(params.fieldName, `ig`), params.newName)
+        );
+        const newRenameScript = `ALTER TABLE ${tableName} RENAME COLUMN ${params.fieldName} TO ${params.newName};`;
+        const currentAlterScriptPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', 'current', 'scripts', `alter_${tableName}.sql`);
+        let currentAlterScript = await FileUtils.readFile(currentAlterScriptPath);
+        if (currentAlterScript) {
+            currentAlterScript += '\r\n';
+        }
+        currentAlterScript += newRenameScript;
 
-            if (tags) {
-                if (!new RegExp(`#${params.tagName}[=\s]`, 'i').test(tags)) {
-                    // but we don't have the one we're looking for
-                    fileString = fileString.replace(fieldText, fieldText.replace(
-                        tags,
-                        tags.replace('*/', `${tagToPut} */`)
-                    ));
-                } else {
-                    // we replace the tag
-                    fileString = fileString.replace(fieldText, fieldText.replace(
-                        tags,
-                        tags.replace(new RegExp(`#${params.tagName}[^#]+ ?([\#\*])`), `${tagToPut} $1`)
-                    ));
+        uiUtils.info({
+            origin: this._origin,
+            message: `Updating ${tableName} alter script`
+        });
+        await FileUtils.writeFileSync(
+            currentAlterScriptPath,
+            currentAlterScript
+        );
+        // look for all relevant objects, check the ones that were using it
+        // replace in objects, and create them in the version
+
+        uiUtils.warning({
+            origin: this._origin,
+            message: `So far the fields will be replaced in the tables, functions, views, and triggers`
+        });
+        const objectsToReplaceIn: {
+            name: string;
+            specificProcess?: (key: string) => void;
+        }[] = [
+                {
+                    name: 'table', specificProcess: async (key: string) => {
+                        const newRenameScript = `ALTER TABLE ${key} RENAME COLUMN ${params.fieldName} TO ${params.newName};`;
+                        const currentAlterScriptPath = path.resolve(databaseObject._properties.path, 'postgres', 'release', 'current', 'scripts', `alter_${key}.sql`);
+                        let currentAlterScript = await FileUtils.readFile(currentAlterScriptPath);
+                        if (currentAlterScript) {
+                            currentAlterScript += '\r\n';
+                        }
+                        currentAlterScript += newRenameScript;
+
+                        await FileUtils.writeFileSync(
+                            currentAlterScriptPath,
+                            currentAlterScript
+                        );
+
+                    }
+                },
+                { name: 'function' },
+                { name: 'view' },
+                { name: 'trigger' },
+            ];
+        for (let j = 0; j < objectsToReplaceIn.length; j++) {
+            const objectToReplaceIn = objectsToReplaceIn[j];
+            for (let i = 0; i < Object.keys(databaseObject[objectToReplaceIn.name]).length; i++) {
+                const key = Object.keys(databaseObject[objectToReplaceIn.name])[i];
+                const currentScript = await FileUtils.readFile(databaseObject[objectToReplaceIn.name][key].latestFile);
+                if (currentScript.match(new RegExp(params.fieldName, 'i'))) {
+                    try {
+                        await DatabaseFileHelper.editObject({
+                            applicationName: params.applicationName,
+                            objectName: key,
+                            objectType: objectToReplaceIn.name
+                        }, uiUtils);
+                    }
+                    catch (e) {
+                        uiUtils.info({
+                            origin: this._origin,
+                            message: e
+                        });
+                    }
+                    // refresh the database object
+                    databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+                    FileUtils.writeFileSync(
+                        databaseObject[objectToReplaceIn.name][key].latestFile,
+                        currentScript.replace(new RegExp(params.fieldName, 'ig'), params.newName)
+                    );
+                    if (objectToReplaceIn.specificProcess) {
+                        objectToReplaceIn.specificProcess(key);
+                    }
                 }
-            } else {
-                // no tags
-                fileString = fileString.replace(fieldText, fieldText + ` /* ${tagToPut} */`);
             }
-        } else {
-            throw 'Invalid field name';
+
         }
-
-
-        FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
-    }
-    static async removeTagFromField(params: {
-        applicationName: string;
-        objectName: string;
-        fieldName: string;
-        tagName: string;
-    }, uiUtils: UiUtils) {
-        uiUtils.info({ origin: this._origin, message: `Getting ready to edit object.` });
-        await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-
-        const databaseObject: DatabaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
-        const databaseSubObject: DatabaseSubObject =
-            await DatabaseHelper.getDatabaseSubObject({ ...params, objectType: 'table' }, databaseObject, DatabaseFileHelper._origin, uiUtils);
-
-        let fileString = await FileUtils.readFile(databaseSubObject.latestFile);
-        // look for our field's text
-        const fieldRegexCaptured = new RegExp(`(${params.fieldName} ${fieldSettingsRegex}`, 'i')
-            .exec(fileString);
-
-        if (fieldRegexCaptured) {
-            // we got our tield
-            const fieldText = fieldRegexCaptured[1];
-            const tags = fieldRegexCaptured[4];
-
-            if (tags) {
-                // in that case, we already have tags
-                fileString = fileString.replace(
-                    fieldText,
-                    fieldText.replace(
-                        tags,
-                        tags.replace(
-                            new RegExp(`#${params.tagName}[^#]+ ?([\#\*])`), `$1`
-                        )
-                    )
-                );
-            }
-        } else {
-            throw 'Invalid field name';
-        }
-
-        FileUtils.writeFileSync(databaseSubObject.latestFile, fileString);
-        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
 }

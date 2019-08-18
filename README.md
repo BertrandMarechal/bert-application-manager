@@ -23,7 +23,7 @@ cls && npm link && aws-mock start-server
   - [x] accept database suffix as name
   - [x] check read only from common utils
   - [x] check file name against object name
-  - [-] check fields foreign keys definitions
+  - [x] check fields foreign keys definitions
   - [x] edit object - accept object names without type
   - [x] edit object - accept partial object name
   - [x] fix unmapped files error message
@@ -41,7 +41,6 @@ cls && npm link && aws-mock start-server
   - [x] read version files on install (version files only), and check file orders
   - [x] pass the uiUtils object to the lower levels (for later integration)
   - [x] check connection parameters on DB installtion
-
 
 ## Tags
 
@@ -64,6 +63,7 @@ create table dumt_version_ver (
 - `#list-filter=<name?>` --generates the list code with a filter on this column
 - `#camel-cased-name=<name!>` --sets the camel cased name
 - `#get-with-parent` --mark the current object as to get when getting the parent object
+- `#ignore-for-fk-check` --mark the current field to be ignore when checking for foreign keys
 
 ### Table Tags
 
