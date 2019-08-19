@@ -15,7 +15,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 })
 export class DatabaseComponent implements OnInit {
   databases$: Observable<fromDatabases.State>;
-  @ViewChild('swalTemplate') swalTemplate: SwalComponent;
+  @ViewChild('swalTemplate', { static: true }) swalTemplate: SwalComponent;
   templateFormControl: FormControl;
 
   constructor(
@@ -54,6 +54,10 @@ export class DatabaseComponent implements OnInit {
         this.actions.push({
           name: 'Refresh',
           value: 'refresh'
+        });
+        this.actions.push({
+          name: 'Check code',
+          value: 'check-code'
         });
         this.actions.push({
           name: 'Check Parameters',
@@ -97,6 +101,8 @@ export class DatabaseComponent implements OnInit {
       this.store.dispatch(new DatabasesActions.PageCreateVersion());
     } else if (action.value === 'check-parameters') {
       this.store.dispatch(new DatabasesActions.PageCheckParameters(this.databaseName));
+    } else if (action.value === 'check-code') {
+      this.store.dispatch(new DatabasesActions.PageCheckCode(this.databaseName));
     } else if (action.value === 'add-template') {
       this.templateFormControl.reset();
       this.swalTemplate.show();
@@ -108,6 +114,6 @@ export class DatabaseComponent implements OnInit {
   }
 
   onInstall(version: string) {
-    this.store.dispatch(new DatabasesActions.PageInstallDatabase({version: version, name: this.databaseName}));
+    this.store.dispatch(new DatabasesActions.PageInstallDatabase({ version: version, name: this.databaseName }));
   }
 }

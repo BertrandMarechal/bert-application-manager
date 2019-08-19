@@ -27,14 +27,16 @@ export class DatabaseChecker {
         applicationName: string;
         fix?: boolean;
     }, uiUtils: UiUtils) {
-
         await RepositoryUtils.checkOrGetApplicationName(params, 'database', uiUtils);
-        await RepositoryUtils.readRepository({
-            type: "postgres"
-        }, uiUtils);
 
         // get the db as object to get the params
         let databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+        await RepositoryUtils.readRepository({
+            startPath: databaseObject._properties.path,
+            type: "postgres"
+        }, uiUtils);
+        databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+
         // get the application and its versions
         let databaseData = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
         if (!databaseData || !databaseObject) {
@@ -322,7 +324,7 @@ export class DatabaseChecker {
                 `Remove "fk" prefix`,
                 'Ignore for next runs',
             ],
-            message: ` - What do you want to do for this field ?`
+            message: ` - What do you want to do for this field (${colors.green(objectWithIssue.objectName)}.${colors.green(objectWithIssue.fieldName || '')}) ?`
         });
         switch (choice['choice']) {
             case 'Ignore for this run':

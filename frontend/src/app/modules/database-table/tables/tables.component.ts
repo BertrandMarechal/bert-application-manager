@@ -3,7 +3,9 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import * as fromDatabaseTable from '@app/store/reducers/database-table.reducers';
 import { Store, select } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { MatTableDataSource, MatPaginator, MatSort, MatTable } from '@angular/material';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { DatabaseTable } from '@app/models/database-file.model';
 @Component({
   selector: 'app-tables',
@@ -11,9 +13,9 @@ import { DatabaseTable } from '@app/models/database-file.model';
   styleUrls: ['./tables.component.scss']
 })
 export class TablesComponent implements OnInit {
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
-  @ViewChild('matTable') matTable: MatTable<DatabaseTable>;
+  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
+  @ViewChild('matTable', { static: true }) matTable: MatTable<DatabaseTable>;
 
   filter: string;
   databaseTable$: Observable<fromDatabaseTable.State>;

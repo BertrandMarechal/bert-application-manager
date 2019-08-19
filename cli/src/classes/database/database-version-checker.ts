@@ -1,5 +1,5 @@
 import { UiUtils } from "../../utils/ui.utils";
-import { DatabaseVersionFile, DatabaseObject, DatabaseTable, DatabaseFile, DatabaseSubObject, DatabaseFunction } from "../../models/database-file.model";
+import { DatabaseVersionFile, DatabaseObject } from "../../models/database-file.model";
 import { DatabaseHelper } from "./database-helper";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { FileUtils } from "../../utils/file.utils";
@@ -26,7 +26,7 @@ export class DatabaseVersionChecker {
             params.version = databaseObject._versions[databaseObject._versions.length - 1];
         }
 
-        uiUtils.info({message: `Checking tables for ${params.version}`, origin: this._origin});
+        uiUtils.info({ message: `Checking tables for ${params.version}`, origin: this._origin });
         // we check if we have an alter table in the list of files
         // then check if we have the table script
         const scriptNames = Object.keys(databaseObject.script)
@@ -34,7 +34,7 @@ export class DatabaseVersionChecker {
             .filter(script => script.latestVersion === params.version)
             .map(script => script.latestFile)
         const modifiedTables: string[] = [];
-        
+
         // we read the version's table folder
         const tableList = await FileUtils.getFileList({
             startPath: path.resolve(databaseObject._properties.path, 'postgres', 'release', params.version, 'schema', '03-tables'),
@@ -42,7 +42,7 @@ export class DatabaseVersionChecker {
         });
         const tableNamesFromtableScripts = tableList
             .map(table => table.split('/')[table.split('/').length - 1].split('.')[0]);
-            
+
         for (let i = 0; i < scriptNames.length; i++) {
             const scriptName = scriptNames[i];
             const file = await FileUtils.readFile(scriptName);
@@ -60,7 +60,7 @@ export class DatabaseVersionChecker {
             const missingTableScripts = modifiedTables
                 .filter(table => tableNamesFromtableScripts.indexOf(table) === -1);
             if (missingTableScripts.length > 0) {
-                uiUtils.error({message: `Missing table scripts for : ${missingTableScripts.join(', ')}`, origin: this._origin});
+                uiUtils.error({ message: `Missing table scripts for : ${missingTableScripts.join(', ')}`, origin: this._origin });
             }
         }
 
@@ -72,7 +72,7 @@ export class DatabaseVersionChecker {
                 )
                 .filter(table => modifiedTables.indexOf(table) === -1);
             if (missingAlterScripts.length > 0) {
-                uiUtils.error({message: `Missing alter table scripts for : ${missingAlterScripts.join(', ')}`, origin: this._origin});
+                uiUtils.error({ message: `Missing alter table scripts for : ${missingAlterScripts.join(', ')}`, origin: this._origin });
             }
         }
     }

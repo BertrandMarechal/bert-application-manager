@@ -3,7 +3,7 @@ import * as fromApp from '@app/store/reducers/app.reducers';
 import * as AppActions from '@app/store/actions/app.actions';
 import { Observable } from 'rxjs';
 import { Store, select } from '@ngrx/store';
-import { MatSelectChange } from '@angular/material';
+import { MatSelectChange } from '@angular/material/select';
 
 @Component({
   selector: 'app-header',

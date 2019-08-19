@@ -38,7 +38,7 @@ export class EditTableComponent implements OnInit, AfterViewInit {
   databases$: Observable<fromDatabases.State>;
 
   database: DatabaseObject;
-  @ViewChild('tableName') tableName: ElementRef;
+  @ViewChild('tableName', { static: false }) tableName: ElementRef;
   tableNameControl: FormControl;
   tableSuffixControl: FormControl;
   fieldFormGroup: FormGroup;

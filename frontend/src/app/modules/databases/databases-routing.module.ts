@@ -12,15 +12,15 @@ const routes: Routes = [{
     children: [
       {
         path: 'tables',
-        loadChildren: '../database-table/database-table.module#DatabaseTableModule'
+        loadChildren: () => import('../database-table/database-table.module').then(m => m.DatabaseTableModule)
       },
       {
         path: 'details',
-        loadChildren: './database/database-details/database-details.module#DatabaseDetailsModule'
+        loadChildren: () => import('./database/database-details/database-details.module').then(m => m.DatabaseDetailsModule)
       },
       {
         path: 'lookups',
-        loadChildren: './database/database-lookups/database-lookups.module#DatabaseLookupsModule'
+        loadChildren: () => import('./database/database-lookups/database-lookups.module').then(m => m.DatabaseLookupsModule)
       },
       {
         path: '',

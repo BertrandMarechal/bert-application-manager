@@ -10,15 +10,15 @@ import { map } from 'rxjs/operators';
 
 @Injectable()
 export class ApplicationsEffects {
-    @Effect() navigateToApplications: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: ['/applications'],
-        actionsObs: this.actions$
-    }).pipe(map(() => ({type: ApplicationsActions.ROUTER_GET_APPLICATIONS})));
+    @Effect() navigateToApplications: Observable<Action> = RouterUtilsService.handleNavigationWithParams(
+        '/applications',
+        this.actions$
+    ).pipe(map(() => ({ type: ApplicationsActions.ROUTER_GET_APPLICATIONS })));
 
-    @Effect() navigateToApplication: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: ['/applications/:name'],
-        actionsObs: this.actions$
-    }).pipe(map((result: RouteNavigationParams) => ({type: ApplicationsActions.ROUTER_GET_APPLICATION, payload: result.params.name})));
+    @Effect() navigateToApplication: Observable<Action> = RouterUtilsService.handleNavigationWithParams(
+        '/applications/:name',
+        this.actions$
+    ).pipe(map((result: RouteNavigationParams) => ({ type: ApplicationsActions.ROUTER_GET_APPLICATION, payload: result.params.name })));
 
     @Effect() getApplications: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
         actionsObs: this.actions$,
@@ -42,7 +42,7 @@ export class ApplicationsEffects {
     constructor(
         private actions$: Actions,
         private applicationService: ApplicationsService
-        ) {
+    ) {
 
     }
 }

@@ -185,6 +185,25 @@ export class ServiceCheckParametersFailed implements Action {
     constructor(public payload?: string) {
     }
 }
+export const PAGE_CHECK_CODE = '[Databases Page] check code';
+export const SERVICE_CHECK_CODE_COMPLETE = '[Databases Service] check code complete';
+export const SERVICE_CHECK_CODE_FAILED = '[Databases Service] check code failed';
+
+export class PageCheckCode implements Action {
+    readonly type = PAGE_CHECK_CODE;
+    constructor(public payload: string) {
+    }
+}
+export class ServiceCheckCodeComplete implements Action {
+    readonly type = SERVICE_CHECK_CODE_COMPLETE;
+    constructor(public payload: DatabaseObject) {
+    }
+}
+export class ServiceCheckCodeFailed implements Action {
+    readonly type = SERVICE_CHECK_CODE_FAILED;
+    constructor(public payload?: string) {
+    }
+}
 
 export type DatabasesActions =
     | EffectGetDatabase
@@ -220,4 +239,8 @@ export type DatabasesActions =
     | PageInstallDatabase
     | ServiceInstallDatabaseComplete
     | ServiceInstallDatabaseFailed
+
+    | PageCheckCode
+    | ServiceCheckCodeComplete
+    | ServiceCheckCodeFailed
     ;

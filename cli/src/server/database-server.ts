@@ -6,8 +6,9 @@ import { Express, Request, Response } from 'express';
 import { SocketUtils } from '../utils/socket.utils';
 import { RepositoryUtils } from '../utils/repository.utils';
 import { DatabaseInstaller } from '../classes/database/database-installer';
-import { UiUtils } from '../utils/ui.utils';
 import { DatabaseTemplates } from '../classes/database/database-templates';
+import { DatabaseTagger } from '../classes/database/database-tagger';
+import { DatabaseChecker } from '../classes/database/database-checker';
 
 export class DatabaseServer {
     static declareRoutes(app: Express, socketUtils: SocketUtils) {
@@ -28,7 +29,13 @@ export class DatabaseServer {
             }, socketUtils);
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
-
+        app.get('/databases/:name/check-code', async (req: Request, res: Response) => {
+            // this one can take a whilel we do not wait
+            DatabaseChecker.checkCode({
+                applicationName: req.params.name
+            }, socketUtils);
+            res.send('ongoing');
+        });
         app.get('/databases/:name/install/:version/:env', async (req: Request, res: Response) => {
             console.log('databases/:name/install/:version/:env');
             try {
@@ -121,7 +128,7 @@ export class DatabaseServer {
             res.send(obj);
         });
         app.post('/databases/:name/tables/:tableName/add-tag', async (req: Request, res: Response) => {
-            await DatabaseFileHelper.addTagOnTable({
+            await DatabaseTagger.addTagOnTable({
                 applicationName: req.params.name,
                 objectName: req.params.tableName,
                 tagName: req.body.tagName,
@@ -130,7 +137,7 @@ export class DatabaseServer {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         app.post('/databases/:name/tables/:tableName/remove-tag', async (req: Request, res: Response) => {
-            await DatabaseFileHelper.removeTagFromTable({
+            await DatabaseTagger.removeTagFromTable({
                 applicationName: req.params.name,
                 objectName: req.params.tableName,
                 tagName: req.body.tagName,
@@ -138,7 +145,7 @@ export class DatabaseServer {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         app.post('/databases/:name/tables/:tableName/:field/add-tag', async (req: Request, res: Response) => {
-            await DatabaseFileHelper.addTagOnField({
+            await DatabaseTagger.addTagOnField({
                 applicationName: req.params.name,
                 objectName: req.params.tableName,
                 fieldName: req.params.field,
@@ -148,7 +155,7 @@ export class DatabaseServer {
             res.send(await ApplicationHelper.getDatabase(req.params.name));
         });
         app.post('/databases/:name/tables/:tableName/:field/remove-tag', async (req: Request, res: Response) => {
-            await DatabaseFileHelper.removeTagFromField({
+            await DatabaseTagger.removeTagFromField({
                 applicationName: req.params.name,
                 objectName: req.params.tableName,
                 fieldName: req.params.field,

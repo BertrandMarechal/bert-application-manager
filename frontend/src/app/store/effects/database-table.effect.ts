@@ -13,20 +13,20 @@ import * as fromDatabaseTable from '../reducers/database-table.reducers';
 
 @Injectable()
 export class DatabaseTableEffects {
-    @Effect() navigateToDatabaseTables: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: ['/databases/:name/tables'],
-        actionsObs: this.actions$
-    }).pipe(map((result: RouteNavigationParams) => {
+    @Effect() navigateToDatabaseTables: Observable<Action> = RouterUtilsService.handleNavigationWithParams(
+        '/databases/:name/tables',
+        this.actions$
+    ).pipe(map((result: RouteNavigationParams) => {
         return {
             type: DatabaseTableActions.ROUTER_GET_DATABASE_TABLES,
             payload: result.params.name
         };
     }
     ));
-    @Effect() navigateToDatabaseTable: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: ['/databases/:name/tables/:tableName/:version'],
-        actionsObs: this.actions$
-    }).pipe(map((result: RouteNavigationParams) => ({
+    @Effect() navigateToDatabaseTable: Observable<Action> = RouterUtilsService.handleNavigationWithParams(
+        '/databases/:name/tables/:tableName/:version',
+        this.actions$
+    ).pipe(map((result: RouteNavigationParams) => ({
         type: DatabaseTableActions.ROUTER_GET_DATABASE_TABLE,
         payload: { databaseName: result.params.name, tableName: result.params.tableName, version: result.params.version }
     })));

@@ -68,17 +68,36 @@ export class LocalhostService {
     });
   }
 
+  private _preProcessStrings(params: any): any {
+    const newMessage = {
+      ...params
+    };
+    if (newMessage.message) {
+      newMessage.message = params.message.replace(/\u001b\[[0-9]{1,2}m/g, '');
+    }
+    if (newMessage.title) {
+      newMessage.title = params.title.replace(/\u001b\[[0-9]{1,2}m/g, '');
+    }
+    if (newMessage.text) {
+      newMessage.text = params.text.replace(/\u001b\[[0-9]{1,2}m/g, '');
+    }
+    return newMessage;
+  }
+
   private _plugUiUtils() {
     this.socketManagement.on('log', (params: LoggingParams) => {
       params.type = 'info';
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('info', (params: LoggingParams) => {
       params.type = 'info';
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'info', params }));
     });
     this.socketManagement.on('success', (params: LoggingParams) => {
       params.type = 'success';
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'success', params }));
       Toast.fire({
         type: 'success',
@@ -87,6 +106,7 @@ export class LocalhostService {
     });
     this.socketManagement.on('warning', (params: LoggingParams) => {
       params.type = 'warning';
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'warning', params }));
       Toast.fire({
         type: 'warning',
@@ -95,6 +115,7 @@ export class LocalhostService {
     });
     this.socketManagement.on('error', (params: LoggingParams) => {
       params.type = 'error';
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceNotification({ type: 'error', params }));
       Toast.fire({
         type: 'error',
@@ -102,6 +123,7 @@ export class LocalhostService {
       });
     });
     this.socketManagement.on('question', async (params: { text: string, origin: string }) => {
+      this._preProcessStrings(params);
       const returnValue = await Swal.fire({
         text: params.text.replace(/\u001b\[[0-9]{1,2}m/g, ''),
         type: 'question',
@@ -111,6 +133,7 @@ export class LocalhostService {
       this.socketManagement.emit('response', returnValue.value);
     });
     this.socketManagement.on('choices', async (params: { choices: string[], title: string, message: string }) => {
+      this._preProcessStrings(params);
       const returnValue = await Swal.fire({
         text: params.message,
         type: 'question',
@@ -122,6 +145,7 @@ export class LocalhostService {
       this.socketManagement.emit('choice', { [params.title]: returnValue.value });
     });
     this.socketManagement.on('startProgress', (params: { length: number; start: number; title: string }) => {
+      this._preProcessStrings(params);
       this.store.dispatch(new ConsoleActions.ServiceStartProgress({
         current: params.start,
         length: params.length,

@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
-import {
-    MatListModule, MatCardModule, MatButtonModule,
-} from '@angular/material';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatListModule } from '@angular/material/list';
 
 @NgModule({
   imports: [

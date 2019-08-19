@@ -16,6 +16,7 @@ import { DatabaseRepositoryReader } from './classes/database/database-repo-reade
 import { LoggerUtils } from './utils/logger.utils';
 import { mainHelp, databaseHelp } from './utils/documentation.utils';
 import { ServerlessRepositoryReader } from './classes/serverless/serverless-repo-reader';
+import { CliFiles } from './classes/cli-files/cli-files';
 
 const mainOptions = [
     { name: 'category', alias: 'z', type: String, defaultOption: true, description: 'Action' },
@@ -273,6 +274,9 @@ const main = async () => {
             case 'c':
             case 'clear':
                 await FileUtils.deleteFolderRecursiveSync(path.resolve(__dirname, '../../temp'));
+                break;
+            case 'files':
+                await CliFiles.openDbDataFile();
                 break;
             case 's':
             case 'server':

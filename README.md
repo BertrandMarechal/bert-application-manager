@@ -5,6 +5,7 @@ Because it's cool
 ```sh
 cls && npm link && aws-mock start-server
 ```
+
 ## todos
 
 - [x] check in which version we want to add the functions
@@ -21,12 +22,13 @@ cls && npm link && aws-mock start-server
 - [x] DB
   - [x] automatically read Database files before installation
   - [x] accept database suffix as name
-  - [x] check read only from common utils
-  - [x] check file name against object name
-  - [x] check fields foreign keys definitions on tables
-  - [x] check local replicated tables unique or primary key
-  - [x] edit object - accept object names without type
-  - [x] edit object - accept partial object name
+  - [x] Checks
+    - [x] check file name against object name
+    - [x] check fields foreign keys definitions on tables
+    - [x] check local replicated tables unique or primary key
+  - [x] Edit object
+    - [x] accept object names without type
+    - [x] accept partial object name
   - [x] fix unmapped files error message
   - [x] create Database files
     - [x] fix replication from issued

@@ -1,8 +1,7 @@
-import {ActivatedRouteSnapshot} from '@angular/router';
-import {Observable, of} from 'rxjs';
-import {ROUTER_NAVIGATION, RouterNavigationAction} from '@ngrx/router-store';
-import {catchError, filter, map, switchMap, withLatestFrom} from 'rxjs/operators';
-import {ofType, Actions} from '@ngrx/effects';
+import { Observable } from 'rxjs';
+import { ROUTER_NAVIGATION, RouterNavigationAction } from '@ngrx/router-store';
+import { filter, map } from 'rxjs/operators';
+import { ofType } from '@ngrx/effects';
 
 export interface RouteNavigationParams {
   params: { [option: string]: string };
@@ -12,14 +11,11 @@ export interface RouteNavigationParams {
 }
 
 export class RouterUtilsService {
-  static handleNavigationWithParams(params: {
-      urls: string | string[],
-      actionsObs: Actions
-    }):
+  static handleNavigationWithParams(segments: string | string[], actions: any):
     Observable<RouteNavigationParams> {
-    params.urls = Array.isArray(params.urls) ? params.urls : [params.urls];
-    const urls = params.urls.map(segment => segment[0] === '/' ? segment : '/' + segment);
-    return params.actionsObs.pipe(
+    segments = Array.isArray(segments) ? segments : [segments];
+    const urls = segments.map(segment => segment[0] === '/' ? segment : '/' + segment);
+    return actions.pipe(
       ofType(ROUTER_NAVIGATION),
       map((x: RouterNavigationAction) => {
         if (x.payload.event.url) {

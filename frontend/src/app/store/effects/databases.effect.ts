@@ -12,12 +12,10 @@ import { DatabaseService } from 'app/services/database.service';
 
 @Injectable()
 export class DatabasesEffects {
-    @Effect() navigateToDatabase: Observable<Action> = RouterUtilsService.handleNavigationWithParams({
-        urls: [
-            '/databases/:name'
-        ],
-        actionsObs: this.actions$
-    }).pipe(map((result: RouteNavigationParams) => ({
+    @Effect() navigateToDatabase: Observable<Action> = RouterUtilsService.handleNavigationWithParams(
+        '/databases/:name',
+        this.actions$
+    ).pipe(map((result: RouteNavigationParams) => ({
         type: DatabasesActions.ROUTER_GET_DATABASE,
         payload: result.params.name
     })));
@@ -30,6 +28,7 @@ export class DatabasesEffects {
             DatabasesActions.ROUTER_GET_DATABASE,
             DatabasesActions.PAGE_GET_DATABASE,
         ],
+        debounceTime: 200,
         serviceMethod: this.databasesService.getDatabase.bind(this.databasesService),
         // condition: (action: DatabasesActions.EffectGetDatabase | DatabasesActions.RouterGetDatabase | DatabasesActions.PageGetDatabase,
         //     state: fromDatabases.State) =>
@@ -117,6 +116,18 @@ export class DatabasesEffects {
             environment: state.environment
         }),
         serviceMethod: this.databasesService.checkParameters.bind(this.databasesService)
+    });
+    @Effect() checkCode: Observable<Action> = NgrxUtilsService.actionToServiceToAction({
+        actionsObs: this.actions$,
+        actionsToListenTo: [
+            DatabasesActions.PAGE_CHECK_CODE
+        ],
+        store: this.store.pipe(select('app')),
+        payloadTransform: (action: DatabasesActions.PageCheckCode, state: fromApp.State) => ({
+            name: action.payload,
+            environment: state.environment
+        }),
+        serviceMethod: this.databasesService.checkCode.bind(this.databasesService)
     });
     constructor(
         private actions$: Actions,

@@ -1,7 +1,7 @@
 import { Actions, ofType } from '@ngrx/effects';
 import { from, interval, Observable } from 'rxjs';
 import { Action, Store } from '@ngrx/store';
-import { catchError, mergeMap, withLatestFrom } from 'rxjs/operators';
+import { catchError, mergeMap, withLatestFrom, debounceTime } from 'rxjs/operators';
 import swal from 'sweetalert2';
 
 const toast = (<any>swal).mixin({
@@ -23,11 +23,13 @@ export class NgrxUtilsService {
     store2?: Observable<Store<any>>,
     successToastMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
     successSwalMessage?: (data: any, action?: any, state?: any, state2?: any) => string,
-    postServiceAction?: (data: any, action?: any, state?: any, state2?: any) => void
+    postServiceAction?: (data: any, action?: any, state?: any, state2?: any) => void,
+    debounceTime?: number;
   }): Observable<Action> {
     return params.actionsObs
       .pipe(
         ofType(...params.actionsToListenTo),
+        debounceTime(params.debounceTime || 1),
         // we wait 1ms if we do not have a store to resolve something (the interval)
         withLatestFrom(params.store || interval(1)),
         withLatestFrom(params.store2 || interval(1)),

@@ -768,7 +768,7 @@ export class DatabaseFileHelper {
                 uiUtils);
         }
 
-        uiUtils.success({ origin: this._origin, message: 'New file version created' });
+        uiUtils.success({ origin: this._origin, message: `New file version created for ${params.objectType} "${params.objectName}"` });
 
         await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
     }
