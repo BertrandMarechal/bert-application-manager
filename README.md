@@ -59,8 +59,9 @@ actions: save (deals with update and insert), delete, get, list
     - [x] check file name against object name
     - [x] check fields foreign keys definitions on tables
     - [x] check local replicated tables unique or primary key
+    - [x] check that the version's files are in the version folder for each version
     - [x] check that all the code that's in postgres/schema is the one that comes from postgres/release/*/schema
-      - [-] Check those files correctly as it seems it is removing important files
+      - [x] Check those files correctly as it seems it is removing important files
     - [x] check that the files that changed over time are identified, and can be fixed
   - [x] Edit object
     - [x] accept object names without type

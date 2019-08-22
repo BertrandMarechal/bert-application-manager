@@ -8,7 +8,6 @@ import path from 'path';
 import { DatabaseSubObject, DatabaseObject, DatabaseTable, DatabaseTableField, DatabaseFileType } from '../../models/database-file.model';
 import { FileUtils } from '../../utils/file.utils';
 import { DatabaseFileHelper } from './database-file-helper';
-import { createSecureContext } from 'tls';
 
 type ObjectIssueTyes = 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk' | 'no-index-on-local-replicated-table';
 
@@ -45,11 +44,91 @@ export class DatabaseChecker {
         }
         await this.checkFileName(databaseObject, params, uiUtils);
         await this.checkFilesMovesOverVersions(databaseObject, params, uiUtils);
-        await this.checkFilesInSchemaFolder(databaseObject, uiUtils);
+        await this.checkVersionFilesAreInVersionFolder(databaseObject, params, uiUtils);
+        await this.checkFilesInSchemaFolder(databaseObject, params, uiUtils);
         await this.checkForeignKeys(databaseObject, params, uiUtils);
         await this.checkReplicatedTableUniqueIndex(databaseObject, params, uiUtils);
     }
 
+    private static async checkVersionFilesAreInVersionFolder(databaseObject: DatabaseObject, params: { applicationName: string }, uiUtils: UiUtils) {
+        uiUtils.info({
+            origin: this._origin,
+            message: `Checking that the files to install in the version are in the version folder`
+        });
+
+        let databaseVersionObjects = await DatabaseHelper.getApplicationDatabaseFiles(params.applicationName);
+        const incorrectFiles = databaseVersionObjects
+            .map(databaseVersionObject => {
+                const regexVersion = new RegExp(`^\\.\\.\\/\\/postgres\\/release\\/${databaseVersionObject.versionName}\\/`);
+                return databaseVersionObject.versions
+                    .map(version => version.fileList.filter(f => !regexVersion.test(f)))
+                    .reduce((agg: { version: string, fileName: string }[], curr) =>
+                        [...agg, ...curr.map(c => ({ version: databaseVersionObject.versionName, fileName: c }))],
+                        []);
+            }).reduce((agg, curr) => [...agg, ...curr], []);
+        if (incorrectFiles.length) {
+            const choice = await uiUtils.choices({
+                title: 'versionFiles',
+                message: `We found ${incorrectFiles.length} files that should be in their version folder and are not\n${
+                    incorrectFiles.map(({ version, fileName }) => `${version} - ${fileName}`).join('\n')
+                    }\n Do you want to fix those ?`,
+                choices: ['Yes', 'No']
+            });
+            if (choice['versionFiles'] === 'Yes') {
+                for (let i = 0; i < incorrectFiles.length; i++) {
+                    const incorrectFile = incorrectFiles[i];
+                    // first check if the file is contained in the version
+                    const fromFileName = databaseObject._properties.path + incorrectFile.fileName
+                        .replace(/^\.\.\/\/postgres/, `\/postgres`);
+                    const newShortName = incorrectFile.fileName
+                        .replace(/^\.\.\/\/postgres/, `\/postgres\/release\/${incorrectFile.version}`)
+                    const toFileName = databaseObject._properties.path + newShortName;
+                    let inVersionFolder = FileUtils.checkIfFolderExists(toFileName);
+                    if (!inVersionFolder) {
+                        const choiceCopyFromLocation = await uiUtils.choices({
+                            title: 'choiceCopyFromLocation',
+                            message: `${incorrectFile.version} ${incorrectFile.fileName} is not in the version's folder. Do you want to copy the one that is specified in the version.json file ?`,
+                            choices: ['Yes', 'No']
+                        });
+                        if (choiceCopyFromLocation.choiceCopyFromLocation === 'Yes') {
+                            FileUtils.copyFileSync(fromFileName, toFileName);
+                            inVersionFolder = true;
+                        } else {
+                            uiUtils.warning({
+                                origin: this._origin,
+                                message: `ignoring`
+                            });
+                        }
+                    }
+                    if (inVersionFolder) {
+                        // update version.json
+                        const versionJsonFileName = databaseObject._properties.path + `/postgres/release/${incorrectFile.version}/version.json`;
+                        FileUtils.writeFileSync(
+                            versionJsonFileName,
+                            (await FileUtils.readFile(versionJsonFileName))
+                                .replace(incorrectFile.fileName, '../' + newShortName)
+                        );
+                    }
+                }
+                await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+                databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
+                uiUtils.success({
+                    origin: this._origin,
+                    message: `All done`
+                });
+            } else {
+                uiUtils.warning({
+                    origin: this._origin,
+                    message: `ignoring`
+                });
+            }
+        } else {
+            uiUtils.success({
+                origin: this._origin,
+                message: `All files are in the version's folder`
+            });
+        }
+    }
     private static async checkFilesMovesOverVersions(databaseObject: DatabaseObject, params: { applicationName: string }, uiUtils: UiUtils) {
         uiUtils.info({
             origin: this._origin,
@@ -112,7 +191,7 @@ export class DatabaseChecker {
             if (keys.length) {
                 uiUtils.warning({
                     origin: this._origin,
-                    message: `Checked ${Object.keys(databaseObject[entityToCheck]).length} file${Object.keys(databaseObject[entityToCheck]).length > 1 ? 's' : ''}, Found ${keys.length} issue${keys.length > 1 ? 's' : ''}. we will loop through them and let you decide what to do with th${keys.length > 1 ? 'ose' : 'is'} file${keys.length > 1 ? 's' : ''}`
+                    message: `Checked ${Object.keys(databaseObject[entityToCheck]).length} file${Object.keys(databaseObject[entityToCheck]).length > 1 ? 's' : ''}, Found ${keys.length} issue${keys.length > 1 ? 's' : ''}\nWe will loop through them and let you decide what to do with th${keys.length > 1 ? 'ose' : 'is'} file${keys.length > 1 ? 's' : ''}`
                 });
                 for (let k = 0; k < keys.length; k++) {
                     const key = keys[k];
@@ -160,6 +239,10 @@ export class DatabaseChecker {
                         }
                     }
                 }
+                uiUtils.info({
+                    origin: this._origin,
+                    message: `Cleaning the repository from empty folders...`
+                });
                 FileUtils.deleteEmptyFolders({
                     startPath: databaseObject._properties.path
                 });
@@ -179,7 +262,7 @@ export class DatabaseChecker {
 
     }
 
-    private static async checkFilesInSchemaFolder(databaseObject: DatabaseObject, uiUtils: UiUtils) {
+    private static async checkFilesInSchemaFolder(databaseObject: DatabaseObject, params: { applicationName: string }, uiUtils: UiUtils) {
         uiUtils.info({
             origin: this._origin,
             message: `Checking files in postgres/schema against postgres/release/*.*.*.*/schema`
@@ -193,18 +276,20 @@ export class DatabaseChecker {
             filter: /[0-9]+.[0-9]+.[0-9]+.[0-9]+(\/|\\)schema.*?\.sql$/
         });
 
-        postgresSchemaFiles = postgresSchemaFiles.map(fileName => fileName.replace(databaseObject._properties.path + '/postgres/schema', ''));
+        postgresSchemaFiles = postgresSchemaFiles.map(fileName => fileName.replace(databaseObject._properties.path + '/postgres/schema', '').toLowerCase());
         const flattenedPostgresReleaseSchemaFiles: Record<string, { fileName: string, version: string, short: string }> = postgresReleaseSchemaFiles
             .filter(fileName => fileName.indexOf('/current/') === -1)
             .map(fileName => ({
-                fileName,
+                fileName: fileName.toLowerCase(),
                 version: (fileName.match(/\/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)\//i) as string[]).reduce((agg, curr, i) => {
                     if (i === 0 || i > 4) {
                         return agg;
                     }
                     return agg + `00000${curr}`.substring(-5)
                 }, ''),
-                short: fileName.replace(new RegExp(databaseObject._properties.path + '\\/postgres\\/release\\/[0-9]+.[0-9]+.[0-9]+.[0-9]+\/schema'), '')
+                short: fileName
+                    .replace(new RegExp(databaseObject._properties.path + '\\/postgres\\/release\\/[0-9]+.[0-9]+.[0-9]+.[0-9]+\/schema'), '')
+                    .toLowerCase()
             }))
             .reduce((agg: Record<string, { fileName: string, version: string, short: string }>, curr) => {
                 agg[curr.short] = agg[curr.short] ? (agg[curr.short].version < curr.version ? curr : agg[curr.short]) : curr;
@@ -221,6 +306,8 @@ export class DatabaseChecker {
             flattenedPostgresReleaseSchemaFiles, missingFilesInPostgresSchema, databaseObject, uiUtils);
         const missingFilesInVersions = postgresSchemaFiles.filter(x => postgresReleaseSchemaFiles.indexOf(x) === -1);
         await this.checkFilesInPostgresNotVersion(missingFilesInVersions, databaseObject, uiUtils);
+        await DatabaseRepositoryReader.readRepo(databaseObject._properties.path, params.applicationName, uiUtils);
+        databaseObject = await DatabaseHelper.getApplicationDatabaseObject(params.applicationName);
     }
 
     private static async checkFilesInPostgresNotVersion(missingFiles: string[], databaseObject: DatabaseObject, uiUtils: UiUtils) {
@@ -230,7 +317,7 @@ export class DatabaseChecker {
         });
         if (missingFiles.length) {
             const response = await uiUtils.choices({
-                message: `  - ${missingFiles.length} missing files found:\n - ${missingFiles.join('\n - ')}.\n Do you wnat to try and fix those ?`,
+                message: `  - ${missingFiles.length} missing files found:\n - ${missingFiles.join('\n - ')}\n Do you wnat to try and fix those ?`,
                 choices: ['Yes', 'No'],
                 title: 'Missing Files'
             });
@@ -292,7 +379,7 @@ export class DatabaseChecker {
         });
         if (missingFiles.length) {
             const response = await uiUtils.choices({
-                message: `  - ${missingFiles.length} missing files found:\n - ${missingFiles.join('\n - ')}.\n Do you wnat to try and fix those ?`,
+                message: `  - ${missingFiles.length} missing files found:\n - ${missingFiles.join('\n - ')}\n Do you wnat to try and fix those ?`,
                 choices: ['Yes', 'No'],
                 title: 'Missing Files'
             });
