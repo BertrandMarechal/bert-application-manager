@@ -85,11 +85,6 @@ export class DatabaseTagger {
         // look for our field's text
         const fieldRegexCaptured = new RegExp(`(${params.fieldName} ${fieldSettingsRegex}`, 'i')
             .exec(fileString);
-
-        console.log('addTagOnField', params.applicationName, params.objectName, params.fieldName, params.tagName);
-
-
-
         if (fieldRegexCaptured && fieldRegexCaptured[1]) {
             const tagToPut = `#${params.tagName}${params.tagValue ? '=' + params.tagValue : ''}`;
             // we got our tield

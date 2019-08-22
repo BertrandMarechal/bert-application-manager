@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "bin": {
-    "am": "./cli/build/main.js"
+    "bam": "./cli/build/main.js",
+    "bertrand-app-manager": "./cli/build/main.js"
   }
 }

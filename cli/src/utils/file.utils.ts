@@ -62,6 +62,50 @@ export class FileUtils {
         }
     }
 
+    static deleteEmptyFolders(params: {
+        startPath: string;
+        maxLevels?: number;
+        currentLevel?: number;
+    }): boolean {
+        params.startPath = FileUtils.replaceSlashes(params.startPath);
+        params.currentLevel = (params.currentLevel || 0) + 1;
+
+        if (!fs.existsSync(params.startPath)) {
+            console.error(params.startPath + ' does not exist');
+            return false;
+        }
+        else {
+            let fileNames = fs.readdirSync(params.startPath);
+            const { directories, hasFiles } = fileNames.reduce((agg: { directories: string[], hasFiles: boolean }, x: string) => {
+                let fileName = path.join(params.startPath, x);
+                let stat = fs.lstatSync(fileName);
+                if (stat.isDirectory()) {
+                    agg.directories.push(x);
+                } else {
+                    agg.hasFiles = true;
+                }
+                return agg;
+            }, { directories: [], hasFiles: false });
+
+            if (directories.length > 0 && (!params.maxLevels || params.maxLevels >= params.currentLevel)) {
+                const canDeleteSubs: boolean[] = directories.map((x: string) => FileUtils.deleteEmptyFolders({
+                    ...params,
+                    startPath: params.startPath + '/' + x
+                }));
+                if (!hasFiles && canDeleteSubs.filter(x => !x).length === 0) {
+                    FileUtils.deleteFolderRecursiveSync(params.startPath);
+                    return true;
+                }
+                return false;
+            } else if (hasFiles) {
+                return false;
+            } else {
+                FileUtils.deleteFolderRecursiveSync(params.startPath);
+                return true;
+            }
+        }
+    }
+
     static replaceSlashes(path: string) {
         return path
             .replace(/\/\//g, '/')
