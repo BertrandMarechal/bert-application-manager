@@ -30,10 +30,6 @@ const loggerUtils = new LoggerUtils();
 const main = async () => {
     try {
         switch (options.category) {
-            case 'h':
-            case 'help':
-                console.log(mainHelp);
-                break;
             case 'db':
             case 'database':
                 const dbOptionsDefinitions = [
@@ -52,10 +48,6 @@ const main = async () => {
                 ]
                 const dbOptions = commandLineArgs(dbOptionsDefinitions, { argv, stopAtFirstUnknown: true });
                 switch (dbOptions.action) {
-                    case 'h':
-                    case 'help':
-                        console.log(databaseHelp);
-                        break;
                     case 'version':
                     case 'v':
                         await DatabaseRepositoryReader.updateVersionFile({
@@ -191,6 +183,9 @@ const main = async () => {
                         }
                         break;
                     default:
+                    case 'h':
+                    case 'help':
+                        console.log(databaseHelp);
                         break;
                 }
                 break;
@@ -302,6 +297,9 @@ const main = async () => {
                         break;
                 }
             default:
+            case 'h':
+            case 'help':
+                console.log(mainHelp);
                 break;
         }
     } catch (error) {
