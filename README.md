@@ -6,6 +6,31 @@ Because it's cool
 npm link && bam help
 ```
 
+## How does it work
+
+I don't quite know, it's like magic, but enhanced
+
+## How do I make it work
+
+Ok, that's a relevant question.
+I'd say "duh, run bam help", but I am not sure the documentation is up to date.
+The best would be to read the code, or to try and fail...
+
+On the idea itself, the whole cli relies on the fact that you are going to run this in a git folder.
+It would read the .git file, and get the layer's name out of it.
+From there, depending on the layer you are dealing with, it would allow you do some useful operations.
+The most common are :
+
+- `bam db e -o <object name>`, that will create a new version, and add the specified object in the verison itself
+- `bam db nv`, that will create a new version (moving the files from a current folder into a "x.x.x.x" version, after popping an option to ask for the version name)
+- `bam db p -f <database_name_here>` that will pop all th parameters in the console, and ask for the parameters to use for the variables to replace in the scripts
+(limited by < and >)
+- `bam db i` that will install the database from scratch on a local environment - the declinations of this are:
+  - `bam db i -v <version>` to install a specific version
+  - `bam db i -e <environment>` to install on a specific environment
+  - `bam db c` to check the database code
+  - `bam db t -t <template>` to add a template. Current supported templates are version and lookup
+
 ## Tags
 
 The application uses tags defined on the database tables to create the files on all layers. Please refer to the list of tags below to know what tags can be used.
