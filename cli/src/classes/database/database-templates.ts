@@ -341,6 +341,7 @@ export class DatabaseTemplates {
                 let currentFileString = await FileUtils.readFile(sourceDatabaseObject.table[params.tableName as string].latestFile);
                 currentFileString = currentFileString
                     .replace(params.tableName, foreignTableName)
+                    .replace(/create\W+table/gi, 'CREATE FOREIGN TABLE')
                     .replace(/references\W+[a-z0-9_]+\W\([a-z0-9_]+\)/gi, '')
                     .replace(/serial\W+primary\W+key/gim, 'INTEGER NOT NULL UNIQUE');
                 fileString = fileString
