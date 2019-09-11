@@ -262,4 +262,21 @@ export class FileUtils {
             }
         });
     }
+
+    static async openFolderInExplorer() {
+        await new Promise((resolve, reject) => {
+            try {
+                const cp = exec(`start .`, (error) => {
+                    if (error) {
+                        reject(`exec error: ${error}`);
+                        return;
+                    }
+                    cp.kill();
+                    resolve();
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
 }

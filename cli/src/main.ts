@@ -271,7 +271,7 @@ const main = async () => {
                 await FileUtils.deleteFolderRecursiveSync(path.resolve(__dirname, '../../temp'));
                 break;
             case 'files':
-                await CliFiles.openDbDataFile();
+                await CliFiles.openFilesFolder();
                 break;
             case 's':
             case 'server':

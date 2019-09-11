@@ -5,4 +5,7 @@ export class CliFiles {
     static openDbDataFile() {
         FileUtils.openFileInFileEditor(DatabaseHelper.postgresDbDataPath);
     }
+    static openFilesFolder() {
+        FileUtils.openFolderInExplorer();
+    }
 }

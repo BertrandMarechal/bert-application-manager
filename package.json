@@ -10,6 +10,6 @@
   "license": "ISC",
   "bin": {
     "bam": "./cli/build/main.js",
-    "bertrand-app-manager": "./cli/build/main.js"
+    "bert-app-manager": "./cli/build/main.js"
   }
 }
