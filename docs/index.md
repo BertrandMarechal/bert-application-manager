@@ -10,7 +10,7 @@ An application should be split into 3 git repos :
 - [app-name]-middle-tier (cli currently working with [AWS Lambda](https://aws.amazon.com/lambda/) and [serverless](https://serverless.com/))
 - [app-name]-database (cli currently working with [PostgreSQL](https://www.postgresql.org/))
 
-Please refer to the specific pages for [frontend](frontend.md), [middle-tier](middle-tier.md) and [databse](databse.md) for more details about those.
+Please refer to the specific pages for [frontend](./frontend.md), [middle-tier](./middle-tier.md) and [database](./database.md) for more details about those.
 
 ## How does it work
 

@@ -108,7 +108,7 @@ Initiates the database if no code is alreaady there. The tool will:
 
 ## create-table
 
-`bam db create-table` OR `bam db ct`
+`bam db create-table` or `bam db ct`
 
 Creates a table script through an interactive cli command.
 It would ask for table name, check the usage of table prefix, ask for name, type, specificities of fields...
@@ -128,9 +128,13 @@ Installs the database. Runs the scripts specified in the version.json files one 
 
 `bam db replication-from`
 
+[DOC IN PROGRESS]
+
 ## replication-to
 
 `bam db replication-to`
+
+[DOC IN PROGRESS]
 
 ## new-version
 
@@ -155,30 +159,43 @@ By doing that, we make sure that the latest files are under the /postgres/schema
 
 `bam db check-version`
 
+[DOC IN PROGRESS]
+
 ## check-code
 
 `bam db check-code`
+
+[DOC IN PROGRESS]
 
 ## params
 
 `bam db params`
 
+[DOC IN PROGRESS]
+
 ## generate-functions
 
 `bam db generate-functions`
+
+[DOC IN PROGRESS]
 
 ## edit-object
 
 `bam db edit-object`
 
+[DOC IN PROGRESS]
+
 ## add-template
 
 `bam db add-template`
+
+[DOC IN PROGRESS]
 
 ## tag
 
 `bam db tag`
 
+[DOC IN PROGRESS]
 
 ## version [Deprecated]
 
