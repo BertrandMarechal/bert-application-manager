@@ -14,7 +14,7 @@ I don't quite know, it's like magic, but enhanced
 
 Ok, that's a relevant question.
 
-Please check out the [documentation](docs/index.md)
+Please check out the [documentation](docs)
 
 ## Tags
 
