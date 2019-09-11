@@ -8,37 +8,65 @@ bert-app-manager (AKA bam) has a collection of commands to help the development 
 
 The cli currently works with PostgreSQL, and will work with a repo having the following structure (or will create the structure if not there already) :
 >/postgres
+>
 >-/schema/...       <-- would contain the latest version of the database files
+>
 >-/release          <-- would contain the versions that have been released or are WIP
+>
 >--/current/...     <-- the version currently under development
+>
 >--/0.0.0.0         <-- version 0.0.0.0
+>
 >---/schema         <-- version 0.0.0.0's schema folder
+>
 >---/scripts        <-- version 0.0.0.0's scripts (schema / data modifying scripts)
+>
 >---/version.json   <-- version 0.0.0.0's list of files to install
 
 The schema folder will have a structure offering the possibility to add all currently known objects (known by the developer of this cli tool) :
 
 >00-database-setup
+>
 >01-types
+>
 >02-external-systems
+>
 >-/00-replications
+>
 >--/00-foreign-servers
+>
 >--/01-user-mappings
+>
 >--/02-local-tables
+>
 >--/03-foreign-tables
+>
 >--/04-source-specific-app-setup
+>
 >-/01-data-transfers
+>
 >-/02-external-system-integrations
+>
 >-/03-data-exchange
+>
 >03-tables
+>
 >04-sequences
+>
 >05-indexes
+>
 >06-views
+>
 >07-functions
+>
 >08-triggers
+>
 >09-data
+>
 >10-users-roles-permissions
+>
 >11-full-text-catalogues
+>
 
 ### Standardisation
 
