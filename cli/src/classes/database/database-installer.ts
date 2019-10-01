@@ -62,6 +62,32 @@ export class DatabaseInstaller {
             if (databaseVersion) {
                 versionsToInstall.push(databaseVersion);
             }
+        } else if (['dev', 'demo', 'prod'].includes(params.environment)) {
+            const confirmed = await uiUtils.choices({
+                message: 'You are probably about to drop and recreate the database you are working with. Is it someting you aer ok about ?',
+                choices: [
+                    'Yes',
+                    'Wait...'
+                ],
+                title: 'check'
+            });
+            if (confirmed['check'] === 'Yes') {
+                const confirmed = await uiUtils.choices({
+                    message: 'You really sure ?',
+                    choices: [
+                        'Yes',
+                        'No'
+                    ],
+                    title: 'check2'
+                });
+                if (confirmed['check2'] === 'Yes') {
+                    versionsToInstall = databaseData;
+                } else {
+                    throw 'ok';
+                }
+            } else {
+                throw 'ok';
+            }
         } else {
             versionsToInstall = databaseData;
         }
