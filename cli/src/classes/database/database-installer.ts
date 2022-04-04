@@ -11,7 +11,7 @@ export class DatabaseInstaller {
     static async installDatabse(params: {
         applicationName: string;
         environment: string;
-        version: string;
+        version: string | null;
     }, uiUtils: UiUtils) {
         if (!params.environment) {
             uiUtils.warning({ origin: this._origin, message: 'No environment provided, the installation will be ran for local' });
@@ -44,7 +44,7 @@ export class DatabaseInstaller {
             while (!fileParameters[params.environment].server) {
                 fileParameters[params.environment].server = await uiUtils.question({
                     origin: DatabaseInstaller._origin,
-                    text: 'Please provide the root password'
+                    text: 'Please provide the server'
                 });
             }
             await DatabaseHelper.updateApplicationDatabaseParameters(params.applicationName, fileParameters);
@@ -206,8 +206,8 @@ export class DatabaseInstaller {
                     uiUtils.stoprProgress();
                 }
             }
-        } catch (error) {
-            uiUtils.error({ origin: this._origin, message: error });
+        } catch (error: any) {
+            uiUtils.error({ origin: this._origin, message: error.toString() });
             postgresUtils.endConnection();
             process.exit();
         }

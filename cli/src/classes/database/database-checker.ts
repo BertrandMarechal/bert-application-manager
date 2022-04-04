@@ -9,14 +9,14 @@ import { DatabaseSubObject, DatabaseObject, DatabaseTable, DatabaseTableField, D
 import { FileUtils } from '../../utils/file.utils';
 import { DatabaseFileHelper } from './database-file-helper';
 
-type ObjectIssueTyes = 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk' | 'no-index-on-local-replicated-table';
+type ObjectIssueTypes = 'incorrect-name' | 'incorrect-fk' | 'incorrect-fk-name' | 'not-fk' | 'no-index-on-local-replicated-table';
 
 interface ObjectWithIssue {
     objectType: DatabaseFileType;
     objectName: string;
     fieldName?: string;
     expected?: string;
-    issueType: ObjectIssueTyes;
+    issueType: ObjectIssueTypes;
     fileName: string;
     usefulData?: any;
 }
@@ -656,10 +656,10 @@ export class DatabaseChecker {
                 objectType: 'local-table'
             }, uiUtils);
         }
-        catch (e) {
+        catch (e: any) {
             uiUtils.info({
                 origin: this._origin,
-                message: e
+                message: e.toString()
             });
         }
         const usefulData = objectWithIssue.usefulData || { fullFieldText: '' };
@@ -737,10 +737,10 @@ export class DatabaseChecker {
                         objectType: 'table'
                     }, uiUtils);
                 }
-                catch (e) {
+                catch (e: any) {
                     uiUtils.info({
                         origin: this._origin,
-                        message: e
+                        message: e.toString()
                     });
                 }
                 // check that we have a table with the correct suffix

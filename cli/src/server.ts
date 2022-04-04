@@ -1,7 +1,7 @@
 import * as bodyParser from 'body-parser';
 import express, { Express, Request, Response } from 'express';
 import * as http from 'http';
-import IO from "socket.io";
+import * as IO from "socket.io";
 import { ApplicationHelper } from './classes/application/application-helper';
 import { DatabaseServer } from './server/database-server';
 import { SocketUtils } from './utils/socket.utils';
@@ -16,7 +16,7 @@ export class Server {
         this.socketUtils = new SocketUtils();
         this.app = express();
         this.server = http.createServer(this.app);
-        this.io = IO(this.server);
+        this.io = new IO.Server(this.server);
     }
 
     listen() {
@@ -63,9 +63,8 @@ export class Server {
         });
         const port = 690;
 
-        this.server.listen(port, (error: any) => {
+        this.server.listen(port, () => {
             console.log(`Listening on port ${port}`);
-            // OpenBrowserUtils.open(`http://localhost:${port}`);
         });
     }
     private _attachSocket(client: IO.Socket) {

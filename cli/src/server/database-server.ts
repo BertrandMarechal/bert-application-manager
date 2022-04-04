@@ -91,7 +91,7 @@ export class DatabaseServer {
             try {
                 await DatabaseFileHelper.createFunctions({
                     applicationName: req.params.name,
-                    filter: req.query.filter
+                    filter: req.query.filter as string
                 }, socketUtils);
                 res.send(await ApplicationHelper.getDatabase(req.params.name));
             } catch (error) {

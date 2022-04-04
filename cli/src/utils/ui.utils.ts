@@ -1,5 +1,5 @@
 export type LoggerType = 'info' | 'warning' | 'error' | 'success';
-export type LoggerColors = 'red' | 'grey' | 'green' | 'blue' | 'cyan' | 'white' | 'yellow' | 'grey';
+export type LoggerColors = 'red' | 'green' | 'blue' | 'cyan' | 'white' | 'yellow' | 'grey';
 
 export interface LoggingParams {
     origin: string;

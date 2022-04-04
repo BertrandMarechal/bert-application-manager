@@ -24,7 +24,7 @@ export class PostgresUtils {
             this.db = this.connections[this.connectionString];
             uiUtils.info({
                 origin: 'PostgresUtils',
-                message: `Updated connection string, ${this.connectionString.replace(/\:.*?\@/gi, ':XXXXXXXXX@')}`
+                message: `Updated connection string, ${this.connectionString}`
             });
         }
         return this;

@@ -795,10 +795,10 @@ export class DatabaseFileHelper {
                 objectType: 'table'
             }, uiUtils);
         }
-        catch (e) {
+        catch (e: any) {
             uiUtils.info({
                 origin: this._origin,
-                message: e
+                message: e.toString()
             });
         }
         // refresh the database object
@@ -875,10 +875,10 @@ export class DatabaseFileHelper {
                             objectType: objectToReplaceIn.name
                         }, uiUtils);
                     }
-                    catch (e) {
+                    catch (e: any) {
                         uiUtils.info({
                             origin: this._origin,
-                            message: e
+                            message: e.toString()
                         });
                     }
                     // refresh the database object

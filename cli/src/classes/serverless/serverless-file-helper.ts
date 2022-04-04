@@ -303,7 +303,7 @@ export class ServerlessFileHelper {
         return await Promise.resolve(true);
     }
 
-    static ymlToJson(yml: string) {
+    static ymlToJson(yml: string): any {
         return jsyaml.load(yml);
     }
 

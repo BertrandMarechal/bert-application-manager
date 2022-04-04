@@ -66,8 +66,8 @@ export class RepositoryUtils {
                                 type: params.type,
                                 subRepo: true
                             }, uiUtils);
-                        } catch (error) {
-                            uiUtils.info({origin: this.origin, message: error});
+                        } catch (error: any) {
+                            uiUtils.info({origin: this.origin, message: error.toString() });
                         }
                     }
                 } else {

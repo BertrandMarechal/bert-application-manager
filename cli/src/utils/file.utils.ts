@@ -204,7 +204,7 @@ export class FileUtils {
         }
     }
 
-    static async renameFolder(from: string, to: string): Promise<any> {
+    static async renameFolder(from: string, to: string): Promise<void> {
         return await new Promise((resolve, reject) => {
             fs.rename(from, to, (error) => {
                 if (error) {
@@ -246,8 +246,8 @@ export class FileUtils {
         }
     };
 
-    static async openFileInFileEditor(fileName: string) {
-        await new Promise((resolve, reject) => {
+    static async openFileInFileEditor(fileName: string): Promise<void> {
+        await new Promise<void>((resolve, reject) => {
             try {
                 const cp = exec(`"${fileName}"`, (error, stdout, stderr) => {
                     if (error) {
@@ -263,8 +263,8 @@ export class FileUtils {
         });
     }
 
-    static async openFolderInExplorer() {
-        await new Promise((resolve, reject) => {
+    static async openFolderInExplorer(): Promise<void> {
+        await new Promise<void>((resolve, reject) => {
             try {
                 const cp = exec(`start .`, (error) => {
                     if (error) {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as io from 'socket.io-client';
-import { environment } from '../../environments/environment';
+import { environment } from '@env/environment';
 import { Store } from '@ngrx/store';
 import Swal from 'sweetalert2';
 import * as fromDatabases from '@app/store/reducers/databases.reducers';
@@ -160,7 +160,7 @@ export class LocalhostService {
     });
   }
 
-  private _waitForConnection(): Promise<any> {
+  private _waitForConnection(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.serverConnected) {
         resolve();

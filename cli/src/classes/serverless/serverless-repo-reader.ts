@@ -7,7 +7,6 @@ import { UiUtils } from "../../utils/ui.utils";
 import { RepositoryUtils } from "../../utils/repository.utils";
 import { DatabaseObject } from "../../models/database-file.model";
 import { DatabaseHelper } from "../database/database-helper";
-import { LoggerUtils } from "../../utils/logger.utils";
 import { ServerlessFileHelper } from "./serverless-file-helper";
 
 export class ServerlessRepositoryReader {
