@@ -76,7 +76,7 @@ const main = async () => {
                         break;
                     case 'install':
                     case 'i':
-                        await DatabaseInstaller.installDatabse({
+                        await DatabaseInstaller.installDatabase({
                             applicationName: dbOptions['application-name'],
                             environment: dbOptions.environment,
                             version: dbOptions.version

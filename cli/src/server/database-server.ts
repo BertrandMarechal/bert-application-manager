@@ -39,7 +39,7 @@ export class DatabaseServer {
         app.get('/databases/:name/install/:version/:env', async (req: Request, res: Response) => {
             console.log('databases/:name/install/:version/:env');
             try {
-                await DatabaseInstaller.installDatabse({
+                await DatabaseInstaller.installDatabase({
                     applicationName: req.params.name,
                     environment: req.params.env,
                     version: req.params.version === 'all' ? null : req.params.version

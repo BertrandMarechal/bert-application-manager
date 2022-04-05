@@ -1,4 +1,3 @@
-console.log(require("os").userInfo().username)
 export const mainHelp = `### This is application manager ###
 This cli provides certain help for you projects.
 

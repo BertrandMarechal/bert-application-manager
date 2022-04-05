@@ -8,7 +8,7 @@ import { DatabaseHelper } from "./database-helper";
 export class DatabaseInstaller {
     private static _origin = 'DatabaseInstaller';
 
-    static async installDatabse(params: {
+    static async installDatabase(params: {
         applicationName: string;
         environment: string;
         version: string | null;
@@ -64,7 +64,7 @@ export class DatabaseInstaller {
             }
         } else if (['dev', 'demo', 'prod'].includes(params.environment)) {
             const confirmed = await uiUtils.choices({
-                message: 'You are probably about to drop and recreate the database you are working with. Is it someting you aer ok about ?',
+                message: 'You are probably about to drop and recreate the database you are working with. Is it something you are ok about ?',
                 choices: [
                     'Yes',
                     'Wait...'
@@ -189,7 +189,7 @@ export class DatabaseInstaller {
                             switch (response.toLowerCase()) {
                                 case 'r':
                                     carryOn = false;
-                                    await this.installDatabse(params, uiUtils);
+                                    await this.installDatabase(params, uiUtils);
                                     break;
                                 case '':
                                     k = k - 1;
@@ -208,11 +208,11 @@ export class DatabaseInstaller {
             }
         } catch (error: any) {
             uiUtils.error({ origin: this._origin, message: error.toString() });
-            postgresUtils.endConnection();
-            process.exit();
+            postgresUtils.endAllConnections();
+            process.exit(1);
         }
         finally {
-            postgresUtils.endConnection();
+            postgresUtils.endAllConnections();
         }
     }
 }

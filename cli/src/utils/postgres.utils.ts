@@ -24,25 +24,17 @@ export class PostgresUtils {
             this.db = this.connections[this.connectionString];
             uiUtils.info({
                 origin: 'PostgresUtils',
-                message: `Updated connection string, ${this.connectionString}`
+                message: `Updated connection string, ${this.connectionString.replace(/\:.*?\@/gi, ':XXXXXXXXX@')}`
             });
         }
         return this;
     }
 
     async execute(sql: string, data?: any): Promise<any> {
-        try {
-            if (data) {
-                const dataToReturn: any = await this.db.any(sql, data);
-                this.endConnection();
-                return dataToReturn;
-            } else {
-                const dataToReturn: any = await this.db.any(sql);
-                this.endConnection();
-                return dataToReturn;
-            }
-        } catch (error) {
-            throw error;
+        if (data) {
+            return this.db.any(sql, data);
+        } else {
+            return this.db.any(sql);
         }
     }
 
@@ -77,6 +69,21 @@ export class PostgresUtils {
     }
 
     endConnection() {
-        this.pgp.end();
+        if (this.db) {
+            for (let key of Object.keys(this.connections)) {
+                if (this.connections[key] === this.db) {
+                    this.connections[key] = undefined;
+                    this.db?.$pool?.end();
+                }
+            }
+        }
+    }
+
+    endAllConnections() {
+        this.db = null;
+        for (let key of Object.keys(this.connections)) {
+            this.connections[key]?.$pool?.end();
+            this.connections[key] = undefined;
+        }
     }
 }
