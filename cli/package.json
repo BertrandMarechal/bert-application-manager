@@ -19,7 +19,7 @@
     "inquirer": "^8.2.2",
     "js-yaml": "^4.1.0",
     "pg-promise": "^10.11.1",
-    "socket.io": "^4.4.1",
+    "socket.io": "^4.5.3",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
